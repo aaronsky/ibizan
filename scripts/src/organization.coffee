@@ -1,4 +1,8 @@
-google_credentials = require '../../config/service_id'
+google_credentials = {
+  client_email: process.env.CLIENT_EMAIL,
+  private_key: process.env.PRIVATE_KEY
+}
+
 Spreadsheet = require './sheet'
 
 CONFIG =
