@@ -1,1 +1,1 @@
-web: bin/ibizan
+web: bin/ibizan --heroku

@@ -5,6 +5,10 @@ set -e
 npm install
 export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
-source ./bin/credentials
+if [ "$1" = "--heroku" ]; then
+  echo "This is a Heroku execution!"
+else
+  source ./bin/credentials
+fi
 
-exec node_modules/.bin/hubot --name "ibizan" -a "slack" "$@"
+exec node_modules/.bin/hubot --name "ibizan" -a "slack"
