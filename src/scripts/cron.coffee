@@ -28,3 +28,4 @@
 # Once an employee is checked ‘in’, they must check ‘out’ before they can check ‘in’ again (to avoid people forgetting to clock out the night before).
 # When given a command, Ibizan should always responds (in the channel) to confirm. When checking out or logging blocks of time, the entry should be read back along with the latest totals. e.g. 3.25 hours logged today / Today’s total: 5.5 hours / Week total: 40 hours
 # Users have the option to say undo to cancel the last command.
+

@@ -1,0 +1,40 @@
+getPositiveNumber = (input, current) ->
+  if not input
+    return current
+  if not isNaN input
+    # number
+    if input >= 0
+      return input
+    return 0
+  return current
+
+class Timetable
+  constructor: (@start, @end, @timezone) ->
+    # code      
+
+  setVacation: (total, available) ->
+    @vacationTotal = getPositiveNumber(total, @vacationTotal)
+    @vacationAvailable = getPositiveNumber(available, @vacationAvailable)
+  setSick: (total, available) ->
+    @sickTotal = getPositiveNumber(total, @sickTotal)
+    @sickAvailable = getPositiveNumber(available, @sickAvailable)
+  setUnpaid: (total) ->
+    @unpaidTotal = getPositiveNumber(total, @unpaidTotal)
+  setOvertime: (total) ->
+    @overtimeTotal = getPositiveNumber(total, @overtimeTotal)
+  setLogged: (total) ->
+    @loggedTotal = getPositiveNumber(total, @loggedTotal)
+  setAverageLogged: (average) ->
+    @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
+
+class User
+  constructor: (@name, @slack, @salary, @timetable) ->
+    @shouldHound = true
+  activeHours: () ->
+    [@timetable.start, @timetable.end]
+  isInactive: (current) ->
+    current = current || Date.now()
+    not (current >= @timetable.start and current <= @timetable.end)
+
+module.exports.User = User
+module.exports.Timetable = Timetable

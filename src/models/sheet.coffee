@@ -1,5 +1,6 @@
 GoogleSpreadsheet = require 'google-spreadsheet'
-{HEADERS, REGEX} = require './constants'
+constants = require './constants'
+HEADERS = constants.HEADERS
 Project = require './project'
 {User, Timetable} = require './user'
 
@@ -10,18 +11,18 @@ class Spreadsheet
     @sheet = new GoogleSpreadsheet(sheet_id)
     @initialized = false
   authorize: (auth, cb) ->
-      @sheet.useServiceAccountAuth auth, (err) ->
-        if err
-          console.log 'authorization failed'
-          throw err
-        console.log 'authorized'
-        cb()
-      console.log 'waiting for authorization'
+    @sheet.useServiceAccountAuth auth, (err) ->
+      if err
+        console.error 'authorization failed'
+        cb err
+      console.log 'authorized'
+      cb()
+    console.log 'waiting for authorization'
   loadOptions: (cb) ->
     that = this
     @sheet.getInfo (err, info) ->
       if err
-        throw err
+        cb err
       that.title = info.title
       that.payroll = info.worksheets[0] # HACK
       that.rawData = info.worksheets[2] # HACK

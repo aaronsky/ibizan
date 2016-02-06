@@ -1,4 +1,4 @@
-Organization = require('./src/organization').get()
+Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
   robot.adapter.client.on 'userTyping', (user, channel) ->

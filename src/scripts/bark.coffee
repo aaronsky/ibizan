@@ -8,9 +8,10 @@
 #   aaronsky
 
 module.exports = (robot) ->
-  Organization = require('./src/organization').get()
+  Organization = require('../models/organization').get()
   
   robot.hear /bark/i, (res) ->
     res.send "Bark Bark"
+  
   robot.hear /!list users/i, (res) ->
     res.send JSON.stringify Organization.users

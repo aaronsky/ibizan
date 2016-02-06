@@ -12,7 +12,11 @@ NAME = 'Fangamer'
 OPTIONS = {}
 
 sheet = new Spreadsheet(CONFIG.sheet_id)
-sheet.authorize CONFIG.auth, () ->
+# TODO: Catch exception here
+sheet.authorize CONFIG.auth, (err) ->
+  if err
+    # code
+    return
   sheet.loadOptions (opts) ->
     OPTIONS = opts
     Organization.get().bindOptions OPTIONS
