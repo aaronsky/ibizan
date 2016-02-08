@@ -4,10 +4,10 @@ expect = require('chai').expect
 Spreadsheet = require '../src/models/sheet.coffee'
 
 describe 'Sheet', ->
+  beforeEach ->
+    sheet_id = ''
+    @sheet = new Spreadsheet(sheet_id)
   describe '#constructor', ->
-    beforeEach ->
-      sheet_id = ''
-      @sheet = new Spreadsheet(sheet_id)
     it 'should set the sheet id'
     it 'should not be fully initialized'
   describe '#authorize(auth, cb)', ->
