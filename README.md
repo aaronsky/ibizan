@@ -1,6 +1,8 @@
 # Ibizan
 _Dog-themed Employee Time Tracking Slack Bot_
 
+[![Build Status](https://travis-ci.org/aaronsky/ibizan.svg?branch=master)](https://travis-ci.org/aaronsky/ibizan)
+
 Ibizan is a chat bot built on the [Hubot](https://github.com/github/hubot) framework, contracted by [Fangamer](http://fangamer.com/). Ibizan is dedicated to providing an intuitive and interactive interface to managing a timesheet.
 
 ## Running ibizan Locally

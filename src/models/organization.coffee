@@ -11,22 +11,14 @@ CONFIG =
 NAME = 'Fangamer'
 OPTIONS = {}
 
-sheet = new Spreadsheet(CONFIG.sheet_id)
-# TODO: Catch exception here
-sheet.authorize CONFIG.auth, (err) ->
-  if err
-    # code
-    return
-  sheet.loadOptions (opts) ->
-    OPTIONS = opts
-    Organization.get().bindOptions OPTIONS
-
 class Calendar
   constructor: (@vacation, @sick, @holidays) ->
 
 # Singleton
 class Organization
   instance = null
+
+  sheet = 
 
   class OrganizationPrivate
     constructor: (@name, @spreadsheet, options) ->
@@ -58,6 +50,13 @@ class Organization
       console.log "Project #{name} could not be found"
 
   @get: () ->
+    sheet ?= new Spreadsheet(CONFIG.sheet_id).authorize CONFIG.auth, (err) ->
+      if err
+        # code
+        return
+      sheet.loadOptions (opts) ->
+        OPTIONS = opts
+        Organization.get().bindOptions OPTIONS
     instance ?= new OrganizationPrivate(NAME, sheet, OPTIONS)
     instance
 

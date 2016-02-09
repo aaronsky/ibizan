@@ -6,7 +6,7 @@ Spreadsheet = require '../src/models/sheet.coffee'
 describe 'Sheet', ->
   beforeEach ->
     sheet_id = ''
-    @sheet = new Spreadsheet(sheet_id)
+    # @sheet = new Spreadsheet(sheet_id)
   describe '#constructor', ->
     it 'should set the sheet id'
     it 'should not be fully initialized'

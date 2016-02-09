@@ -1,6 +1,6 @@
 {
   "name": "ibizan",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "author": "Aaron Sky <aaronsky@skyaaron.com>",
   "description": "Dog-themed Employee Time Tracking Slack Bot",
