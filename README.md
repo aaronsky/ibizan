@@ -7,7 +7,9 @@ Ibizan is a chat bot built on the [Hubot](https://github.com/github/hubot) frame
 
 After cloning the repo and setting the created folder to your current directory, you can test Ibizan hubot by running the following command:
 
-    ./bin/ibizan
+```
+./bin/ibizan
+```
 
 This will install dependencies and run the bot. However, it will not work without setting up your configuration (below).
 
@@ -103,8 +105,10 @@ Create a spreadsheet on Google Sheets that has the following layout:
 1. Create a file in the bin/ folder and name it `credentials`. 
 2. Add the following to credentials: 
 
-    export HUBOT_SLACK_TOKEN=<hubot token from Slack>
-    export CLIENT_EMAIL=<client_email from your Service Auth JSON>
-    export PRIVATE_KEY=<private_key from your Service Auth JSON>
+```
+export HUBOT_SLACK_TOKEN=<hubot token from Slack>
+export CLIENT_EMAIL=<client_email from your Service Auth JSON>
+export PRIVATE_KEY=<private_key from your Service Auth JSON>
+```
 
 Note: This file is not under source control. In order to use Ibizan with Heroku, you must set environment variables manually using the Heroku Toolbelt. 
