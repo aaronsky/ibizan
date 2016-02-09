@@ -48,9 +48,9 @@
 module.exports = (robot) ->
 
   Organization = require('../models/organization').get()
+  Punch = require('../models/punch')
   CONSTANTS = require '../helpers/constants'
   REGEX = CONSTANTS.REGEX
-  MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 
   canPunchHere = (name, channel) ->
     try
@@ -76,12 +76,14 @@ module.exports = (robot) ->
       res.send "Talk to me in private about this, please? ;)"
 
   finalizePunch = (punch) ->
+    if not punch
+      return 'Punch could not be parsed :('
     Organization.spreadsheet.enterPunch punch
     JSON.stringify punch
 
   # respond to mode
   robot.respond /(in|out|vacation|sick|unpaid)/i, (res) ->
-    parse res, res.match.input
+    parse res, res.match.input, res.match[1]
 
   # respond to simple time block
   robot.respond /([0-9]+\.+[0-9]*) hours/i, (res) ->

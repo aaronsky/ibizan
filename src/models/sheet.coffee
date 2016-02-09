@@ -1,5 +1,5 @@
 GoogleSpreadsheet = require 'google-spreadsheet'
-constants = require './constants'
+constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
 Project = require './project'
 {User, Timetable} = require './user'

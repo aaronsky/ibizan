@@ -1,11 +1,20 @@
+  
+CONSTANTS = require '../helpers/constants'
+REGEX = CONSTANTS.REGEX
+MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
+Organization = require('../models/organization').get()
+
 class Punch
-  constructor: (@mode = 'none', 
+  constructor: (@user, 
+                @mode = 'none', 
                 @times = [], 
                 @projects = [],
                 @notes = '') ->
     # ...
 
   @parse: (user, command, mode='none') ->
+    if not user or not command
+      return
     if mode and mode isnt 'none'
       [mode, command] = parseMode command
 
@@ -24,7 +33,7 @@ class Punch
     [projects, command] = parseProjects command
     notes = command
 
-    punch = new Punch(mode, datetimes, projects, notes)
+    punch = new Punch(user, mode, datetimes, projects, notes)
     punch
 
   parseMode = (command) ->
@@ -37,7 +46,7 @@ class Punch
     else
       ['none', command]
 
-  punchTime = (command, activeStart, activeEnd) ->
+  parseTime = (command, activeStart, activeEnd) ->
     # parse time component
     command = command || ''
     time = []
@@ -89,15 +98,14 @@ class Punch
     projects = []
     command = command || ''
     command_copy = command.split(' ').slice()
+
     for word in command_copy
       if word.charAt(0) is '#'
-        if project = Organization.getProjectByName command
+        if project = Organization.getProjectByName word
           projects.push project
         command = command.replace word + ' ', ''
       else
         break
     [projects, command]
-
-
 
 module.exports = Punch
