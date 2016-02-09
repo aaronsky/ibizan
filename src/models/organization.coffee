@@ -6,7 +6,7 @@ google_credentials = {
 Spreadsheet = require './sheet'
 
 CONFIG =
-  sheet_id: '1owlFh2wlnerIPDSLziDUl4jECZC4pYJ0gk3IQ71OLRI'
+  sheet_id: process.env.SHEET_ID
   auth: google_credentials
 NAME = 'Fangamer'
 OPTIONS = {}
