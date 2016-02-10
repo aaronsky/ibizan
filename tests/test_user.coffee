@@ -1,4 +1,4 @@
-
+moment = require 'moment'
 expect = require('chai').expect
 {User, Timetable} = require '../src/models/user.coffee'
 
@@ -79,10 +79,8 @@ describe 'Timetable', ->
 
 describe 'User', ->
   beforeEach ->
-    start = new Date()
-    start.setHours(7)
-    end = new Date()
-    end.setHours(18)
+    start = moment().hour(7)
+    end = moment().hour(18)
     timetable = new Timetable(start, end, 'Eastern')
     @user = new User('Jimmy Hendricks', 'jeff', false, timetable)
   describe '#activeHours()', ->
@@ -92,9 +90,9 @@ describe 'User', ->
       dates = @user.activeHours()
       expect(dates).to.have.length(2)
       expect(dates).to.have.deep.property('[0]')
-                    .that.is.an.instanceof Date
+                    .that.is.an.instanceof moment
       expect(dates).to.have.deep.property('[1]')
-                    .that.is.an.instanceof Date
+                    .that.is.an.instanceof moment
     it 'should return the start and end times', ->
       dates = @user.activeHours()
       expect(dates).to.have.deep.property '[0]', @user.timetable.start
@@ -103,18 +101,14 @@ describe 'User', ->
   describe '#isInactive()', ->
     it 'should be true when it is earlier than the start time', ->
       start = @user.timetable.start
-      time = new Date(start)
-      time.setHours(start.getHours() - 2)
+      time = moment(start).subtract(2, 'hours')
       expect(@user.isInactive(time)).to.be.true
     it 'should be true when it is later than the end time', ->
       end = @user.timetable.end
-      time = new Date(end)
-      time.setHours(end.getHours() + 2)
+      time = moment(end).add(2, 'hours')
       expect(@user.isInactive(time)).to.be.true
     it 'should be false when it is in between the start and end time', ->
       start = @user.timetable.start
       end = @user.timetable.end
-      hourDifference = end.getHours() - start.getHours()
-      time = new Date(start)
-      time.setHours(start.getHours() + (hourDifference / 2))
+      time = moment(start).add(end.diff(start, 'hours') / 2, 'hours')
       expect(@user.isInactive(time)).to.be.false

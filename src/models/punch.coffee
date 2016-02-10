@@ -1,4 +1,5 @@
-  
+
+moment = require 'moment'
 CONSTANTS = require '../helpers/constants'
 REGEX = CONSTANTS.REGEX
 MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
@@ -24,10 +25,10 @@ class Punch
     [dates, command] = parseDate command
     for date in dates
       for time in times
-        datetime = new Date(date)
-        datetime.setHours time.getHours()
-        datetime.setMinutes time.getMinutes()
-        datetime.setSeconds time.getSeconds()
+        datetime = moment(date)
+        datetime.hour(time.hour())
+        datetime.minute(time.minute())
+        datetime.second(time.second())
         datetimes.push datetime
     if times.block?
       datetimes.block = times.block
@@ -54,8 +55,8 @@ class Punch
     time = []
     if match = command.match REGEX.rel_time
       if match[0] is 'half-day' or match[0] is 'half day'
-        copy = new Date(activeStart.getTime())
-        copy.setHours(activeStart.getHours() - 4)
+        copy = moment(activeStart)
+        copy.hour(activeStart.hour() - 4)
         time.push copy, activeEnd
       else
         block = parseFloat match[3]
@@ -64,34 +65,33 @@ class Punch
     else if match = command.match REGEX.time
       # TODO: DRY
       # do something with the absolutism
-      today = new Date()
-      today_str = "#{today.getFullYear()}-#{today.getMonth()}-#{today.getDate()} "
-      time.push new Date(today_str + match[0])
+      today = moment()
+      time.push moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
       command = command.replace(match[0] + ' ', '')
     # else if match = command.match regex for time ranges (???)
     else
-      time.push new Date()
+      time.push moment()
     [time, command]
 
   parseDate = (command) ->
     command = command || ''
     date = []
     if match = command.match /today/i
-      date.push new Date()
+      date.push moment()
       command = command.replace(match[0] + ' ', '')
     else if match = command.match /yesterday/i
-      today = new Date()
-      today.setDate(today.getDate() - 1)
+      today = moment()
+      today.date(today.date() - 1)
       date.push today
       command = command.replace(match[0] + ' ', '')
       [date, command]
     else if match = command.match REGEX.date # Placeholder for date blocks
-      absDate = new Date(match[0])
-      absDate.setFullYear(new Date().getFullYear())
+      absDate = moment(match[0])
+      absDate.setFullYear(moment.year())
       date.push absDate
       command = command.replace(match[0] + ' ', '')
     else
-      date.push new Date()
+      date.push moment()
     [date, command]
 
   parseProjects = (command) ->

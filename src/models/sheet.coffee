@@ -1,4 +1,6 @@
 GoogleSpreadsheet = require 'google-spreadsheet'
+moment = require 'moment'
+require '../../lib/moment-holidays.js'
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
 Project = require './project'
@@ -49,10 +51,8 @@ class Spreadsheet
           if row[header]
             if header is VARIABLE_HEADERS.holidays
               name = row[header]
-              date = new Date(row[VARIABLE_HEADERS.holidayDate])
+              date = moment().fromHolidayString(row[VARIABLE_HEADERS.holidayDate])
               opts[key][name] = date
-            else if header is VARIABLE_HEADERS.holidayDate
-              continue
             else if header is VARIABLE_HEADERS.exemptChannels
               channel = row[header]
               if channel
@@ -76,7 +76,7 @@ class Spreadsheet
         if row[PROJECT_HEADERS.name]
           name = row[PROJECT_HEADERS.name].trim()
         if row[PROJECT_HEADERS.start]
-          startDate = new Date(row[PROJECT_HEADERS.start])
+          startDate = moment(row[PROJECT_HEADERS.start], 'MM/DD/YYYY')
         if row[PROJECT_HEADERS.total]
           total = parseInt row[PROJECT_HEADERS.total]
         project = new Project(name, startDate, total)
@@ -88,13 +88,12 @@ class Spreadsheet
         throw err
       users = []
       USER_HEADERS = HEADERS.users
-      today = new Date()
-      today_str = "#{today.getFullYear()}-#{today.getMonth()}-#{today.getDate()} "
+      today = moment()
       for row in rows
         temp = {}
         for key, header of USER_HEADERS
           if header is USER_HEADERS.start or header is USER_HEADERS.end
-            temp[key] = new Date(today_str + row[header])
+            temp[key] = moment("#{today.format("YYYY-MM-DD")} #{row[header]}")
           else if header is USER_HEADERS.salary
             temp[key] = row[header] is 'Y'
           else
@@ -119,13 +118,13 @@ class Spreadsheet
       return
     row = {}
     headers = HEADERS.rawdata
-    today = new Date()
-    row[headers.today] = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear()
+    today = moment()
+    row[headers.today] = today.format('MM/DD/YYYY')
     row[headers.name] = punch.user.name
     if punch.mode is 'in'
-      row[headers.in] = punch.times[0]
+      row[headers.in] = punch.times[0].format('hh:mm:ss A')
     else if punch.mode is 'out'
-      row[headers.out] = punch.times[0]
+      row[headers.out] = punch.times[0].format('hh:mm:ss A')
       # row[headers.totalTime] = 
     else if punch.times.block?
       block = punch.times.block

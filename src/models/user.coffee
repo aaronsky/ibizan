@@ -1,3 +1,5 @@
+moment = require 'moment'
+
 getPositiveNumber = (input, current) ->
   if not input
     return current
@@ -33,8 +35,8 @@ class User
   activeHours: () ->
     [@timetable.start, @timetable.end]
   isInactive: (current) ->
-    current = current || Date.now()
-    not (current >= @timetable.start and current <= @timetable.end)
+    current = current || moment()
+    not current.isBetween(@timetable.start, @timetable.end)
 
 module.exports.User = User
 module.exports.Timetable = Timetable
