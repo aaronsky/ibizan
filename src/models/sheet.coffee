@@ -54,10 +54,15 @@ class Spreadsheet
             else if header is VARIABLE_HEADERS.holidayDate
               continue
             else if header is VARIABLE_HEADERS.exemptChannels
-              opts[key].push row[header]
+              channel = row[header]
+              if channel
+                channel = channel.replace '#', ''
+                opts[key].push channel
             else
               if isNaN(row[header])
-                opts[key] = row[header].trim()
+                val = row[header]
+                if val
+                  opts[key] = val.trim().replace '#', ''
               else
                 opts[key] = parseInt row[header]
       cb opts
@@ -107,8 +112,38 @@ class Spreadsheet
         user = new User(temp.name, temp.slackname, temp.salary, timetable)
         users.push user
       cb users
-  enterPunch: (punch) ->
+  enterPunch: (punch, cb) ->
     # code
+    if not punch
+      cb(new Error('Punch was not found'))
+      return
+    row = {}
+    headers = HEADERS.rawdata
+    today = new Date()
+    row[headers.today] = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear()
+    row[headers.name] = punch.user.name
+    if punch.mode is 'in'
+      row[headers.in] = punch.times[0]
+    else if punch.mode is 'out'
+      row[headers.out] = punch.times[0]
+      # row[headers.totalTime] = 
+    else if punch.times.block?
+      block = punch.times.block
+      hours = Math.floor block
+      minutes = Math.round((block - hours) * 60)
+      row[headers.blockTime] = hours + ':' + (if minutes < 10 then '0' + minutes else minutes) + ':00' 
+    row[headers.notes] = punch.notes
+    max = if punch.projects.length < 6 then punch.projects.length else 5
+    for i in [0..max]
+      project = punch.projects[i]
+      if project?
+        row[headers['project' + (i + 1)]] = '#' + project.name
+    @rawData.addRow row, (err) ->
+      if err
+        cb(err)
+        return
+      cb()
+
   generateReport: () ->
     # code
 

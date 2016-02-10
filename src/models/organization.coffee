@@ -1,15 +1,14 @@
-google_credentials = {
-  client_email: process.env.CLIENT_EMAIL,
-  private_key: process.env.PRIVATE_KEY
-}
 
 Spreadsheet = require './sheet'
 
 CONFIG =
   sheet_id: process.env.SHEET_ID
-  auth: google_credentials
+  auth:
+    client_email: process.env.CLIENT_EMAIL
+    private_key: process.env.PRIVATE_KEY
+
 NAME = 'Fangamer'
-OPTIONS = {}
+OPTIONS = null
 
 class Calendar
   constructor: (@vacation, @sick, @holidays) ->
@@ -18,13 +17,22 @@ class Calendar
 class Organization
   instance = null
 
-  sheet = 
-
   class OrganizationPrivate
-    constructor: (@name, @spreadsheet, options) ->
-      @bindOptions(options)
-    bindOptions: (opts) ->
-      if opts
+    constructor: (@name = NAME, options = OPTIONS) ->
+      if CONFIG.sheet_id
+        @spreadsheet = new Spreadsheet(CONFIG.sheet_id)
+        that = this
+        @spreadsheet.authorize CONFIG.auth, (err) ->
+          if err
+            return
+          that.spreadsheet.loadOptions (opts) ->
+            that.bindOptions opts
+      else
+        console.warn 'Sheet not initialized, no spreadsheet ID was provided'
+    bindOptions: (opts = OPTIONS) ->
+      if opts 
+        if not OPTIONS
+          OPTIONS = opts
         @users ?= opts.users
         @projects ?= opts.projects
         @calendar ?= new Calendar(opts.vacation, opts.sick, opts.holidays)
@@ -43,6 +51,7 @@ class Organization
             return user
       console.log "user #{name} could not be found"
     getProjectByName: (name) ->
+      name = name.replace '#', ''
       if @projects
         for project in @projects
           if name is project.name
@@ -50,14 +59,7 @@ class Organization
       console.log "Project #{name} could not be found"
 
   @get: () ->
-    sheet ?= new Spreadsheet(CONFIG.sheet_id).authorize CONFIG.auth, (err) ->
-      if err
-        # code
-        return
-      sheet.loadOptions (opts) ->
-        OPTIONS = opts
-        Organization.get().bindOptions OPTIONS
-    instance ?= new OrganizationPrivate(NAME, sheet, OPTIONS)
+    instance ?= new OrganizationPrivate()
     instance
 
 module.exports = Organization

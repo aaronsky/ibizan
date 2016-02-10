@@ -29,6 +29,8 @@ class Punch
         datetime.setMinutes time.getMinutes()
         datetime.setSeconds time.getSeconds()
         datetimes.push datetime
+    if times.block?
+      datetimes.block = times.block
 
     [projects, command] = parseProjects command
     notes = command
@@ -56,11 +58,9 @@ class Punch
         copy.setHours(activeStart.getHours() - 4)
         time.push copy, activeEnd
       else
-        length = match[3]
-        # do something with the length
-        # block.start = 
-        # block.end = 
-      command = command.replace(match[0] + ' ', '')
+        block = parseFloat match[3]
+        time.block = block
+      command = command.replace(match[0], '').trimLeft()
     else if match = command.match REGEX.time
       # TODO: DRY
       # do something with the absolutism

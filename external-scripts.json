@@ -1,6 +1,3 @@
 [
-  "hubot-diagnostics",
-  "hubot-help",
-  "hubot-heroku-keepalive",
-  "hubot-rules"
+  "hubot-help"
 ]

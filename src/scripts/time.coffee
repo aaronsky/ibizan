@@ -52,11 +52,22 @@ module.exports = (robot) ->
   CONSTANTS = require '../helpers/constants'
   REGEX = CONSTANTS.REGEX
 
-  canPunchHere = (name, channel) ->
-    try
-      Organization.clockChannel is channel or name is channel
-    catch e
+  isDM = (name, channel) ->
+    name is channel
+
+  isClockChannel = (channel) ->
+    channel is Organization.clockChannel
+
+  isProjectChannel = (channel) ->
+    if Organization.getProjectByName channel
+      true
+    else
       false
+
+  canPunchHere = (name, channel) ->
+    isDM(name, channel) or 
+    isClockChannel(channel) or 
+    isProjectChannel(channel)
 
   parse = (res, msg, mode) ->
     if canPunchHere res.message.user.name, res.message.user.room
@@ -65,27 +76,37 @@ module.exports = (robot) ->
         res.send "You aren\'t an employee at #{Organization.name}"
         return
       msg = res.match.input
-      msg = msg.replace 'ibizan ', ''
-      if mode
-        punch = Punch.parse user, msg, mode
-      else
-        punch = Punch.parse user, msg
-      response = finalizePunch punch
-      res.send response
+      msg = msg.replace REGEX.ibizan, ''
+      punch = Punch.parse user, msg, mode
+      if not punch.projects.length and isProjectChannel res.message.user.room
+        punch.projects.push Organization.getProjectByName(res.message.user.room)
+      sendPunch punch, res
     else
       res.send "Talk to me in private about this, please? ;)"
 
-  finalizePunch = (punch) ->
+  sendPunch = (punch, res) ->
     if not punch
-      return 'Punch could not be parsed :('
-    Organization.spreadsheet.enterPunch punch
-    JSON.stringify punch
+      cb(new Error('Punch could not be parsed :('), null)
+      return
+    Organization.spreadsheet.enterPunch punch, (err) ->
+      if err
+        # dm user with error???
+        return
+      client = robot.adapter.client
+      params = {
+        "name": "dog2",
+        "channel": res.message.rawMessage.channel,
+        "timestamp": res.message.id
+      }
+      client._apiCall 'reactions.add', params, (response) ->
+        if not response.ok
+          res.send response.error
 
   # respond to mode
-  robot.respond /(in|out|vacation|sick|unpaid)/i, (res) ->
+  robot.respond REGEX.modes, (res) ->
     parse res, res.match.input, res.match[1]
 
   # respond to simple time block
-  robot.respond /([0-9]+\.+[0-9]*) hours/i, (res) ->
+  robot.respond REGEX.rel_time, (res) ->
     parse res, res.match.input, 'none'
 
