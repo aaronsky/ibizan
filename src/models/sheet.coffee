@@ -28,6 +28,7 @@ class Spreadsheet
       that.title = info.title
       that.payroll = info.worksheets[0] # HACK
       that.rawData = info.worksheets[2] # HACK
+      that.punchCount = parseInt(that.rawData.rowCount) - 1
       that.loadVariables info.worksheets[4], (opts) -> 
         that.loadProjects info.worksheets[1], (projects) ->
           opts.projects = projects
@@ -111,37 +112,74 @@ class Spreadsheet
         user = new User(temp.name, temp.slackname, temp.salary, timetable)
         users.push user
       cb users
-  enterPunch: (punch, cb) ->
+  enterPunch: (punch, user, cb) ->
     # code
-    if not punch
-      cb(new Error('Punch was not found'))
+    if not punch or not user
+      cb(new Error('Invalid parameters passed: Punch or user is undefined.'))
       return
-    row = {}
     headers = HEADERS.rawdata
-    today = moment()
-    row[headers.today] = today.format('MM/DD/YYYY')
-    row[headers.name] = punch.user.name
-    if punch.mode is 'in'
-      row[headers.in] = punch.times[0].format('hh:mm:ss A')
-    else if punch.mode is 'out'
+    if user.lastPunch and user.lastPunch.punch.mode is 'in' and punch.mode is 'out'
+      row = user.lastPunch.row
       row[headers.out] = punch.times[0].format('hh:mm:ss A')
-      # row[headers.totalTime] = 
-    else if punch.times.block?
-      block = punch.times.block
-      hours = Math.floor block
-      minutes = Math.round((block - hours) * 60)
-      row[headers.blockTime] = hours + ':' + (if minutes < 10 then '0' + minutes else minutes) + ':00' 
-    row[headers.notes] = punch.notes
-    max = if punch.projects.length < 6 then punch.projects.length else 5
-    for i in [0..max]
-      project = punch.projects[i]
-      if project?
-        row[headers['project' + (i + 1)]] = '#' + project.name
-    @rawData.addRow row, (err) ->
-      if err
-        cb(err)
-        return
-      cb()
+      elapsed = punch.times[0].diff(user.lastPunch.punch.times[0], 'hours', true)
+      hours = Math.floor elapsed
+      minutes = Math.round((elapsed - hours) * 60)
+      row[headers.totalTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
+      extraProjectCount = user.lastPunch.punch.projects.length
+      for project in punch.projects
+        if extraProjectCount >= 6
+          break
+        if project not in user.lastPunch.punch.projects
+          extraProjectCount += 1
+          row[headers["project#{extraProjectCount}"]] = "##{project.name}"
+      if punch.notes
+        row[headers.notes] = "#{user.lastPunch.punch.notes}\n#{punch.notes}" 
+      row.save (err) ->
+        if err
+          cb(err)
+          return
+        cb()
+    else
+      row = {}
+      row[headers.id] = @punchCount + 1
+      today = moment()
+      row[headers.today] = today.format('MM/DD/YYYY')
+      row[headers.name] = user.name
+      if punch.mode is 'in'
+        row[headers.in] = punch.times[0].format('hh:mm:ss A')
+      else if punch.mode is 'out'
+        row[headers.out] = punch.times[0].format('hh:mm:ss A')
+        # row[headers.totalTime] = 
+      else if punch.times.block?
+        block = punch.times.block
+        hours = Math.floor block
+        minutes = Math.round((block - hours) * 60)
+        row[headers.blockTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
+      row[headers.notes] = punch.notes
+      max = if punch.projects.length < 6 then punch.projects.length else 5
+      for i in [0..max]
+        project = punch.projects[i]
+        if project?
+          row[headers["project#{i + 1}"]] = "##{project.name}"
+      that = this
+      @rawData.addRow row, (err) ->
+        if err
+          cb(err)
+          return
+        params = 
+          orderby: "column:#{headers.id}"
+          reverse: true
+        that.rawData.getRows params, (err, rows) ->
+          if err or not rows
+            cb(err)
+            return
+          # HACK: THIS NEEDS STRESS TESTING
+          first = rows[0]
+          user.lastPunch = 
+            punch: punch
+            row: first # Important for undo and update operations
+          that.punchCount = rows.length - 1
+          cb()
 
   generateReport: () ->
     # code

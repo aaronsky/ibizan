@@ -6,8 +6,7 @@ MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('../models/organization').get()
 
 class Punch
-  constructor: (@user, 
-                @mode = 'none', 
+  constructor: (@mode = 'none', 
                 @times = [], 
                 @projects = [],
                 @notes = '') ->
@@ -36,7 +35,7 @@ class Punch
     [projects, command] = parseProjects command
     notes = command
 
-    punch = new Punch(user, mode, datetimes, projects, notes)
+    punch = new Punch(mode, datetimes, projects, notes)
     punch
 
   parseMode = (command) ->

@@ -31,6 +31,7 @@ class Timetable
 
 class User
   constructor: (@name, @slack, @salary, @timetable) ->
+    @lastPunch = null
     @shouldHound = true
   activeHours: () ->
     [@timetable.start, @timetable.end]

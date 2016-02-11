@@ -80,15 +80,15 @@ module.exports = (robot) ->
       punch = Punch.parse user, msg, mode
       if not punch.projects.length and isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
-      sendPunch punch, res
+      sendPunch punch, user, res
     else
       res.send "Talk to me in private about this, please? ;)"
 
-  sendPunch = (punch, res) ->
+  sendPunch = (punch, user, res) ->
     if not punch
       cb(new Error('Punch could not be parsed :('), null)
       return
-    Organization.spreadsheet.enterPunch punch, (err) ->
+    Organization.spreadsheet.enterPunch punch, user, (err) ->
       if err
         # dm user with error???
         return
@@ -109,4 +109,17 @@ module.exports = (robot) ->
   # respond to simple time block
   robot.respond REGEX.rel_time, (res) ->
     parse res, res.match.input, 'none'
+
+  robot.respond /undo/i, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    if user.lastPunch
+      user.lastPunch.row.del (err) ->
+        if err
+          res.send 'Something went wrong with your undo request'
+          console.error err
+          return
+        user.lastPunch = null
+    else
+      res.send 'There\'s nothing for me to undo'
+
 
