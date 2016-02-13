@@ -1,6 +1,8 @@
 moment = require 'moment'
 
 getPositiveNumber = (input, current) ->
+  if not current
+    current = 0
   if not input
     return current
   if not isNaN input
@@ -12,7 +14,7 @@ getPositiveNumber = (input, current) ->
 
 class Timetable
   constructor: (@start, @end, @timezone) ->
-    # code      
+    # code
 
   setVacation: (total, available) ->
     @vacationTotal = getPositiveNumber(total, @vacationTotal)
@@ -38,6 +40,8 @@ class User
   isInactive: (current) ->
     current = current || moment()
     not current.isBetween(@timetable.start, @timetable.end)
+  setLastPunch: (punch) ->
+    @lastPunch = punch
 
 module.exports.User = User
 module.exports.Timetable = Timetable

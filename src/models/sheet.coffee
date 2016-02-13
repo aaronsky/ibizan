@@ -1,4 +1,5 @@
 GoogleSpreadsheet = require 'google-spreadsheet'
+Q = require 'q'
 moment = require 'moment'
 require '../../lib/moment-holidays.js'
 constants = require '../helpers/constants'
@@ -21,20 +22,29 @@ class Spreadsheet
       cb()
     console.log 'waiting for authorization'
   loadOptions: (cb) ->
-    that = this
-    @sheet.getInfo (err, info) ->
+    @sheet.getInfo (err, info) =>
       if err
         cb err
-      that.title = info.title
-      that.payroll = info.worksheets[0] # HACK
-      that.rawData = info.worksheets[2] # HACK
-      that.punchCount = parseInt(that.rawData.rowCount) - 1
-      that.loadVariables info.worksheets[4], (opts) -> 
-        that.loadProjects info.worksheets[1], (projects) ->
+      @title = info.title
+      @payroll = info.worksheets[0] # HACK
+      @rawData = info.worksheets[2] # HACK
+
+      # HACK: This isn't going to be good enough for higher volume usership
+      @punchCount = parseInt(@rawData.rowCount) - 1
+      
+      # HACKS EVERYWHERE
+      # loadVariables then loadProjects then loadEmployees then done
+      # @loadVariables(info.worksheets[4])
+      # .then(@loadProjects)
+      # .then( () ->
+      #   opts.projects = projects
+      # )
+      @loadVariables info.worksheets[4], (opts) => 
+        @loadProjects info.worksheets[1], (projects) =>
           opts.projects = projects
-          that.loadEmployees info.worksheets[3], (users) ->
+          @loadEmployees info.worksheets[3], (users) =>
             opts.users = users
-            that.initialized = true
+            @initialized = true
             cb opts
   loadVariables: (worksheet, cb) ->
     worksheet.getRows (err, rows) ->
@@ -94,6 +104,11 @@ class Spreadsheet
         temp = {}
         for key, header of USER_HEADERS
           if header is USER_HEADERS.start or header is USER_HEADERS.end
+            row[header] = row[header].toLowerCase()
+            if row[header] is 'midnight'
+              row[header] = '12:00 am'
+            else if row[header] is 'noon'
+              row[header] = '12:00 pm'
             temp[key] = moment("#{today.format("YYYY-MM-DD")} #{row[header]}")
           else if header is USER_HEADERS.salary
             temp[key] = row[header] is 'Y'
@@ -118,70 +133,59 @@ class Spreadsheet
       cb(new Error('Invalid parameters passed: Punch or user is undefined.'))
       return
     headers = HEADERS.rawdata
-    if user.lastPunch and user.lastPunch.punch.mode is 'in' and punch.mode is 'out'
+    if user.lastPunch and user.lastPunch.mode is 'in' and punch.mode is 'out'
       row = user.lastPunch.row
       row[headers.out] = punch.times[0].format('hh:mm:ss A')
-      elapsed = punch.times[0].diff(user.lastPunch.punch.times[0], 'hours', true)
+      elapsed = punch.times[0].diff(user.lastPunch.times[0], 'hours', true)
       hours = Math.floor elapsed
       minutes = Math.round((elapsed - hours) * 60)
       row[headers.totalTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
-      extraProjectCount = user.lastPunch.punch.projects.length
+      extraProjectCount = user.lastPunch.projects.length
       for project in punch.projects
         if extraProjectCount >= 6
           break
-        if project not in user.lastPunch.punch.projects
+        if project not in user.lastPunch.projects
           extraProjectCount += 1
           row[headers["project#{extraProjectCount}"]] = "##{project.name}"
       if punch.notes
-        row[headers.notes] = "#{user.lastPunch.punch.notes}\n#{punch.notes}" 
+        row[headers.notes] = "#{user.lastPunch.notes}\n#{punch.notes}" 
       row.save (err) ->
         if err
           cb(err)
           return
+        # add hours to project in projects
         cb()
+    else if punch.mode is 'vacation' or punch.mode is 'sick' or punch.mode is 'unpaid'
+      # do these go in raw data?
+      # error if exceeds available
+      # add to user numbers
+      # save user row
     else
-      row = {}
-      row[headers.id] = @punchCount + 1
-      today = moment()
-      row[headers.today] = today.format('MM/DD/YYYY')
-      row[headers.name] = user.name
-      if punch.mode is 'in'
-        row[headers.in] = punch.times[0].format('hh:mm:ss A')
-      else if punch.mode is 'out'
-        row[headers.out] = punch.times[0].format('hh:mm:ss A')
-        # row[headers.totalTime] = 
-      else if punch.times.block?
-        block = punch.times.block
-        hours = Math.floor block
-        minutes = Math.round((block - hours) * 60)
-        row[headers.blockTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
-      row[headers.notes] = punch.notes
-      max = if punch.projects.length < 6 then punch.projects.length else 5
-      for i in [0..max]
-        project = punch.projects[i]
-        if project?
-          row[headers["project#{i + 1}"]] = "##{project.name}"
-      that = this
-      @rawData.addRow row, (err) ->
+      row = punch.toRawRow(@punchCount + 1, user.name)
+      @rawData.addRow row, (err) =>
         if err
           cb(err)
           return
         params = 
           orderby: "column:#{headers.id}"
           reverse: true
-        that.rawData.getRows params, (err, rows) ->
+          sq: encodeURIComponent "select * where #{headers.id} = #{row[headers.id]}"
+        @rawData.getRows params, (err, rows) =>
           if err or not rows
             cb(err)
             return
           # HACK: THIS NEEDS STRESS TESTING
-          first = rows[0]
-          user.lastPunch = 
-            punch: punch
-            row: first # Important for undo and update operations
-          that.punchCount = rows.length - 1
+          console.log rows.length
+          punch.assignRow rows[0]
+          user.setLastPunch punch
+          @punchCount = rows.length - 1
           cb()
 
   generateReport: () ->
     # code
+    # foreach user
+    #   create row obj
+    #   get total hours * days for each field
+    #   add row to sheet
 
 module.exports = Spreadsheet
