@@ -41,7 +41,7 @@ class Punch
       datetimes.block = times.block
 
     [projects, command] = parseProjects command
-    notes = command
+    notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
     punch
@@ -85,7 +85,7 @@ class Punch
 
   parseTime = (command, activeStart, activeEnd) ->
     # parse time component
-    command = command || ''
+    command = command.trimLeft() || ''
     time = []
     if match = command.match REGEX.rel_time
       if match[0] is 'half-day' or match[0] is 'half day'
@@ -95,57 +95,68 @@ class Punch
       else
         block = parseFloat match[3]
         time.block = block
-      command = command.replace(match[0], '').trimLeft()
+      command = command.replace ///#{match[0]} ?///i, ''
     else if match = command.match REGEX.twelvetime
       # TODO: DRY
       # do something with the absolutism
       today = moment()
       time.push moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
-      command = command.replace(match[0] + ' ', '')
+      command = command.replace ///#{match[0]} ?///i, ''
     else if match = command.match REGEX.twentyfourtime
       today = moment()
       time.push moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
-      command = command.replace(match[0] + ' ', '')
+      command = command.replace ///#{match[0]} ?///i, ''
     # else if match = command.match regex for time ranges (???)
     else
       time.push moment()
     [time, command]
 
   parseDate = (command) ->
-    command = command || ''
+    command = command.trimLeft() || ''
+    thisYear = moment().year()
     date = []
     if match = command.match /today/i
       date.push moment()
-      command = command.replace(match[0] + ' ', '')
+      command = command.replace ///#{match[0]} ?///i, ''
     else if match = command.match /yesterday/i
       yesterday = moment().subtract(1, 'days')
       date.push yesterday
-      command = command.replace(match[0] + ' ', '')
+      command = command.replace ///#{match[0]} ?///i, ''
     else if match = command.match /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i
       today = moment()
       if today.format('dddd').toLowerCase() isnt match[0]
         today = today.day(match[0]).subtract(7, 'days')
       date.push today
-      command = command.replace(match[0] + ' ', '')
+      command = command.replace ///#{match[0]} ?///i, ''
     else if match = command.match REGEX.date # Placeholder for date blocks
-      absDate = moment(match[0])
-      absDate.year(absDate.year())
-      date.push absDate
-      command = command.replace(match[0] + ' ', '')
+      if match[0].indexOf('-') isnt -1
+        dateStrings = match[0].split('-')
+        month = ''
+        for str in dateStrings
+          str = str.trim()
+          if not month
+            if month = str.match REGEX.months
+              month = month[0]
+              str = str.replace(month, '').trim()
+          date.push moment("#{month} #{str}").year(thisYear)
+      else
+        absDate = moment(match[0]).year(thisYear)
+        date.push absDate
+      command = command.replace ///#{match[0]} ?///i, ''
     else
       date.push moment()
     [date, command]
 
   parseProjects = (command) ->
     projects = []
-    command = command || ''
+    command = command.trimLeft() || ''
     command_copy = command.split(' ').slice()
 
     for word in command_copy
       if word.charAt(0) is '#'
         if project = Organization.getProjectByName word
           projects.push project
-        command = command.replace /word + ' '/i, ''
+        command = command.replace ///#{word} ?///i, ''
       else
         break
     [projects, command]
