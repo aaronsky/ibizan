@@ -59,10 +59,7 @@ module.exports = (robot) ->
     channel is Organization.clockChannel
 
   isProjectChannel = (channel) ->
-    if Organization.getProjectByName channel
-      true
-    else
-      false
+    Organization.getProjectByName(channel)?
 
   canPunchHere = (name, channel) ->
     isDM(name, channel) or 
