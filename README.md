@@ -10,7 +10,7 @@ Ibizan is a chat bot built on the [Hubot](https://github.com/github/hubot) frame
 After cloning the repo and setting the created folder to your current directory, you can test Ibizan hubot by running the following command:
 
 ```
-./bin/ibizan
+npm start
 ```
 
 This will install dependencies and run the bot. However, it will not work without setting up your configuration (below).
@@ -109,6 +109,7 @@ Create a spreadsheet on Google Sheets that has the following layout:
 
 ```
 export HUBOT_SLACK_TOKEN=<hubot token from Slack>
+export SHEET_ID=<id from your timesheet>
 export CLIENT_EMAIL=<client_email from your Service Auth JSON>
 export PRIVATE_KEY=<private_key from your Service Auth JSON>
 ```
