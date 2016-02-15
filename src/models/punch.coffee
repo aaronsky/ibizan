@@ -94,9 +94,13 @@ class Punch
         block = parseFloat match[3]
         time.block = block
       command = command.replace(match[0], '').trimLeft()
-    else if match = command.match REGEX.time
+    else if match = command.match REGEX.twelvetime
       # TODO: DRY
       # do something with the absolutism
+      today = moment()
+      time.push moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
+      command = command.replace(match[0] + ' ', '')
+    else if match = command.match REGEX.twentyfourtime
       today = moment()
       time.push moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
       command = command.replace(match[0] + ' ', '')
@@ -115,9 +119,15 @@ class Punch
       yesterday = moment().subtract(1, 'days')
       date.push yesterday
       command = command.replace(match[0] + ' ', '')
+    else if match = command.match /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i
+      today = moment()
+      if today.format('dddd').toLowerCase() isnt match[0]
+        today = today.day(match[0]).subtract(7, 'days')
+      date.push today
+      command = command.replace(match[0] + ' ', '')
     else if match = command.match REGEX.date # Placeholder for date blocks
       absDate = moment(match[0])
-      absDate.setFullYear(moment.year())
+      absDate.year(absDate.year())
       date.push absDate
       command = command.replace(match[0] + ' ', '')
     else
