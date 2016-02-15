@@ -1,5 +1,7 @@
 
 moment = require 'moment'
+uuid = require 'node-uuid'
+
 { HEADERS, REGEX } = require '../helpers/constants'
 MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('../models/organization').get()
@@ -44,10 +46,10 @@ class Punch
     punch = new Punch(mode, datetimes, projects, notes)
     punch
 
-  toRawRow: (id, name) ->
+  toRawRow: (name) ->
     headers = HEADERS.rawdata
     row = {}
-    row[headers.id] = id
+    row[headers.id] = uuid.v1()
     row[headers.today] = moment().format('MM/DD/YYYY')
     row[headers.name] = name
     if @times.block?
@@ -143,7 +145,7 @@ class Punch
       if word.charAt(0) is '#'
         if project = Organization.getProjectByName word
           projects.push project
-        command = command.replace word + ' ', ''
+        command = command.replace /word + ' '/i, ''
       else
         break
     [projects, command]

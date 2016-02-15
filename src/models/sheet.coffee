@@ -28,9 +28,6 @@ class Spreadsheet
       @title = info.title
       @payroll = info.worksheets[0] # HACK
       @rawData = info.worksheets[2] # HACK
-
-      # HACK: This isn't going to be good enough for higher volume usership
-      @punchCount = parseInt(@rawData.rowCount) - 1
       
       # HACKS EVERYWHERE
       # loadVariables then loadProjects then loadEmployees then done
@@ -161,11 +158,12 @@ class Spreadsheet
       # add to user numbers
       # save user row
     else
-      row = punch.toRawRow(@punchCount + 1, user.name)
+      row = punch.toRawRow user.name
       @rawData.addRow row, (err) =>
         if err
           cb(err)
           return
+        # HACK: This is still wrong
         params = 
           orderby: "column:#{headers.id}"
           reverse: true
@@ -178,7 +176,6 @@ class Spreadsheet
           console.log rows.length
           punch.assignRow rows[0]
           user.setLastPunch punch
-          @punchCount = rows.length - 1
           cb()
 
   generateReport: () ->
