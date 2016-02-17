@@ -80,6 +80,7 @@ class Punch
     # if mode is 'vacation' and time isn't divisible by 4
     # if mode is 'sick' and time isn't divisible by 4
     # if mode is 'unpaid' and time isn't divisible by 4
+    # if date is more than 7 days from today
 
 
     return true
@@ -103,6 +104,10 @@ class Punch
         copy = moment(activeStart)
         copy.hour(activeStart.hour() - 4)
         time.push copy, activeEnd
+      else if match[0] is 'noon'
+        time.push moment({hour: 12, minute: 0})
+      else if match[0] is 'midnight'
+        time.push moment({hour: 0, minute: 0})
       else
         block = parseFloat match[3]
         time.block = block
