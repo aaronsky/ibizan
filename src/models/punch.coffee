@@ -71,6 +71,17 @@ class Punch
     @row = row
 
   isValid: (user) ->
+    # fail cases
+    # if mode is 'in' and user has not punched out
+    # if mode is 'in' and date is yesterday
+    # if mode is 'unpaid' and user is non-salary
+    # if mode is 'vacation' and user doesn't have enough vacation time
+    # if mode is 'sick' and user doesn't have enough sick time
+    # if mode is 'vacation' and time isn't divisible by 4
+    # if mode is 'sick' and time isn't divisible by 4
+    # if mode is 'unpaid' and time isn't divisible by 4
+
+
     return true
 
   parseMode = (command) ->
@@ -100,7 +111,12 @@ class Punch
       # TODO: DRY
       # do something with the absolutism
       today = moment()
-      time.push moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
+      if not match[0].match /(am|pm)?/i
+        isPM = today.format('a') is 'pm'
+      today = moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
+      if isPM
+        moment.add(12, 'hours')
+      time.push today
       command = command.replace ///#{match[0]} ?///i, ''
     else if match = command.match REGEX.twentyfourtime
       today = moment()

@@ -10,7 +10,8 @@ module.exports = (robot) ->
       channel:
         id: channel.id
         name: channel.name
-        dm: !!channel.is_im
+        private: !!channel.is_im || !!channel.is_group
+    console.log channel
     user = Organization.getUserBySlackName(res.user.name)
     if not user
       return
@@ -18,7 +19,7 @@ module.exports = (robot) ->
       return
     else if not user.shouldHound
       return
-    else if res.channel.name in Organization.exemptChannels
+    else if res.channel.private or res.channel.name in Organization.exemptChannels
       return
     # else send message
 
@@ -28,3 +29,6 @@ module.exports = (robot) ->
       return
     user.shouldHound = false
     res.send 'Ok, I\'ll stop hounding you until tomorrow ;)'
+
+  robot.adapter.client.on 'message', (message) ->
+    console.log message

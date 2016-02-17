@@ -36,7 +36,7 @@ class Spreadsheet
       # .then( () ->
       #   opts.projects = projects
       # )
-      @loadVariables info.worksheets[4], (opts) => 
+      @loadVariables info.worksheets[4], (opts) =>
         @loadProjects info.worksheets[1], (projects) =>
           opts.projects = projects
           @loadEmployees info.worksheets[3], (users) =>
@@ -145,14 +145,16 @@ class Spreadsheet
           extraProjectCount += 1
           row[headers["project#{extraProjectCount}"]] = "##{project.name}"
       if punch.notes
-        row[headers.notes] = "#{user.lastPunch.notes}\n#{punch.notes}" 
+        row[headers.notes] = "#{user.lastPunch.notes}\n#{punch.notes}"
       row.save (err) ->
         if err
           cb(err)
           return
         # add hours to project in projects
         cb()
-    else if punch.mode is 'vacation' or punch.mode is 'sick' or punch.mode is 'unpaid'
+    else if punch.mode is 'vacation' or
+            punch.mode is 'sick' or
+            punch.mode is 'unpaid'
       # do these go in raw data?
       # error if exceeds available
       # add to user numbers
@@ -164,11 +166,11 @@ class Spreadsheet
           cb(err)
           return
         # HACK: This is still wrong
-        params = 
+        params =
           orderby: "column:#{headers.id}"
           reverse: true
-          sq: encodeURIComponent "select * where #{headers.id} = #{row[headers.id]}"
-        @rawData.getRows params, (err, rows) =>
+          sq: encodeURIComponent "select * where #{headers.id}=#{row[headers.id]}"
+        @rawData.getRows params, (err, rows) ->
           if err or not rows
             cb(err)
             return
@@ -181,8 +183,16 @@ class Spreadsheet
   generateReport: () ->
     # code
     # foreach user
-    #   create row obj
-    #   get total hours * days for each field
-    #   add row to sheet
+    #   payroll date = today
+    #   employee name = user.name
+    #   if salary then paid hours = (80 - Unpaid hours)
+    #   if non-salary then = (Logged Hours + Vacation Hours + Sick Hours)
+    #   logged hours = user.logged
+    #   logged hours = user.vacation
+    #   logged hours = user.sick
+    #   overtime hours = max(0, Logged Hours - 80)
+    #   holiday hours = user.holiday
+    #   @payroll.addRow
+
 
 module.exports = Spreadsheet

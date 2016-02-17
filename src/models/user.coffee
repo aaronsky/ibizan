@@ -42,6 +42,8 @@ class User
     not current.isBetween(@timetable.start, @timetable.end)
   setLastPunch: (punch) ->
     @lastPunch = punch
+  undoPunch: () ->
+    return
 
 module.exports.User = User
 module.exports.Timetable = Timetable
