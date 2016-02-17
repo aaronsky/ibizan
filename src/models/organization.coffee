@@ -57,6 +57,9 @@ class Organization
           if name is project.name
             return project
       console.log "Project #{name} could not be found"
+    generateReport: () ->
+      if @spreadsheet
+        @spreadsheet.generateReport()
 
   @get: () ->
     instance ?= new OrganizationPrivate()

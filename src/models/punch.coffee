@@ -112,20 +112,19 @@ class Punch
         block = parseFloat match[3]
         time.block = block
       command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match REGEX.twelvetime
-      # TODO: DRY
-      # do something with the absolutism
+    else if match = command.match REGEX.time
+      timeMatch = match[0]
       today = moment()
-      if not match[0].match /(am|pm)?/i
-        isPM = today.format('a') is 'pm'
-      today = moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
+      if hourStr = timeMatch.match /\b(([0-1][0-9])|(2[0-3])):/i
+        hour = parseInt (hourStr[0].replace(':', ''))
+        if hour <= 12
+          isPM = today.format('a') is 'pm'
+          if not timeMatch.match /am?|pm?/i
+            timeMatch = timeMatch + " #{today.format('a')}"
+      today = moment("#{today.format('YYYY-MM-DD')} #{timeMatch}")
       if isPM
-        moment.add(12, 'hours')
+        today.add(12, 'hours')
       time.push today
-      command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match REGEX.twentyfourtime
-      today = moment()
-      time.push moment("#{today.format('YYYY-MM-DD')} #{match[0]}")
       command = command.replace ///#{match[0]} ?///i, ''
     # else if match = command.match regex for time ranges (???)
     else
@@ -134,7 +133,6 @@ class Punch
 
   parseDate = (command) ->
     command = command.trimLeft() || ''
-    thisYear = moment().year()
     date = []
     if match = command.match /today/i
       date.push moment()
@@ -143,7 +141,7 @@ class Punch
       yesterday = moment().subtract(1, 'days')
       date.push yesterday
       command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i
+    else if match = command.match REGEX.days
       today = moment()
       if today.format('dddd').toLowerCase() isnt match[0]
         today = today.day(match[0]).subtract(7, 'days')
@@ -155,13 +153,20 @@ class Punch
         month = ''
         for str in dateStrings
           str = str.trim()
-          if not month
-            if month = str.match REGEX.months
-              month = month[0]
-              str = str.replace(month, '').trim()
-          date.push moment("#{month} #{str}").year(thisYear)
+          date.push moment(str, "MMMM DD")
       else
-        absDate = moment(match[0]).year(thisYear)
+        absDate = moment(match[0], "MMMM DD")
+        date.push absDate
+      command = command.replace ///#{match[0]} ?///i, ''
+    else if match = command.match REGEX.numdate
+      if match[0].indexOf('-') isnt -1
+        dateStrings = match[0].split('-')
+        month = ''
+        for str in dateStrings
+          str = str.trim()
+          date.push moment(str, 'MM/DD')
+      else
+        absDate = moment(match[0], 'MM/DD')
         date.push absDate
       command = command.replace ///#{match[0]} ?///i, ''
     else

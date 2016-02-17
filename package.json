@@ -16,6 +16,7 @@
     "url": "https://github.com/aaronsky/ibizan.git"
   },
   "dependencies": {
+    "every-moment": "0.0.1",
     "google-spreadsheet": "^1.1.3",
     "hubot": "^2.18.0",
     "hubot-help": "^0.1.3",
