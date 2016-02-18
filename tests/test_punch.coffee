@@ -160,3 +160,16 @@ describe 'Punch', ->
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
       expect(punch.notes).to.be.empty
+  describe '#isValid(user)', ->
+    beforeEach ->
+      start = moment().hour(7)
+      end = moment().hour(18)
+      timetable = new Timetable(start, end, 'Eastern')
+      timetable.setVacation(13, 0)
+      timetable.setSick(5, 0)
+      timetable.setUnpaid(0)
+      timetable.setOvertime(0)
+      timetable.setLogged(0)
+      timetable.setAverageLogged(0)
+      @user = new User('Aaron Sky', 'aaronsky', true, timetable)
+    
