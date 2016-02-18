@@ -151,6 +151,7 @@ class Spreadsheet
           cb(err)
           return
         # add hours to project in projects
+
         cb()
     else if punch.mode is 'vacation' or
             punch.mode is 'sick' or
@@ -165,18 +166,14 @@ class Spreadsheet
         if err
           cb(err)
           return
-        # HACK: This is still wrong
-        params =
-          orderby: "column:#{headers.id}"
-          reverse: true
-          sq: encodeURIComponent "select * where #{headers.id}=#{row[headers.id]}"
+        params = {}
         @rawData.getRows params, (err, rows) ->
           if err or not rows
             cb(err)
             return
-          # HACK: THIS NEEDS STRESS TESTING
-          console.log rows.length
-          punch.assignRow rows[0]
+          row_match = (r for r in rows when r[headers.id] is row[headers.id])[0]
+          # console.log !!row_match
+          punch.assignRow row_match
           user.setLastPunch punch
           cb()
 

@@ -38,7 +38,7 @@ cellHeaders =
     totalLogged:         'totalloggedhours'
     averageLogged:       'averagehoursloggedweek'
   rawdata:
-    id:                  'punchno.'
+    id:                  'punchid'
     today:               'dateentered'
     name:                'employee'
     in:                  'in'
