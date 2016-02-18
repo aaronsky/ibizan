@@ -129,6 +129,9 @@ class Spreadsheet
     if not punch or not user
       cb(new Error('Invalid parameters passed: Punch or user is undefined.'))
       return
+    else if not punch.isValid(user)
+      cb(new Error('Punch is invalid'))
+      return
     headers = HEADERS.rawdata
     if user.lastPunch and user.lastPunch.mode is 'in' and punch.mode is 'out'
       row = user.lastPunch.row
@@ -151,13 +154,17 @@ class Spreadsheet
           cb(err)
           return
         # add hours to project in projects
-
+        active = elapsed - user.activeTime()
+        overtime = elapsed - active
+        user.timetable.setLogged(active)
+        user.timetable.setOvertime(overtime)
+        # setAverage
+        user.setLastPunch(null)
         cb()
     else if punch.mode is 'vacation' or
             punch.mode is 'sick' or
             punch.mode is 'unpaid'
       # do these go in raw data?
-      # error if exceeds available
       # add to user numbers
       # save user row
     else

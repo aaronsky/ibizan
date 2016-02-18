@@ -37,6 +37,8 @@ class User
     @shouldHound = true
   activeHours: () ->
     [@timetable.start, @timetable.end]
+  activeTime: () ->
+    @timetable.end.diff(@timetable.start, 'hours', true)
   isInactive: (current) ->
     current = current || moment()
     not current.isBetween(@timetable.start, @timetable.end)

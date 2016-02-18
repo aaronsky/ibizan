@@ -50,6 +50,7 @@ Create a spreadsheet on Google Sheets that has the following layout:
 #### Worksheet 3
 * Name - Raw Data
 * Column Headers:
+  * Punch ID - [String]
   * Date Entered - [Date]
   * Employee - [String]
   * In - [Date]
