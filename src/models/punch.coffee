@@ -46,6 +46,21 @@ class Punch
     punch = new Punch(mode, datetimes, projects, notes)
     punch
 
+  out: (punch) ->
+    if not @times.block?
+      @times.push punch.times[0]
+      @elapsed = @times[1].diff(@times[0], 'hours', true)
+
+    extraProjectCount = @projects.length
+    for project in punch.projects
+      if extraProjectCount >= 6
+        break
+      if project not in @projects
+        extraProjectCount += 1
+        @projects.push = project.name
+    if punch.notes
+      @notes = "#{@notes}\n#{punch.notes}"
+
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     row = {}
@@ -58,7 +73,12 @@ class Punch
       minutes = Math.round((block - hours) * 60)
       row[headers.blockTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
     else
-      row[headers[@mode]] = @times[0].format('hh:mm:ss A')
+      for time, i in @times
+        row[headers[MODES[i]]] = time.format('hh:mm:ss A')
+      if @times.length > 2
+        hours = Math.floor elapsed
+        minutes = Math.round((elapsed - hours) * 60)
+        row[headers.totalTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
     row[headers.notes] = @notes
     max = if @projects.length < 6 then @projects.length else 5
     for i in [0..max]

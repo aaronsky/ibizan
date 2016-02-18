@@ -122,6 +122,7 @@ class Spreadsheet
         timetable.setLogged(temp.totalLogged)
         timetable.setAverageLogged(temp.averageLogged)
         user = new User(temp.name, temp.slackname, temp.salary, timetable)
+        user.row = row
         users.push user
       cb users
   enterPunch: (punch, user, cb) ->
@@ -134,21 +135,9 @@ class Spreadsheet
       return
     headers = HEADERS.rawdata
     if user.lastPunch and user.lastPunch.mode is 'in' and punch.mode is 'out'
-      row = user.lastPunch.row
-      row[headers.out] = punch.times[0].format('hh:mm:ss A')
-      elapsed = punch.times[0].diff(user.lastPunch.times[0], 'hours', true)
-      hours = Math.floor elapsed
-      minutes = Math.round((elapsed - hours) * 60)
-      row[headers.totalTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
-      extraProjectCount = user.lastPunch.projects.length
-      for project in punch.projects
-        if extraProjectCount >= 6
-          break
-        if project not in user.lastPunch.projects
-          extraProjectCount += 1
-          row[headers["project#{extraProjectCount}"]] = "##{project.name}"
-      if punch.notes
-        row[headers.notes] = "#{user.lastPunch.notes}\n#{punch.notes}"
+      last = user.lastPunch
+      last.out punch
+      row = punch.toRawRow user.name
       row.save (err) ->
         if err
           cb(err)
@@ -159,6 +148,7 @@ class Spreadsheet
         user.timetable.setLogged(active)
         user.timetable.setOvertime(overtime)
         # setAverage
+        updateUserRow user
         user.setLastPunch(null)
         cb()
     else if punch.mode is 'vacation' or
@@ -183,6 +173,28 @@ class Spreadsheet
           punch.assignRow row_match
           user.setLastPunch punch
           cb()
+  updateUserRow: (user) ->
+    if user.row
+      row = user.row
+      headers = HEADERS.users
+      row[headers.slackname] = user.slack
+      row[headers.name] = user.name
+      row[headers.salary] = user.salary
+      row[headers.start] = user.timetable.start
+      row[headers.end] = user.timetable.end
+      row[headers.timezone] = user.timetable.timezone
+      row[headers.vacationAvailable] = user.timetable.vacationAvailable
+      row[headers.vacationLogged] = user.timetable.vacationTotal
+      row[headers.sickAvailable] = user.timetable.sickAvailable
+      row[headers.sickLogged] = user.timetable.sickTotal
+      row[headers.unpaidLogged] = user.timetable.unpaidTotal
+      row[headers.overtime] = user.timetable.overtimeTotal
+      row[headers.totalLogged] = user.timetable.loggedTotal
+      row[headers.averageLogged] = user.timetable.averageLoggedTotal
+      row.save (err) ->
+        if err
+          cb(err)
+          return
 
   generateReport: () ->
     # code
