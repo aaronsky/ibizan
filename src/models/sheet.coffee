@@ -70,7 +70,6 @@ class Spreadsheet
       last = user.lastPunch
       last.out punch
       row = last.toRawRow user.name
-      Logger.log row
       row.save (err) ->
         if err
           cb(err)
