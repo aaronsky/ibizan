@@ -9,4 +9,5 @@ env:
   matrix:
   - NODE_ENV=development
 after_success:
-  - coveralls
+  - npm run coverage
+  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
