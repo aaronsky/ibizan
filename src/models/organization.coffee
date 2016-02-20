@@ -1,4 +1,6 @@
 
+Q = require 'q'
+Logger = require '../helpers/logger'
 Spreadsheet = require './sheet'
 
 CONFIG =
@@ -8,7 +10,6 @@ CONFIG =
     private_key: process.env.PRIVATE_KEY
 
 NAME = 'Fangamer'
-OPTIONS = null
 
 class Calendar
   constructor: (@vacation, @sick, @holidays) ->
@@ -18,51 +19,56 @@ class Organization
   instance = null
 
   class OrganizationPrivate
-    constructor: (@name = NAME, options = OPTIONS) ->
+    constructor: (@name = NAME) ->
       if CONFIG.sheet_id
         @spreadsheet = new Spreadsheet(CONFIG.sheet_id)
-        that = this
-        @spreadsheet.authorize CONFIG.auth, (err) ->
-          if err
-            return
-          that.spreadsheet.loadOptions (opts) ->
-            that.bindOptions opts
+        @spreadsheet.authorize(CONFIG.auth)
+        .then(@spreadsheet.loadOptions.bind(@spreadsheet))
+        .then(
+          (opts) =>
+            if opts
+              @users ?= opts.users
+              @projects ?= opts.projects
+              @calendar ?= new Calendar(opts.vacation, opts.sick, opts.holidays)
+              @clockChannel ?= opts.clockChannel
+              @exemptChannels ?= opts.exemptChannels
+              Logger.log 'Loaded options'
+        )
+        .catch((error) -> Logger.error(error))
       else
-        console.warn 'Sheet not initialized, no spreadsheet ID was provided'
-    bindOptions: (opts = OPTIONS) ->
-      if opts
-        if not OPTIONS
-          OPTIONS = opts
-        @users ?= opts.users
-        @projects ?= opts.projects
-        @calendar ?= new Calendar(opts.vacation, opts.sick, opts.holidays)
-        @clockChannel ?= opts.clockChannel
-        @exemptChannels ?= opts.exemptChannels
+        Logger.warn 'Sheet not initialized, no spreadsheet ID was provided'
     getUserBySlackName: (name) ->
       if @users
         for user in @users
           if name is user.slack
             return user
-      console.log "user #{name} could not be found"
+      Logger.log "user #{name} could not be found"
     getUserByRealName: (name) ->
       if @users
         for user in @users
           if name is user.name
             return user
-      console.log "user #{name} could not be found"
+      Logger.log "user #{name} could not be found"
     getProjectByName: (name) ->
       name = name.replace '#', ''
       if @projects
         for project in @projects
           if name is project.name
             return project
-      console.log "Project #{name} could not be found"
-    generateReport: (completion) ->
+      Logger.log "Project #{name} could not be found"
+    generateReport: () ->
+      deferred = Q.defer()
       if @spreadsheet
-        @spreadsheet.generateReport @users, completion
+        @spreadsheet.generateReport(@users).done((numberDone) -> deferred.resolve(numberDone))
       else
-        completion(new Error('Spreadsheet was not loaded, report cannot be generated'))
-
+        deferred.reject 'Spreadsheet was not loaded, report cannot be generated'
+      deferred.promise
+    resetHounding: () ->
+      i = 0
+      for user in @users
+        user.shouldHound = true
+        i += 1
+      i
   @get: () ->
     instance ?= new OrganizationPrivate()
     instance

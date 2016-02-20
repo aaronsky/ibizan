@@ -88,7 +88,7 @@ module.exports = (robot) ->
     Organization.spreadsheet.enterPunch punch, user, (err) ->
       if err
         # dm user with error???
-        console.error err
+        Logger.error err
         res.send 'bad punch, see log'
         return
       client = robot.adapter.client
@@ -115,7 +115,7 @@ module.exports = (robot) ->
       user.lastPunch.row.del (err) ->
         if err
           res.send 'Something went wrong with your undo request.'
-          console.error err
+          Logger.error err
           return
         user.setLastPunch null
         res.send 'Removed your last punch.'

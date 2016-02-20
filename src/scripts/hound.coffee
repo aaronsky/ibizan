@@ -1,4 +1,5 @@
 moment = require 'moment'
+Logger = require '../helpers/logger'
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
@@ -8,8 +9,8 @@ module.exports = (robot) ->
 
   hound = (user, slack) ->
     now = moment()
-    console.log 'hounding'
-    console.log slack
+    Logger.log 'hounding'
+    Logger.log slack
     presence = slack.getPresence (res) ->
       if res.ok
         lastActivity = moment(res.lastActivity)
@@ -23,17 +24,17 @@ module.exports = (robot) ->
     user = Organization.getUserBySlackName slackuser.name
 
     if not user
-      console.log 'user not found'
+      Logger.log 'user not found'
       return
     else if user.isInactive()
-      console.log 'user is inactive'
+      Logger.log 'user is inactive'
       return
     else if not user.shouldHound
-      console.log 'user is safe from hounding'
+      Logger.log 'user is safe from hounding'
       return
     else if channel.private or
             channel.name in Organization.exemptChannels
-      console.log 'inappropriate channel'
+      Logger.log 'inappropriate channel'
       return
     else
       # hound user, slackuser

@@ -5,6 +5,7 @@ moment = require 'moment'
 
 require '../../lib/moment-holidays.js'
 constants = require '../helpers/constants'
+Logger = require '../helpers/logger'
 HEADERS = constants.HEADERS
 Project = require './project'
 {User, Timetable} = require './user'
@@ -16,19 +17,21 @@ class Spreadsheet
     @sheet = new GoogleSpreadsheet(sheet_id)
     @initialized = false
 
-  authorize: (auth, cb) ->
+  authorize: (auth) ->
+    deferred = Q.defer()
     @sheet.useServiceAccountAuth auth, (err) ->
       if err
-        console.error 'authorization failed'
-        cb err
-      console.log 'authorized'
-      cb()
-    console.log 'waiting for authorization'
+        deferred.reject err
+      Logger.log 'Authorized successfully'
+      deferred.resolve()
+    Logger.log 'waiting for authorization'
+    deferred.promise
 
-  loadOptions: (cb) ->
+  loadOptions: () ->
+    deferred = Q.defer()
     @sheet.getInfo (err, info) =>
       if err
-        cb err
+        deferred.reject err
       @title = info.title
       for worksheet in info.worksheets
         title = worksheet.title
@@ -36,25 +39,23 @@ class Spreadsheet
         title = words[0].toLowerCase()
         i = 1
         while title.length < 6 and i < words.length
-          title.concat(words[i])
+          title = title.concat(words[i])
           i += 1
         @[title] = worksheet
 
       if not (@rawData and @payroll and @variables and @projects and @employees)
-         cb (new Error ('worksheets failed to be associated properly'))
-      
-      @_loadVariables({})
-      .then(@_loadProjects.bind(this))
-      .then(@_loadEmployees.bind(this))
-      .catch(
-        (error) ->
-          console.error "Couldn't download sheet data", error
-      ).done(
-        (opts) =>
-          @initialized = true
-          console.log 'loaded all data'
-          cb opts
-      )
+        deferred.reject 'worksheets failed to be associated properly'
+      else
+        @_loadVariables({})
+        .then(@_loadProjects.bind(this))
+        .then(@_loadEmployees.bind(this))
+        .catch((error) -> deferred.reject("Couldn't download sheet data"))
+        .done(
+          (opts) =>
+            @initialized = true
+            deferred.resolve opts
+        )
+    return deferred.promise
 
   enterPunch: (punch, user, cb) ->
     # code
@@ -69,7 +70,7 @@ class Spreadsheet
       last = user.lastPunch
       last.out punch
       row = last.toRawRow user.name
-      console.log row
+      Logger.log row
       row.save (err) ->
         if err
           cb(err)
@@ -103,29 +104,25 @@ class Spreadsheet
             cb(err)
             return
           row_match = (r for r in rows when r[headers.id] is row[headers.id])[0]
-          # console.log !!row_match
+          # Logger.log !!row_match
           punch.assignRow row_match
           user.setLastPunch punch
           cb()
 
-  generateReport: (users, completion) ->
+  generateReport: (users) ->
+    deferred = Q.defer()
     numberDone = 0;
-    shouldExecute = true;
 
     for user in users
-      if shouldExecute
-        row = user.toRawPayroll()
-        @payroll.addRow row, (err) ->
-          if err
-            shouldContinue = false
-            completion err, numberDone
-            return
-          numberDone += 1;
-          if numberDone >= users.length
-            shouldExecute = false
-            completion null, numberDone
-      else
-        break
+      row = user.toRawPayroll()
+      @payroll.addRow row, (err) ->
+        if err
+          deferred.reject err, numberDone
+          return
+        numberDone += 1;
+        if numberDone >= users.length
+          deferred.resolve numberDone
+    deferred.promise
 
   _loadVariables: (opts) ->
     deferred = Q.defer()
