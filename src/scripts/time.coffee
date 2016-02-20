@@ -83,11 +83,13 @@ module.exports = (robot) ->
 
   sendPunch = (punch, user, res) ->
     if not punch
-      cb(new Error('Punch could not be parsed :('), null)
+      res.send 'Punch could not be parsed :('
       return
     Organization.spreadsheet.enterPunch punch, user, (err) ->
       if err
         # dm user with error???
+        console.error err
+        res.send 'bad punch, see log'
         return
       client = robot.adapter.client
       params = {
@@ -112,11 +114,12 @@ module.exports = (robot) ->
     if user.lastPunch
       user.lastPunch.row.del (err) ->
         if err
-          res.send 'Something went wrong with your undo request'
+          res.send 'Something went wrong with your undo request.'
           console.error err
           return
-        user.lastPunch = null
+        user.setLastPunch null
+        res.send 'Removed your last punch.'
     else
-      res.send 'There\'s nothing for me to undo'
+      res.send 'There\'s nothing for me to undo.'
 
 

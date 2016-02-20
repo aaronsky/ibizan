@@ -30,7 +30,7 @@ class Organization
       else
         console.warn 'Sheet not initialized, no spreadsheet ID was provided'
     bindOptions: (opts = OPTIONS) ->
-      if opts 
+      if opts
         if not OPTIONS
           OPTIONS = opts
         @users ?= opts.users
@@ -57,9 +57,11 @@ class Organization
           if name is project.name
             return project
       console.log "Project #{name} could not be found"
-    generateReport: () ->
+    generateReport: (completion) ->
       if @spreadsheet
-        @spreadsheet.generateReport()
+        @spreadsheet.generateReport @users, completion
+      else
+        completion(new Error('Spreadsheet was not loaded, report cannot be generated'))
 
   @get: () ->
     instance ?= new OrganizationPrivate()

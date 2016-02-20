@@ -11,6 +11,9 @@ module.exports = (robot) ->
     for user in users
       user.shouldHound = true
 
+  sendReport = (completion) ->
+    console.log 'Time to send the biweekly report!'
+    Organization.generateReport completion
 
   job = new Cron '00 00 06 * * 1-5',
                  resetHounding,
@@ -25,9 +28,21 @@ module.exports = (robot) ->
   #       If Employee is Salary: =(80 - Unpaid hours)
   #       If Employee is Non-Salary:  =(Logged Hours + Vacation Hours + Sick Hours)
   #     Overtime Hours: =max(0, Logged Hours - 80)
-  every 2, 'weeks', () ->
-    console.log 'Time to send the biweekly report!'
-    Organization.generateReport()
+  every 2, 'weeks', sendReport
+
+
+  robot.hear /!generate report/i, (res) ->
+    sendReport (err, numberDone) ->
+      if err
+        console.error err
+        res.send "Could not generate a report - #{numberDone}"
+        return
+      res.send "Generated a report successfully - #{numberDone}"
+
+
+  robot.hear /!reset hound status/i, (res) ->
+    count = resetHounding()
+    res.send "Reset #{count} #{if count is 1 then "person's" else "peoples'"} hound status"
 
   # Ibizan should not treat weekends or Work Holidays as business days. So if a user says they’re on vacation from Thursday, Jan 14 to Monday, Jan 18, Ibizan will only count three days of vacation against their total (instead of 5).
   # Ibizan should only accept check-ins, check-outs, and time logs in the ‘Time Logging Channel’ specified in the ‘Variables’ tab on the Ibizan spreadsheet. Ibizan should not accept logging attempts via DM or any other Slack channel.

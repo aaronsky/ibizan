@@ -106,9 +106,11 @@ class Spreadsheet
               row[header] = '12:00 am'
             else if row[header] is 'noon'
               row[header] = '12:00 pm'
-            temp[key] = moment("#{today.format("YYYY-MM-DD")} #{row[header]}")
+            temp[key] = moment(row[header], 'hh:mm a')
           else if header is USER_HEADERS.salary
             temp[key] = row[header] is 'Y'
+          else if header is USER_HEADERS.overtime
+            continue
           else
             if isNaN(row[header])
               temp[key] = row[header].trim()
@@ -118,7 +120,6 @@ class Spreadsheet
         timetable.setVacation(temp.vacationAvailable, temp.vacationLogged)
         timetable.setSick(temp.sickAvailable, temp.sickLogged)
         timetable.setUnpaid(temp.unpaidLogged)
-        timetable.setOvertime(temp.overtime)
         timetable.setLogged(temp.totalLogged)
         timetable.setAverageLogged(temp.averageLogged)
         user = new User(temp.name, temp.slackname, temp.salary, timetable)
@@ -137,18 +138,21 @@ class Spreadsheet
     if user.lastPunch and user.lastPunch.mode is 'in' and punch.mode is 'out'
       last = user.lastPunch
       last.out punch
-      row = punch.toRawRow user.name
+      row = last.toRawRow user.name
+      console.log row
       row.save (err) ->
         if err
           cb(err)
           return
         # add hours to project in projects
-        active = elapsed - user.activeTime()
-        overtime = elapsed - active
-        user.timetable.setLogged(active)
-        user.timetable.setOvertime(overtime)
+        if last.times.block
+          workTime = last.times.block
+        else
+          workTime = last.elapsed
+        user.timetable.setLogged(workTime)
+        # calculate project times
         # setAverage
-        updateUserRow user
+        user.updateRow()
         user.setLastPunch(null)
         cb()
     else if punch.mode is 'vacation' or
@@ -173,42 +177,27 @@ class Spreadsheet
           punch.assignRow row_match
           user.setLastPunch punch
           cb()
-  updateUserRow: (user) ->
-    if user.row
-      row = user.row
-      headers = HEADERS.users
-      row[headers.slackname] = user.slack
-      row[headers.name] = user.name
-      row[headers.salary] = user.salary
-      row[headers.start] = user.timetable.start
-      row[headers.end] = user.timetable.end
-      row[headers.timezone] = user.timetable.timezone
-      row[headers.vacationAvailable] = user.timetable.vacationAvailable
-      row[headers.vacationLogged] = user.timetable.vacationTotal
-      row[headers.sickAvailable] = user.timetable.sickAvailable
-      row[headers.sickLogged] = user.timetable.sickTotal
-      row[headers.unpaidLogged] = user.timetable.unpaidTotal
-      row[headers.overtime] = user.timetable.overtimeTotal
-      row[headers.totalLogged] = user.timetable.loggedTotal
-      row[headers.averageLogged] = user.timetable.averageLoggedTotal
-      row.save (err) ->
-        if err
-          cb(err)
-          return
+  
 
-  generateReport: () ->
-    # code
-    # foreach user
-    #   payroll date = today
-    #   employee name = user.name
-    #   if salary then paid hours = (80 - Unpaid hours)
-    #   if non-salary then = (Logged Hours + Vacation Hours + Sick Hours)
-    #   logged hours = user.logged
-    #   logged hours = user.vacation
-    #   logged hours = user.sick
-    #   overtime hours = max(0, Logged Hours - 80)
-    #   holiday hours = user.holiday
-    #   @payroll.addRow
+  # TODO: DOES NOT WORK
+  generateReport: (users, completion) ->
+    numberDone = 0;
+    shouldExecute = true;
+
+    for user in users
+      if shouldExecute
+        row = user.toRawPayroll()
+        @payroll.addRow row, (err) ->
+          if err
+            shouldContinue = false
+            completion err, numberDone
+            return
+          numberDone += 1;
+          if numberDone >= users.length
+            shouldExecute = false
+            completion null, numberDone
+      else
+        break
 
 
 module.exports = Spreadsheet

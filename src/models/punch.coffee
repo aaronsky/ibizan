@@ -7,8 +7,8 @@ MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('../models/organization').get()
 
 class Punch
-  constructor: (@mode = 'none', 
-                @times = [], 
+  constructor: (@mode = 'none',
+                @times = [],
                 @projects = [],
                 @notes = '') ->
     # ...
@@ -46,7 +46,7 @@ class Punch
     punch = new Punch(mode, datetimes, projects, notes)
     punch
 
-  out: (punch) ->
+  out: (punch, cb) ->
     if not @times.block?
       @times.push punch.times[0]
       @elapsed = @times[1].diff(@times[0], 'hours', true)
@@ -63,10 +63,10 @@ class Punch
 
   toRawRow: (name) ->
     headers = HEADERS.rawdata
-    row = {}
-    row[headers.id] = uuid.v1()
-    row[headers.today] = moment().format('MM/DD/YYYY')
-    row[headers.name] = name
+    row = @row || {}
+    row[headers.id] = row[headers.id] || uuid.v1()
+    row[headers.today] = row[headers.today] || moment().format('MM/DD/YYYY')
+    row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block
       hours = Math.floor block
@@ -75,9 +75,9 @@ class Punch
     else
       for time, i in @times
         row[headers[MODES[i]]] = time.format('hh:mm:ss A')
-      if @times.length > 2
-        hours = Math.floor elapsed
-        minutes = Math.round((elapsed - hours) * 60)
+      if @elapsed
+        hours = Math.floor @elapsed
+        minutes = Math.round((@elapsed - hours) * 60)
         row[headers.totalTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
     row[headers.notes] = @notes
     max = if @projects.length < 6 then @projects.length else 5
@@ -99,35 +99,35 @@ class Punch
     if @mode is 'in'
       # if mode is 'in' and user has not punched out
       if user.lastPunch
-        false
+        return false
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
         for time in @times
           # if mode is 'in' and date is yesterday
           if time.isSame(yesterday, 'd')
-            false
+            return false
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
-      false
+      return false
     else if @mode is 'vacation' or @mode is 'sick' or @mode is 'unpaid'
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         if @mode is 'vacation' and
            user.timetable.vacationAvailable < elapsed
-          false
+          return false
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
                 user.timetable.sickAvailable < elapsed
-          false
+          return false
         # if mode is 'vacation' and time isn't divisible by 4
         # if mode is 'sick' and time isn't divisible by 4
         # if mode is 'unpaid' and time isn't divisible by 4
         else if elapsed % 4 isnt 0
-          false
+          return false
     # if date is more than 7 days from today
     else if date and moment().diff(date, 'days') >= 7
-      false
-    true
+      return false
+    return true
 
   parseMode = (command) ->
     comps = command.split ' '
@@ -165,7 +165,7 @@ class Punch
           isPM = today.format('a') is 'pm'
           if not timeMatch.match /am?|pm?/i
             timeMatch = timeMatch + " #{today.format('a')}"
-      today = moment("#{today.format('YYYY-MM-DD')} #{timeMatch}")
+      today = moment(timeMatch, 'h:mm a')
       if isPM
         today.add(12, 'hours')
       time.push today

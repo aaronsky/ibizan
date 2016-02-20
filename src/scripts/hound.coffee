@@ -1,3 +1,4 @@
+moment = require 'moment'
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
@@ -5,28 +6,22 @@ module.exports = (robot) ->
   #   If the user is logged out, the DM should say: Check in if you’re on the clock~
   #   If the user is logged in, the DM should say: Don’t forget to check out~
 
-  hound = (user) ->
+  hound = (user, slack) ->
     now = moment()
     console.log 'hounding'
-    console.log user
-    presence = user.getPresence (res) ->
+    console.log slack
+    presence = slack.getPresence (res) ->
       if res.ok
         lastActivity = moment(res.lastActivity)
         if now.diff(lastActivity, 'hours') >= 3
           robot.sendMessage 'NO'
 
 
-  robot.adapter.client.on 'userTyping', (user, channel) ->
-    res =
-      user:
-        id: user.id
-        name: user.name
-        real_name: user.real_name || user.name
-      channel:
-        id: channel.id
-        name: channel.name
-        private: !!channel.is_im || !!channel.is_group
-    user = Organization.getUserBySlackName(res.user.name)
+  robot.adapter.client.on 'userTyping', (slackuser, channel) ->
+    if not channel.private 
+      channel.private = !!channel.is_im or !!channel.is_group
+    user = Organization.getUserBySlackName slackuser.name
+
     if not user
       console.log 'user not found'
       return
@@ -36,12 +31,12 @@ module.exports = (robot) ->
     else if not user.shouldHound
       console.log 'user is safe from hounding'
       return
-    else if res.channel.private or
-            res.channel.name in Organization.exemptChannels
+    else if channel.private or
+            channel.name in Organization.exemptChannels
       console.log 'inappropriate channel'
       return
     else
-      hound user
+      # hound user, slackuser
 
   robot.respond /(stop|disable) ibizan/i, (res) ->
     user = Organization.getUserBySlackName(res.message.user.name)
