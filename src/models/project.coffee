@@ -1,3 +1,6 @@
+
+moment = require 'moment'
+
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
 
@@ -5,6 +8,8 @@ class Project
   constructor: (@name = '', @start, @total) ->
     @name = @name.replace '#', ''
   @parse: (row) ->
+    if not row
+      return
     headers = HEADERS.projects
     if row[headers.name]
       name = row[headers.name].trim()

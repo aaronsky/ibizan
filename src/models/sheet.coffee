@@ -30,75 +30,31 @@ class Spreadsheet
       if err
         cb err
       @title = info.title
-      @payroll = info.worksheets[0] # HACK
-      @rawData = info.worksheets[2] # HACK
+      for worksheet in info.worksheets
+        title = worksheet.title
+        words = title.split ' '
+        title = words[0].toLowerCase()
+        i = 1
+        while title.length < 6 and i < words.length
+          title.concat(words[i])
+          i += 1
+        @[title] = worksheet
+
+      if not (@rawData and @payroll and @variables and @projects and @employees)
+         cb (new Error ('worksheets failed to be associated properly'))
       
-      # HACKS EVERYWHERE
-      # loadVariables then loadProjects then loadEmployees then done
-      # @loadVariables(info.worksheets[4])
-      # .then(@loadProjects)
-      # .then( () ->
-      #   opts.projects = projects
-      # )
-      @loadVariables info.worksheets[4], (opts) =>
-        @loadProjects info.worksheets[1], (projects) =>
-          opts.projects = projects
-          @loadEmployees info.worksheets[3], (users) =>
-            opts.users = users
-            @initialized = true
-            cb opts
-
-  loadVariables: (worksheet, cb) ->
-    worksheet.getRows (err, rows) ->
-      if err
-        throw err
-      opts =
-        vacation: 0
-        sick: 0
-        holidays: {}
-        clockChannel: ''
-        exemptChannels: []
-      VARIABLE_HEADERS = HEADERS.variables
-      for row in rows
-        for key, header of VARIABLE_HEADERS
-          if row[header]
-            if header is VARIABLE_HEADERS.holidays
-              name = row[header]
-              date = moment().fromHolidayString(row[VARIABLE_HEADERS.holidayDate])
-              opts[key][name] = date
-            else if header is VARIABLE_HEADERS.exemptChannels
-              channel = row[header]
-              if channel
-                channel = channel.replace '#', ''
-                opts[key].push channel
-            else
-              if isNaN(row[header])
-                val = row[header]
-                if val
-                  opts[key] = val.trim().replace '#', ''
-              else
-                opts[key] = parseInt row[header]
-      cb opts
-
-  loadProjects: (worksheet, cb) ->
-    worksheet.getRows (err, rows) ->
-      if err
-        throw err
-      projects = []
-      for row in rows
-        project = Project.parse row
-        projects.push project
-      cb projects
-
-  loadEmployees: (worksheet, cb) ->
-    worksheet.getRows (err, rows) ->
-      if err
-        throw err
-      users = []
-      for row in rows
-        user = User.parse row
-        users.push user
-      cb users
+      @_loadVariables({})
+      .then(@_loadProjects.bind(this))
+      .then(@_loadEmployees.bind(this))
+      .catch(
+        (error) ->
+          console.error "Couldn't download sheet data", error
+      ).done(
+        (opts) =>
+          @initialized = true
+          console.log 'loaded all data'
+          cb opts
+      )
 
   enterPunch: (punch, user, cb) ->
     # code
@@ -171,5 +127,64 @@ class Spreadsheet
       else
         break
 
+  _loadVariables: (opts) ->
+    deferred = Q.defer()
+    @variables.getRows (err, rows) ->
+      if err
+        deferred.reject err
+      opts =
+        vacation: 0
+        sick: 0
+        holidays: {}
+        clockChannel: ''
+        exemptChannels: []
+      VARIABLE_HEADERS = HEADERS.variables
+      for row in rows
+        for key, header of VARIABLE_HEADERS
+          if row[header]
+            if header is VARIABLE_HEADERS.holidays
+              name = row[header]
+              date = moment().fromHolidayString(row[VARIABLE_HEADERS.holidayDate])
+              opts[key][name] = date
+            else if header is VARIABLE_HEADERS.exemptChannels
+              channel = row[header]
+              if channel
+                channel = channel.replace '#', ''
+                opts[key].push channel
+            else
+              if isNaN(row[header])
+                val = row[header]
+                if val
+                  opts[key] = val.trim().replace '#', ''
+              else
+                opts[key] = parseInt row[header]
+      deferred.resolve opts
+    deferred.promise
+
+  _loadProjects: (opts) ->
+    deferred = Q.defer()
+    @projects.getRows (err, rows) ->
+      if err
+        deferred.reject err
+      projects = []
+      for row in rows
+        project = Project.parse row
+        projects.push project
+      opts.projects = projects
+      deferred.resolve opts
+    deferred.promise
+
+  _loadEmployees: (opts) ->
+    deferred = Q.defer()
+    @employees.getRows (err, rows) ->
+      if err
+        deferred.reject err
+      users = []
+      for row in rows
+        user = User.parse row
+        users.push user
+      opts.users = users
+      deferred.resolve opts
+    deferred.promise
 
 module.exports = Spreadsheet
