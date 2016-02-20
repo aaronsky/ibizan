@@ -17,20 +17,24 @@ class Punch
     if not user or not command
       return
     if mode and mode isnt 'none'
-      [mode, command] = parseMode command
+      [mode, command] = _parseMode command
 
     [start, end] = user.activeHours()
-    [times, command] = parseTime command, start, end
-    [dates, command] = parseDate command
+    [times, command] = _parseTime command, start, end
+    [dates, command] = _parseDate command
 
     datetimes = []
     if times.length > 0 and dates.length > 0
       for date in dates
         for time in times
-          datetime = moment(date)
-          datetime.hour(time.hour())
-          datetime.minute(time.minute())
-          datetime.second(time.second())
+          datetime = moment({
+            year: date.get('year'),
+            month: date.get('month'),
+            date: date.get('date'),
+            hour: date.get('hour'),
+            minute: date.get('minute'),
+            second: date.get('second')
+          })
           datetimes.push datetime
     else if times.length > 0
       datetimes = times
@@ -40,7 +44,7 @@ class Punch
     if times.block?
       datetimes.block = times.block
 
-    [projects, command] = parseProjects command
+    [projects, command] = _parseProjects command
     notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
@@ -129,106 +133,106 @@ class Punch
       return false
     return true
 
-  parseMode = (command) ->
-    comps = command.split ' '
-    [mode, command] = [comps.shift(), comps.join ' ']
-    mode = (mode || '').trim()
-    command = (command || '').trim()
-    if mode in MODES
-      [mode, command]
+_parseMode = (command) ->
+  comps = command.split ' '
+  [mode, command] = [comps.shift(), comps.join ' ']
+  mode = (mode || '').trim()
+  command = (command || '').trim()
+  if mode in MODES
+    [mode, command]
+  else
+    ['none', command]
+
+_parseTime = (command, activeStart, activeEnd) ->
+  # parse time component
+  command = command.trimLeft() || ''
+  time = []
+  if match = command.match REGEX.rel_time
+    if match[0] is 'half-day' or match[0] is 'half day'
+      copy = moment(activeStart)
+      copy.hour(activeStart.hour() - 4)
+      time.push copy, activeEnd
+    else if match[0] is 'noon'
+      time.push moment({hour: 12, minute: 0})
+    else if match[0] is 'midnight'
+      time.push moment({hour: 0, minute: 0})
     else
-      ['none', command]
+      block = parseFloat match[3]
+      time.block = block
+    command = command.replace ///#{match[0]} ?///i, ''
+  else if match = command.match REGEX.time
+    timeMatch = match[0]
+    today = moment()
+    if hourStr = timeMatch.match /\b(([0-1][0-9])|(2[0-3])):/i
+      hour = parseInt (hourStr[0].replace(':', ''))
+      if hour <= 12
+        isPM = today.format('a') is 'pm'
+        if not timeMatch.match /am?|pm?/i
+          timeMatch = timeMatch + " #{today.format('a')}"
+    today = moment(timeMatch, 'h:mm a')
+    if isPM
+      today.add(12, 'hours')
+    time.push today
+    command = command.replace ///#{match[0]} ?///i, ''
+  # else if match = command.match regex for time ranges (???)
+  else
+    time.push moment()
+  [time, command]
 
-  parseTime = (command, activeStart, activeEnd) ->
-    # parse time component
-    command = command.trimLeft() || ''
-    time = []
-    if match = command.match REGEX.rel_time
-      if match[0] is 'half-day' or match[0] is 'half day'
-        copy = moment(activeStart)
-        copy.hour(activeStart.hour() - 4)
-        time.push copy, activeEnd
-      else if match[0] is 'noon'
-        time.push moment({hour: 12, minute: 0})
-      else if match[0] is 'midnight'
-        time.push moment({hour: 0, minute: 0})
-      else
-        block = parseFloat match[3]
-        time.block = block
-      command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match REGEX.time
-      timeMatch = match[0]
-      today = moment()
-      if hourStr = timeMatch.match /\b(([0-1][0-9])|(2[0-3])):/i
-        hour = parseInt (hourStr[0].replace(':', ''))
-        if hour <= 12
-          isPM = today.format('a') is 'pm'
-          if not timeMatch.match /am?|pm?/i
-            timeMatch = timeMatch + " #{today.format('a')}"
-      today = moment(timeMatch, 'h:mm a')
-      if isPM
-        today.add(12, 'hours')
-      time.push today
-      command = command.replace ///#{match[0]} ?///i, ''
-    # else if match = command.match regex for time ranges (???)
+_parseDate = (command) ->
+  command = command.trimLeft() || ''
+  date = []
+  if match = command.match /today/i
+    date.push moment()
+    command = command.replace ///#{match[0]} ?///i, ''
+  else if match = command.match /yesterday/i
+    yesterday = moment().subtract(1, 'days')
+    date.push yesterday
+    command = command.replace ///#{match[0]} ?///i, ''
+  else if match = command.match REGEX.days
+    today = moment()
+    if today.format('dddd').toLowerCase() isnt match[0]
+      today = today.day(match[0]).subtract(7, 'days')
+    date.push today
+    command = command.replace ///#{match[0]} ?///i, ''
+  else if match = command.match REGEX.date # Placeholder for date blocks
+    if match[0].indexOf('-') isnt -1
+      dateStrings = match[0].split('-')
+      month = ''
+      for str in dateStrings
+        str = str.trim()
+        date.push moment(str, "MMMM DD")
     else
-      time.push moment()
-    [time, command]
-
-  parseDate = (command) ->
-    command = command.trimLeft() || ''
-    date = []
-    if match = command.match /today/i
-      date.push moment()
-      command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match /yesterday/i
-      yesterday = moment().subtract(1, 'days')
-      date.push yesterday
-      command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match REGEX.days
-      today = moment()
-      if today.format('dddd').toLowerCase() isnt match[0]
-        today = today.day(match[0]).subtract(7, 'days')
-      date.push today
-      command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match REGEX.date # Placeholder for date blocks
-      if match[0].indexOf('-') isnt -1
-        dateStrings = match[0].split('-')
-        month = ''
-        for str in dateStrings
-          str = str.trim()
-          date.push moment(str, "MMMM DD")
-      else
-        absDate = moment(match[0], "MMMM DD")
-        date.push absDate
-      command = command.replace ///#{match[0]} ?///i, ''
-    else if match = command.match REGEX.numdate
-      if match[0].indexOf('-') isnt -1
-        dateStrings = match[0].split('-')
-        month = ''
-        for str in dateStrings
-          str = str.trim()
-          date.push moment(str, 'MM/DD')
-      else
-        absDate = moment(match[0], 'MM/DD')
-        date.push absDate
-      command = command.replace ///#{match[0]} ?///i, ''
+      absDate = moment(match[0], "MMMM DD")
+      date.push absDate
+    command = command.replace ///#{match[0]} ?///i, ''
+  else if match = command.match REGEX.numdate
+    if match[0].indexOf('-') isnt -1
+      dateStrings = match[0].split('-')
+      month = ''
+      for str in dateStrings
+        str = str.trim()
+        date.push moment(str, 'MM/DD')
     else
-      date.push moment()
-    [date, command]
+      absDate = moment(match[0], 'MM/DD')
+      date.push absDate
+    command = command.replace ///#{match[0]} ?///i, ''
+  else
+    date.push moment()
+  [date, command]
 
-  parseProjects = (command) ->
-    projects = []
-    command = command.trimLeft() || ''
-    command_copy = command.split(' ').slice()
+_parseProjects = (command) ->
+  projects = []
+  command = command.trimLeft() || ''
+  command_copy = command.split(' ').slice()
 
-    for word in command_copy
-      if word.charAt(0) is '#'
-        if project = Organization.getProjectByName word
-          projects.push project
-        command = command.replace ///#{word} ?///i, ''
-      else
-        break
-    [projects, command]
+  for word in command_copy
+    if word.charAt(0) is '#'
+      if project = Organization.getProjectByName word
+        projects.push project
+      command = command.replace ///#{word} ?///i, ''
+    else
+      break
+  [projects, command]
 
 module.exports = Punch
