@@ -35,8 +35,35 @@ class User
   constructor: (@name, @slack, @salary, @timetable) ->
     @lastPunch = null
     @shouldHound = true
-  @parse: () ->
+  @parse: (row) ->
     headers = HEADERS.users
+    temp = {}
+    for key, header of headers
+      if header is headers.start or header is headers.end
+        row[header] = row[header].toLowerCase()
+        if row[header] is 'midnight'
+          row[header] = '12:00 am'
+        else if row[header] is 'noon'
+          row[header] = '12:00 pm'
+        temp[key] = moment(row[header], 'hh:mm a')
+      else if header is headers.salary
+        temp[key] = row[header] is 'Y'
+      else if header is headers.overtime
+        continue
+      else
+        if isNaN(row[header])
+          temp[key] = row[header].trim()
+        else
+          temp[key] = parseInt row[header]
+    timetable = new Timetable(temp.start, temp.end, temp.timezone)
+    timetable.setVacation(temp.vacationAvailable, temp.vacationLogged)
+    timetable.setSick(temp.sickAvailable, temp.sickLogged)
+    timetable.setUnpaid(temp.unpaidLogged)
+    timetable.setLogged(temp.totalLogged)
+    timetable.setAverageLogged(temp.averageLogged)
+    user = new User(temp.name, temp.slackname, temp.salary, timetable)
+    user.row = row
+    user
   activeHours: () ->
     [@timetable.start, @timetable.end]
   activeTime: () ->
@@ -56,7 +83,10 @@ class User
     if @salary
       row[headers.paid] = 80 - @timetable.unpaidTotal
     else
-      row[headers.paid] = @timetable.loggedTotal + @timetable.vacationTotal + @timetable.sickTotal
+      row[headers.paid] = @timetable.loggedTotal +
+                          @timetable.vacationTotal +
+                          @timetable.sickTotal
+
     row[headers.unpaid] = @timetable.unpaidTotal
     row[headers.logged] = @timetable.loggedTotal
     row[headers.vacation] = @timetable.vacationTotal
@@ -69,7 +99,7 @@ class User
       headers = HEADERS.users
       @row[headers.slackname] = @slack
       @row[headers.name] = @name
-      @row[headers.salary] = if @salary then 'Y' else 'N' 
+      @row[headers.salary] = if @salary then 'Y' else 'N'
       @row[headers.start] = @timetable.start.format('H:MM A')
       @row[headers.end] = @timetable.end.format('H:MM A')
       @row[headers.timezone] = @timetable.timezone

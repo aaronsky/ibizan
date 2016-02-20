@@ -46,16 +46,6 @@ describe 'Timetable', ->
       test_validate_set_values(@timetable, mode, -85, 0)
     it 'should handle less than two arguments gracefully', ->
       test_validate_set_values(@timetable, mode, undefined, 0)
-  describe '#setOvertime(total)', ->
-    mode = 'overtime'
-    it 'should change the underlying values', ->
-      test_validate_set_values(@timetable, mode, 85, 85)
-    it 'should only take numbers', ->
-      test_validate_set_values(@timetable, mode, 'ghosts', 0)
-    it 'should only take positive numbers', ->
-      test_validate_set_values(@timetable, mode, -85, 0)
-    it 'should handle less than two arguments gracefully', ->
-      test_validate_set_values(@timetable, mode, undefined, 0)
   describe '#setLogged(total)', ->
     mode = 'logged'
     it 'should change the underlying values', ->

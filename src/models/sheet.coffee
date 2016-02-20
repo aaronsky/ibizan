@@ -1,6 +1,8 @@
+
 GoogleSpreadsheet = require 'google-spreadsheet'
 Q = require 'q'
 moment = require 'moment'
+
 require '../../lib/moment-holidays.js'
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
@@ -13,6 +15,7 @@ class Spreadsheet
   constructor: (sheet_id) ->
     @sheet = new GoogleSpreadsheet(sheet_id)
     @initialized = false
+
   authorize: (auth, cb) ->
     @sheet.useServiceAccountAuth auth, (err) ->
       if err
@@ -21,6 +24,7 @@ class Spreadsheet
       console.log 'authorized'
       cb()
     console.log 'waiting for authorization'
+
   loadOptions: (cb) ->
     @sheet.getInfo (err, info) =>
       if err
@@ -43,6 +47,7 @@ class Spreadsheet
             opts.users = users
             @initialized = true
             cb opts
+
   loadVariables: (worksheet, cb) ->
     worksheet.getRows (err, rows) ->
       if err
@@ -74,58 +79,27 @@ class Spreadsheet
               else
                 opts[key] = parseInt row[header]
       cb opts
+
   loadProjects: (worksheet, cb) ->
     worksheet.getRows (err, rows) ->
       if err
         throw err
       projects = []
-      PROJECT_HEADERS = HEADERS.projects
       for row in rows
-        if row[PROJECT_HEADERS.name]
-          name = row[PROJECT_HEADERS.name].trim()
-        if row[PROJECT_HEADERS.start]
-          startDate = moment(row[PROJECT_HEADERS.start], 'MM/DD/YYYY')
-        if row[PROJECT_HEADERS.total]
-          total = parseInt row[PROJECT_HEADERS.total]
-        project = new Project(name, startDate, total)
+        project = Project.parse row
         projects.push project
       cb projects
+
   loadEmployees: (worksheet, cb) ->
     worksheet.getRows (err, rows) ->
       if err
         throw err
       users = []
-      USER_HEADERS = HEADERS.users
-      today = moment()
       for row in rows
-        temp = {}
-        for key, header of USER_HEADERS
-          if header is USER_HEADERS.start or header is USER_HEADERS.end
-            row[header] = row[header].toLowerCase()
-            if row[header] is 'midnight'
-              row[header] = '12:00 am'
-            else if row[header] is 'noon'
-              row[header] = '12:00 pm'
-            temp[key] = moment(row[header], 'hh:mm a')
-          else if header is USER_HEADERS.salary
-            temp[key] = row[header] is 'Y'
-          else if header is USER_HEADERS.overtime
-            continue
-          else
-            if isNaN(row[header])
-              temp[key] = row[header].trim()
-            else
-              temp[key] = parseInt row[header]
-        timetable = new Timetable(temp.start, temp.end, temp.timezone)
-        timetable.setVacation(temp.vacationAvailable, temp.vacationLogged)
-        timetable.setSick(temp.sickAvailable, temp.sickLogged)
-        timetable.setUnpaid(temp.unpaidLogged)
-        timetable.setLogged(temp.totalLogged)
-        timetable.setAverageLogged(temp.averageLogged)
-        user = new User(temp.name, temp.slackname, temp.salary, timetable)
-        user.row = row
+        user = User.parse row
         users.push user
       cb users
+
   enterPunch: (punch, user, cb) ->
     # code
     if not punch or not user
@@ -177,9 +151,7 @@ class Spreadsheet
           punch.assignRow row_match
           user.setLastPunch punch
           cb()
-  
 
-  # TODO: DOES NOT WORK
   generateReport: (users, completion) ->
     numberDone = 0;
     shouldExecute = true;

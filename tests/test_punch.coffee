@@ -21,7 +21,6 @@ describe 'Punch', ->
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)
-      timetable.setOvertime(0)
       timetable.setLogged(0)
       timetable.setAverageLogged(0)
       @user = new User('Aaron Sky', 'aaronsky', true, timetable)
