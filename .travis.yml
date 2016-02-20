@@ -8,3 +8,5 @@ node_js:
 env:
   matrix:
   - NODE_ENV=development
+after_success:
+  - coveralls
