@@ -3,9 +3,12 @@ Logger = require '../helpers/logger'
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
-  # Ibizan will DM an employee as soon as they’ve posted in Slack after more than 3 hours of inactivity.
-  #   If the user is logged out, the DM should say: Check in if you’re on the clock~
-  #   If the user is logged in, the DM should say: Don’t forget to check out~
+  # Ibizan will DM an employee as soon as they’ve posted in Slack after
+  # more than 3 hours of inactivity.
+  #   If the user is logged out, the DM should say:
+  #     Check in if you’re on the clock~
+  #   If the user is logged in, the DM should say:
+  #     Don’t forget to check out~
 
   hound = (user, slack) ->
     now = moment()
@@ -19,7 +22,7 @@ module.exports = (robot) ->
 
 
   robot.adapter.client.on 'userTyping', (slackuser, channel) ->
-    if not channel.private 
+    if not channel.private
       channel.private = !!channel.is_im or !!channel.is_group
     user = Organization.getUserBySlackName slackuser.name
 

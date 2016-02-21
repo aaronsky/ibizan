@@ -22,21 +22,26 @@ class Organization
     constructor: (@name = NAME) ->
       if CONFIG.sheet_id
         @spreadsheet = new Spreadsheet(CONFIG.sheet_id)
-        @spreadsheet.authorize(CONFIG.auth)
-        .then(@spreadsheet.loadOptions.bind(@spreadsheet))
-        .then(
-          (opts) =>
-            if opts
-              @users ?= opts.users
-              @projects ?= opts.projects
-              @calendar ?= new Calendar(opts.vacation, opts.sick, opts.holidays)
-              @clockChannel ?= opts.clockChannel
-              @exemptChannels ?= opts.exemptChannels
-              Logger.log 'Loaded options'
-        )
-        .catch((error) -> Logger.error(error))
+        @sync()
+        .done(() -> Logger.log('Options loaded'))
       else
         Logger.warn 'Sheet not initialized, no spreadsheet ID was provided'
+    sync: () ->
+      deferred = Q.defer()
+      @spreadsheet.authorize(CONFIG.auth)
+      .then(@spreadsheet.loadOptions.bind(@spreadsheet))
+      .then(
+        (opts) =>
+          if opts
+            @users = opts.users
+            @projects = opts.projects
+            @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays)
+            @clockChannel = opts.clockChannel
+            @exemptChannels = opts.exemptChannels
+        )
+        .catch((error) -> deferred.reject(error))
+        .done(() -> deferred.resolve(true))
+      deferred.promise
     getUserBySlackName: (name) ->
       if @users
         for user in @users
@@ -59,7 +64,8 @@ class Organization
     generateReport: () ->
       deferred = Q.defer()
       if @spreadsheet
-        @spreadsheet.generateReport(@users).done((numberDone) -> deferred.resolve(numberDone))
+        @spreadsheet.generateReport(@users)
+        .done((numberDone) -> deferred.resolve(numberDone))
       else
         deferred.reject 'Spreadsheet was not loaded, report cannot be generated'
       deferred.promise

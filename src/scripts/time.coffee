@@ -62,8 +62,8 @@ module.exports = (robot) ->
     Organization.getProjectByName(channel)?
 
   canPunchHere = (name, channel) ->
-    isDM(name, channel) or 
-    isClockChannel(channel) or 
+    isDM(name, channel) or
+    isClockChannel(channel) or
     isProjectChannel(channel)
 
   parse = (res, msg, mode) ->

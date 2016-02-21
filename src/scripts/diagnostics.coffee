@@ -15,3 +15,10 @@ module.exports = (robot) ->
     res.send "Reset #{count}
                #{if count is 1 then "person's" else "peoples'"}
                hound status"
+
+  robot.hear /!sync!/i, (res) ->
+    Organization.sync()
+    .catch((err) -> res.send "Failed to resync.")
+    .done((status) ->
+      res.send "Re-synced with spreadsheet"
+    )
