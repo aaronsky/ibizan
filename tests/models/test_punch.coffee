@@ -2,10 +2,10 @@
 moment = require 'moment'
 expect = require('chai').expect
 
-Organization = require('../src/models/organization').get()
-Project = require '../src/models/project'
-{ User, Timetable } = require '../src/models/user'
-Punch = require '../src/models/punch'
+Organization = require('../../src/models/organization').get()
+Project = require '../../src/models/project'
+{ User, Timetable } = require '../../src/models/user'
+Punch = require '../../src/models/punch'
 
 Organization.projects = [
   new Project('#production'),

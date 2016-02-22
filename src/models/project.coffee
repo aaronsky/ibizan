@@ -17,7 +17,10 @@ class Project
     if row[headers.start]
       startDate = moment(row[headers.start], 'MM/DD/YYYY')
     if row[headers.total]
-      total = parseInt row[headers.total]
+      if isNaN(row[headers.total])
+        total = 0
+      else
+        total = parseInt row[headers.total]
     project = new Project(name, startDate, total, row)
     project
 

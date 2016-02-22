@@ -5,6 +5,6 @@ class Logger
   @warn: (msg) ->
     console.warn "[Ibizan] (#{new Date()}) WARN: #{msg}"
   @error: (msg, error) ->
-    console.error "[Ibizan] (#{new Date()}) ERROR: #{msg}", error
+    console.error "[Ibizan] (#{new Date()}) ERROR: #{msg}", error || ''
 
 module.exports = Logger

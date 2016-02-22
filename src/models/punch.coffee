@@ -74,14 +74,16 @@ class Punch
       block = @times.block
       hours = Math.floor block
       minutes = Math.round((block - hours) * 60)
-      row[headers.blockTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
+      minute_str = if minutes < 10 then "0#{minutes}" else minutes
+      row[headers.blockTime] = "#{hours}:#{minute_str}:00"
     else
       for time, i in @times
         row[headers[MODES[i]]] = time.format('hh:mm:ss A')
       if @elapsed
         hours = Math.floor @elapsed
         minutes = Math.round((@elapsed - hours) * 60)
-        row[headers.totalTime] = "#{hours}:#{if minutes < 10 then "0#{minutes}" else minutes}:00"
+        minute_str = if minutes < 10 then "0#{minutes}" else minutes
+        row[headers.blockTime] = "#{hours}:#{minute_str}:00"
     row[headers.notes] = @notes
     max = if @projects.length < 6 then @projects.length else 5
     for i in [0..max]

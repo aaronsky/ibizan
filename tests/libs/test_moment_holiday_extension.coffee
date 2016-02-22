@@ -2,7 +2,7 @@
 expect = require('chai').expect
 
 moment = require 'moment'
-require '../lib/moment-holidays.js'
+require '../../lib/moment-holidays.js'
 
 describe 'moment', ->
 

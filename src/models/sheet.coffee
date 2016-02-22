@@ -45,7 +45,11 @@ class Spreadsheet
             i += 1
           @[title] = worksheet
 
-        if not (@rawData and @payroll and @variables and @projects and @employees)
+        if not (@rawData and
+                @payroll and
+                @variables and
+                @projects and
+                @employees)
           deferred.reject 'worksheets failed to be associated properly'
         else
           @_loadVariables({})
@@ -118,7 +122,8 @@ class Spreadsheet
               if err or not rows
                 deferred.reject err
               else
-                row_match = (r for r in rows when r[headers.id] is row[headers.id])[0]
+                row_match =
+                  (r for r in rows when r[headers.id] is row[headers.id])[0]
                 # Logger.log !!row_match
                 punch.assignRow row_match
                 user.setLastPunch punch
@@ -158,7 +163,8 @@ class Spreadsheet
             if row[header]
               if header is VARIABLE_HEADERS.holidays
                 name = row[header]
-                date = moment().fromHolidayString(row[VARIABLE_HEADERS.holidayDate])
+                date =
+                  moment().fromHolidayString(row[VARIABLE_HEADERS.holidayDate])
                 opts[key][name] = date
               else if header is VARIABLE_HEADERS.exemptChannels
                 channel = row[header]

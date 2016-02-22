@@ -11,7 +11,7 @@ module.exports = (robot) ->
   Organization = require('../models/organization').get()
   
   robot.hear /bark/i, (res) ->
-    res.send "Bark Bark"
-  
-  robot.hear /!list users/i, (res) ->
-    res.send JSON.stringify Organization.users
+    res.send "bark bark"
+
+  robot.respond /tell me a joke/i, (res) ->
+    res.send "woof"

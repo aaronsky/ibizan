@@ -78,12 +78,11 @@ class User
       # weekend
       return true
     else if current.holiday()?
-      return true  
+      return true
     else if current.isBetween(@timetable.start, @timetable.end)
       return false
     else
       return true
-
   setLastPunch: (punch) ->
     @lastPunch = punch
   undoPunch: () ->
