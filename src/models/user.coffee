@@ -1,4 +1,7 @@
+
 moment = require 'moment'
+Q = require 'q'
+
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
 
@@ -32,7 +35,7 @@ class Timetable
     @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
 
 class User
-  constructor: (@name, @slack, @salary, @timetable) ->
+  constructor: (@name, @slack, @salary, @timetable, @row = null) ->
     @lastPunch = null
     @shouldHound = true
   @parse: (row) ->
@@ -61,8 +64,7 @@ class User
     timetable.setUnpaid(temp.unpaidLogged)
     timetable.setLogged(temp.totalLogged)
     timetable.setAverageLogged(temp.averageLogged)
-    user = new User(temp.name, temp.slackname, temp.salary, timetable)
-    user.row = row
+    user = new User(temp.name, temp.slackname, temp.salary, timetable, row)
     user
   activeHours: () ->
     [@timetable.start, @timetable.end]
@@ -95,7 +97,8 @@ class User
     row[headers.holiday] = @timetable.holiday
     row
   updateRow: () ->
-    if @row
+    deferred = Q.defer()
+    if @row?
       headers = HEADERS.users
       @row[headers.slackname] = @slack
       @row[headers.name] = @name
@@ -113,8 +116,12 @@ class User
       @row[headers.averageLogged] = @timetable.averageLoggedTotal
       @row.save (err) ->
         if err
-          cb(err)
-          return
+          deferred.reject err
+        else
+          deferred.resolve true
+    else
+      deferred.reject 'Row is null'
+    deferred.promise
 
 module.exports.User = User
 module.exports.Timetable = Timetable

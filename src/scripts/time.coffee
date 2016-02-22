@@ -85,21 +85,25 @@ module.exports = (robot) ->
     if not punch
       res.send 'Punch could not be parsed :('
       return
-    Organization.spreadsheet.enterPunch punch, user, (err) ->
-      if err
-        # dm user with error???
+    Organization.spreadsheet.enterPunch(punch, user)
+    .catch(
+      (err) ->
         Logger.error err
         res.send 'bad punch, see log'
-        return
-      client = robot.adapter.client
-      params = {
-        "name": "dog2",
-        "channel": res.message.rawMessage.channel,
-        "timestamp": res.message.id
-      }
-      client._apiCall 'reactions.add', params, (response) ->
-        if not response.ok
-          res.send response.error
+    )
+    .done(
+      () ->
+        client = robot.adapter.client
+        params = {
+          "name": "dog2",
+          "channel": res.message.rawMessage.channel,
+          "timestamp": res.message.id
+        }
+        client._apiCall 'reactions.add', params, (response) ->
+          if not response.ok
+            res.send response.error
+    )
+      
 
   # respond to mode
   robot.respond REGEX.modes, (res) ->

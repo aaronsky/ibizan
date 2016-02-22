@@ -57,13 +57,13 @@ class Spreadsheet
         )
     return deferred.promise
 
-  enterPunch: (punch, user, cb) ->
-    # code
+  enterPunch: (punch, user) ->
+    deferred = Q.defer()
     if not punch or not user
-      cb(new Error('Invalid parameters passed: Punch or user is undefined.'))
+      deferred.reject 'Invalid parameters passed: Punch or user is undefined.'
       return
     else if not punch.isValid(user)
-      cb(new Error('Punch is invalid'))
+      deferred.reject 'Punch is invalid'
       return
     headers = HEADERS.rawdata
     if user.lastPunch and user.lastPunch.mode is 'in' and punch.mode is 'out'
@@ -72,7 +72,7 @@ class Spreadsheet
       row = last.toRawRow user.name
       row.save (err) ->
         if err
-          cb(err)
+          deferred.reject err
           return
         # add hours to project in projects
         if last.times.block
@@ -80,37 +80,51 @@ class Spreadsheet
         else
           workTime = last.elapsed
         user.timetable.setLogged(workTime)
-        # calculate project times
         # setAverage
-        user.updateRow()
-        user.setLastPunch(null)
-        cb()
+        # calculate project times
+        promises = []
+        for project in last.projects
+          project.total += workTime
+          promises.push(project.updateRow())
+        promises.push(user.updateRow())
+        Q.all(promises)
+        .catch(
+          (err) ->
+            deferred.reject err
+        )
+        .done(
+          () ->
+            user.setLastPunch(null)
+            deferred.resolve()
+        )
     else if punch.mode is 'vacation' or
             punch.mode is 'sick' or
             punch.mode is 'unpaid'
       # do these go in raw data?
       # add to user numbers
       # save user row
+      deferred.resolve()
     else
       row = punch.toRawRow user.name
       @rawData.addRow row, (err) =>
         if err
-          cb(err)
+          deferred.reject err
           return
         params = {}
         @rawData.getRows params, (err, rows) ->
           if err or not rows
-            cb(err)
+            deferred.reject err
             return
           row_match = (r for r in rows when r[headers.id] is row[headers.id])[0]
           # Logger.log !!row_match
           punch.assignRow row_match
           user.setLastPunch punch
-          cb()
+          deferred.resolve()
+    deferred.promise
 
   generateReport: (users) ->
     deferred = Q.defer()
-    numberDone = 0;
+    numberDone = 0
 
     for user in users
       row = user.toRawPayroll()
@@ -118,7 +132,7 @@ class Spreadsheet
         if err
           deferred.reject err, numberDone
           return
-        numberDone += 1;
+        numberDone += 1
         if numberDone >= users.length
           deferred.resolve numberDone
     deferred.promise

@@ -9,7 +9,7 @@ CONFIG =
     client_email: process.env.CLIENT_EMAIL
     private_key: process.env.PRIVATE_KEY
 
-NAME = 'Fangamer'
+NAME = process.env.ORG_NAME
 
 class Calendar
   constructor: (@vacation, @sick, @holidays) ->
