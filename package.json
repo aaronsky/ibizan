@@ -31,6 +31,7 @@
   "devDependencies": {
     "chai": "^3.5.0",
     "co": "^4.6.0",
+    "coffee-coverage": "^1.0.1",
     "coffee-script": "^1.10.0",
     "coveralls": "^2.11.6",
     "hubot-test-helper": "^1.4.4",
@@ -40,7 +41,7 @@
   "scripts": {
     "start": "./bin/ibizan",
     "ibizan": "./bin/ibizan",
-    "test": "mocha --compilers \"coffee:coffee-script/register\" ./tests/* && exit 0",
-    "coverage": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --compilers \"coffee:coffee-script/register\" -R spec ./tests/* && exit 0"
+    "test": "mocha --compilers \"coffee:coffee-script/register\" ./tests/**/* && exit 0",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul --recursive ./tests/**/*"
   }
 }
