@@ -21,13 +21,13 @@ class Project
     project = new Project(name, startDate, total, row)
     project
 
-  @updateRow: () ->
+  updateRow: () ->
     deferred = Q.defer()
     if @row?
       headers = HEADERS.projects
-      @row[headers.name] = @name
+      @row[headers.name] = "##{@name}"
       @row[headers.start] = @start.format('MM/DD/YYYY')
-      @row[headers.total] = @total
+      @row[headers.total] = Math.floor @total
       @row.save (err) ->
         if err
           deferred.reject err

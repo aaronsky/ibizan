@@ -22,6 +22,7 @@ class Organization
     constructor: (@name = NAME) ->
       if CONFIG.sheet_id
         @spreadsheet = new Spreadsheet(CONFIG.sheet_id)
+        Logger.log "Welcome to #{@name}!"
         @sync()
         .done(() -> Logger.log('Options loaded'))
       else

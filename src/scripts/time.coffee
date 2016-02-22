@@ -24,33 +24,13 @@
 # Author:
 #   aaronsky
 
-# 1. At startup, connect to spreadsheet
-# 2. Sync employee list
-# 3. Sync project list
-# 4. Sync variables
-# 5. Start bot
-
-# async steps
-
-# if punch in|out|unpaid|vacation|sick|hours
-#   message should be in private channel
-#   message word 0 should be the match
-#   message word 1 should be:
-#     * undefined
-#         punch at current time/date
-#     * a project
-#         if project is defined, punch at current time/date for project
-#     * a time
-#         punch at the entered time/current date
-#     * a time block (absolute date, relative date, half-day. relative date)
-#         process block (come back to this)
-
 module.exports = (robot) ->
 
-  Organization = require('../models/organization').get()
-  Punch = require('../models/punch')
   CONSTANTS = require '../helpers/constants'
   REGEX = CONSTANTS.REGEX
+  Logger = require '../helpers/logger'
+  Organization = require('../models/organization').get()
+  Punch = require('../models/punch')
 
   isDM = (name, channel) ->
     name is channel
@@ -89,7 +69,8 @@ module.exports = (robot) ->
     .catch(
       (err) ->
         Logger.error err
-        res.send 'bad punch, see log'
+        robot.send {room: res.message.user.name},
+                  "Something is wrong with your punch, please don't punch dogs."
     )
     .done(
       () ->

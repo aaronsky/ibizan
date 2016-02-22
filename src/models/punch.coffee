@@ -27,19 +27,18 @@ class Punch
     if times.length > 0 and dates.length > 0
       for date in dates
         for time in times
-          datetime = moment({
-            year: date.get('year'),
-            month: date.get('month'),
-            date: date.get('date'),
-            hour: date.get('hour'),
-            minute: date.get('minute'),
-            second: date.get('second')
-          })
+          datetime = _mergeDateTime(date, time)
           datetimes.push datetime
-    else if times.length > 0
-      datetimes = times
-    else if dates.length > 0
-      datetimes = dates
+    else if dates.length > 0 and times.length is 0
+      for date in dates
+        datetime = _mergeDateTime(date, moment())
+        datetimes.push datetime
+    else if times.length > 0 and dates.length is 0
+      for time in times
+        datetime = _mergeDateTime(moment(), time)
+        datetimes.push datetimes
+    else
+      datetimes.push moment()
 
     if times.block?
       datetimes.block = times.block
@@ -50,7 +49,7 @@ class Punch
     punch = new Punch(mode, datetimes, projects, notes)
     punch
 
-  out: (punch, cb) ->
+  out: (punch) ->
     if not @times.block?
       @times.push punch.times[0]
       @elapsed = @times[1].diff(@times[0], 'hours', true)
@@ -133,6 +132,16 @@ class Punch
       return false
     return true
 
+_mergeDateTime = (date, time) ->
+  return moment({
+    year: date.get('year'),
+    month: date.get('month'),
+    date: date.get('date'),
+    hour: time.get('hour'),
+    minute: time.get('minute'),
+    second: time.get('second')
+  })
+
 _parseMode = (command) ->
   comps = command.split ' '
   [mode, command] = [comps.shift(), comps.join ' ']
@@ -175,8 +184,6 @@ _parseTime = (command, activeStart, activeEnd) ->
     time.push today
     command = command.replace ///#{match[0]} ?///i, ''
   # else if match = command.match regex for time ranges (???)
-  else
-    time.push moment()
   [time, command]
 
 _parseDate = (command) ->
@@ -217,8 +224,6 @@ _parseDate = (command) ->
       absDate = moment(match[0], 'MM/DD')
       date.push absDate
     command = command.replace ///#{match[0]} ?///i, ''
-  else
-    date.push moment()
   [date, command]
 
 _parseProjects = (command) ->

@@ -1,4 +1,15 @@
+# Description:
+#   Your dog friend can keep you in line
+#
+# Commands:
+#
+# Notes:
+#
+# Author:
+#   aaronsky
+
 moment = require 'moment'
+
 Logger = require '../helpers/logger'
 Organization = require('../models/organization').get()
 
@@ -41,6 +52,7 @@ module.exports = (robot) ->
       return
     else
       # hound user, slackuser
+      Logger.log "hounding #{user.slack}"
 
   robot.respond /(stop|disable) ibizan/i, (res) ->
     user = Organization.getUserBySlackName(res.message.user.name)

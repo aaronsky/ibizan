@@ -1,3 +1,13 @@
+# Description:
+#   Your dog friend is running tasks on a schedule
+#
+# Commands:
+#
+# Notes:
+#
+# Author:
+#   aaronsky
+
 schedule = require 'node-schedule'
 
 Organization = require('../models/organization').get()

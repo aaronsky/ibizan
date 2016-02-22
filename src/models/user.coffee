@@ -4,6 +4,7 @@ Q = require 'q'
 
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
+Logger = require '../helpers/logger'
 
 getPositiveNumber = (input, current) ->
   if not current
@@ -72,7 +73,17 @@ class User
     @timetable.end.diff(@timetable.start, 'hours', true)
   isInactive: (current) ->
     current = current || moment()
-    not current.isBetween(@timetable.start, @timetable.end)
+    day = current.day()
+    if day is 0 or day is 6
+      # weekend
+      return true
+    else if current.holiday()?
+      return true  
+    else if current.isBetween(@timetable.start, @timetable.end)
+      return false
+    else
+      return true
+
   setLastPunch: (punch) ->
     @lastPunch = punch
   undoPunch: () ->
