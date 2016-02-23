@@ -21,7 +21,7 @@ class Punch
 
     [start, end] = user.activeHours()
     [times, command] = _parseTime command, start, end
-    [dates, command] = _parseDate command
+    [dates, command] = _parseDate command, start, end
 
     datetimes = []
     if times.length > 0 and dates.length > 0
@@ -42,6 +42,8 @@ class Punch
 
     if times.block?
       datetimes.block = times.block
+    else if datetimes.length is 2
+      @elapsed = datetimes[1].diff(datetimes[0], 'hours', true)
 
     [projects, command] = _parseProjects command
     notes = command.trim()
@@ -188,15 +190,17 @@ _parseTime = (command, activeStart, activeEnd) ->
   # else if match = command.match regex for time ranges (???)
   [time, command]
 
-_parseDate = (command) ->
+_parseDate = (command, activeStart, activeEnd) ->
   command = command.trimLeft() || ''
   date = []
   if match = command.match /today/i
-    date.push moment()
+    date.push(_mergeDateTime(moment(), activeStart))
+    date.push(_mergeDateTime(moment(), activeEnd))
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match /yesterday/i
     yesterday = moment().subtract(1, 'days')
-    date.push yesterday
+    date.push(_mergeDateTime(yesterday, activeStart))
+    date.push(_mergeDateTime(yesterday, activeEnd))
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.days
     today = moment()

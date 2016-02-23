@@ -107,9 +107,37 @@ class Spreadsheet
       else if punch.mode is 'vacation' or
               punch.mode is 'sick' or
               punch.mode is 'unpaid'
-        # do these go in raw data?
-        # add to user numbers
-        # save user row
+        row = punch.toRawRow user.name
+        row[headers.project1] = punch.mode
+        @rawData.addRow row, (err) =>
+          if err
+            deferred.reject err
+          else
+            if punch.times.block
+              elapsed = punch.times.block
+            else
+              elapsed = punch.elapsed
+            if punch.mode is 'vacation'
+              total = user.timetable.vacationTotal
+              available = user.timetable.vacationAvailable
+              user.timetable.setVacation(total + elapsed, available - elapsed)
+            else if punch.mode is 'sick'
+              total = user.timetable.sickTotal
+              available = user.timetable.sickAvailable
+              user.timetable.setSick(total + elapsed, available - elapsed)
+            else if punch.mode is 'unpaid'
+              total = user.timetable.unpaidTotal
+              user.timetable.setUnpaid(total + elapsed)
+            user.updateRow()
+            .catch(
+              (err) ->
+                deferred.reject err
+            )
+            .done(
+              () ->
+                user.setLastPunch(null)
+                deferred.resolve()
+            )
         deferred.resolve()
       else
         row = punch.toRawRow user.name
