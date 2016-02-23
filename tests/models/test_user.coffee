@@ -131,8 +131,6 @@ describe 'User', ->
       @user.setLastPunch null
       expect(@user.lastPunch).to.be.null
   describe '#undoPunch()', ->
-    it 'should return undefined', ->
-      expect(@user.undoPunch()).to.be.undefined
   describe '#toRawPayroll()', ->
     it 'should not return null', ->
       payrollRow = @user.toRawPayroll()

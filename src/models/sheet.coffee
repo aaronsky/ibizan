@@ -94,15 +94,15 @@ class Spreadsheet
                 promises.push (project.updateRow())
               promises.push(user.updateRow())
               Q.all(promises)
+              .then(
+                () ->
+                  deferred.resolve()
+              )
               .catch(
                 (err) ->
                   deferred.reject err
               )
-              .done(
-                () ->
-                  user.setLastPunch(null)
-                  deferred.resolve()
-              )
+              .done()
         else
           deferred.reject 'out punch for no in punch'
       else if punch.mode is 'vacation' or

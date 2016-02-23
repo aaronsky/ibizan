@@ -106,13 +106,17 @@ module.exports = (robot) ->
   robot.respond /undo/i, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     if user.lastPunch
-      user.lastPunch.row.del (err) ->
-        if err
-          res.send 'Something went wrong with your undo request.'
-          Logger.error err
-          return
-        user.setLastPunch null
-        res.send 'Removed your last punch.'
+      user.undoPunch()
+      .then(
+        () ->
+          res.send 'Undid your last punch action'
+      )
+      .catch(
+        (err) ->
+          console.error err
+          res.send "Something went wrong while undoing your punch."
+      )
+      .done()
     else
       res.send 'There\'s nothing for me to undo.'
 

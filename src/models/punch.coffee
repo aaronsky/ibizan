@@ -84,8 +84,11 @@ class Punch
       minute_str = if minutes < 10 then "0#{minutes}" else minutes
       row[headers.blockTime] = "#{hours}:#{minute_str}:00"
     else
-      for time, i in @times
-        row[headers[MODES[i]]] = time.format('hh:mm:ss A')
+      for i in [0..1]
+        if time = @times[i]
+          row[headers[MODES[i]]] = time.format('hh:mm:ss A')
+        else
+          row[headers[MODES[i]]] = ''
       if @elapsed
         hours = Math.floor @elapsed
         minutes = Math.round((@elapsed - hours) * 60)

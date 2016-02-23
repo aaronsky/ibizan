@@ -88,7 +88,28 @@ class User
   setLastPunch: (punch) ->
     @lastPunch = punch
   undoPunch: () ->
-    return
+    deferred = Q.defer()
+    if @lastPunch
+      if @lastPunch.mode is 'vacation' or
+         @lastPunch.mode is 'sick' or
+         @lastPunch.mode is 'unpaid'
+        that = @
+        deletePromise = Q.nfbind(@lastPunch.row.del.bind(@lastPunch))
+        deferred.resolve(deletePromise().then(() -> that.setLastPunch(null)))
+      else if @lastPunch.mode is 'out'
+        # projects will not be touched
+        @lastPunch.times.pop()
+        @lastPunch.elapsed = null
+        if @notes.lastIndexOf("\n") > 0
+          @notes = @notes.substring(0, @notes.lastIndexOf("\n"))
+        @lastPunch.mode = 'in'
+        savePromise = Q.nfbind(@lastPunch.row.save.bind(@lastPunch))
+        deferred.resolve(savePromise())
+      else if @lastPunch.mode is 'in'
+        that = @
+        deletePromise = Q.nfbind(@lastPunch.row.del.bind(@lastPunch))
+        deferred.resolve(deletePromise().then(() -> that.setLastPunch(null)))
+    deferred.promise
   toRawPayroll: () ->
     headers = HEADERS.payrollreports
     row = {}
