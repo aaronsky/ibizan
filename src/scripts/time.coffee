@@ -74,13 +74,7 @@ module.exports = (robot) ->
       res.send 'Punch could not be parsed :('
       return
     Organization.spreadsheet.enterPunch(punch, user)
-    .catch(
-      (err) ->
-        Logger.error err
-        robot.send {room: res.message.user.name},
-                  "Something is wrong with your punch, please don't punch dogs."
-    )
-    .done(
+    .then(
       () ->
         client = robot.adapter.client
         params = {
@@ -92,6 +86,13 @@ module.exports = (robot) ->
           if not response.ok
             res.send response.error
     )
+    .catch(
+      (err) ->
+        Logger.error err
+        robot.send {room: res.message.user.name},
+                  "Something is wrong with your punch, please don't punch dogs."
+    )
+    .done()
       
 
   # respond to mode
