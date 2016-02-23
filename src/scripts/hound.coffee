@@ -31,7 +31,6 @@ module.exports = (robot) ->
         if now.diff(lastActivity, 'hours') >= 3
           robot.sendMessage 'NO'
 
-
   robot.adapter.client.on 'userTyping', (slackuser, channel) ->
     if not channel.private
       channel.private = !!channel.is_im or !!channel.is_group
@@ -40,19 +39,24 @@ module.exports = (robot) ->
     if not user
       Logger.log 'user not found'
       return
-    else if user.isInactive()
+
+    last = user.lastMessage || moment()
+    user.lastMessage = moment()
+
+    if user.isInactive()
       Logger.log 'user is inactive'
-      return
     else if not user.shouldHound
       Logger.log 'user is safe from hounding'
-      return
     else if channel.private or
             channel.name in Organization.exemptChannels
       Logger.log 'inappropriate channel'
-      return
+    else if user.lastMessage.diff(last, 'hours', true) < 3
+      Logger.log 'user has been recently active'
     else
-      # hound user, slackuser
-      Logger.log "hounding #{user.slack}"
+      if user.lastPunch and user.lastPunch.mode is 'in'
+        robot.send { room: slackuser.name }, "Don't forget to check out~"
+      else
+        robot.send { room: slackuser.name }, "Check in if you're on the clock~"
 
   robot.respond /(stop|disable) ibizan/i, (res) ->
     user = Organization.getUserBySlackName(res.message.user.name)
