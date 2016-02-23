@@ -71,45 +71,46 @@ class Spreadsheet
       deferred.reject 'Punch is invalid'
     else
       headers = HEADERS.rawdata
-      if user.lastPunch and
-         user.lastPunch.mode is 'in' and
-         punch.mode is 'out'
-        last = user.lastPunch
-        last.out punch
-        row = last.toRawRow user.name
-        row.save (err) ->
-          if err
-            deferred.reject err
-          else
-            # add hours to project in projects
-            if last.times.block
-              workTime = last.times.block
+      if punch.mode is 'out'
+        if user.lastPunch and user.lastPunch.mode is 'in'
+          last = user.lastPunch
+          last.out punch
+          row = last.toRawRow user.name
+          row.save (err) ->
+            if err
+              deferred.reject err
             else
-              workTime = last.elapsed
-            user.timetable.setLogged(workTime)
-            # setAverage
-            # calculate project times
-            promises = []
-            for project in last.projects
-              project.total += workTime
-              promises.push (project.updateRow())
-            promises.push(user.updateRow())
-            Q.all(promises)
-            .catch(
-              (err) ->
-                deferred.reject err
-            )
-            .done(
-              () ->
-                user.setLastPunch(null)
-                deferred.resolve()
-            )
+              # add hours to project in projects
+              if last.times.block
+                workTime = last.times.block
+              else
+                workTime = last.elapsed
+              user.timetable.setLogged(workTime)
+              # setAverage
+              # calculate project times
+              promises = []
+              for project in last.projects
+                project.total += workTime
+                promises.push (project.updateRow())
+              promises.push(user.updateRow())
+              Q.all(promises)
+              .catch(
+                (err) ->
+                  deferred.reject err
+              )
+              .done(
+                () ->
+                  user.setLastPunch(null)
+                  deferred.resolve()
+              )
+        else
+          deferred.reject 'out punch for no in punch'
       else if punch.mode is 'vacation' or
               punch.mode is 'sick' or
               punch.mode is 'unpaid'
         row = punch.toRawRow user.name
         row[headers.project1] = punch.mode
-        @rawData.addRow row, (err) =>
+        @rawData.addRow row, (err) ->
           if err
             deferred.reject err
           else

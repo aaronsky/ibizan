@@ -21,24 +21,29 @@ class Punch
 
     [start, end] = user.activeHours()
     [times, command] = _parseTime command, start, end
-    [dates, command] = _parseDate command, start, end
+    [dates, command] = _parseDate command
 
     datetimes = []
-    if times.length > 0 and dates.length > 0
-      for date in dates
-        for time in times
-          datetime = _mergeDateTime(date, time)
-          datetimes.push datetime
+    if dates.length is 0 and times.length is 0
+      datetimes.push(moment())
     else if dates.length > 0 and times.length is 0
-      for date in dates
-        datetime = _mergeDateTime(date, moment())
-        datetimes.push datetime
-    else if times.length > 0 and dates.length is 0
+      datetimes.push(_mergeDateTime(dates[0], start))
+      datetimes.push(_mergeDateTime(dates[dates.length - 1], end))
+    else if dates.length is 0 and times.length > 0
       for time in times
-        datetime = _mergeDateTime(moment(), time)
-        datetimes.push datetimes
+        datetimes.push(_mergeDateTime(moment(), time))
     else
-      datetimes.push moment()
+      if dates.length is 2 and times.length is 2
+        datetimes.push(_mergeDateTime(dates[0], times[0]))
+        datetimes.push(_mergeDateTime(dates[1], times[1]))
+      else if dates.length is 2 and times.length is 1
+        datetimes.push(_mergeDateTime(dates[0], times[0]))
+        datetimes.push(_mergeDateTime(dates[1], times[0]))
+      else if dates.length is 1 and times.length is 2
+        datetimes.push(_mergeDateTime(dates[0], times[0]))
+        datetimes.push(_mergeDateTime(dates[0], times[1]))
+      else
+        datetimes.push(_mergeDateTime(dates[0], times[0]))
 
     if times.block?
       datetimes.block = times.block
@@ -190,17 +195,15 @@ _parseTime = (command, activeStart, activeEnd) ->
   # else if match = command.match regex for time ranges (???)
   [time, command]
 
-_parseDate = (command, activeStart, activeEnd) ->
+_parseDate = (command) ->
   command = command.trimLeft() || ''
   date = []
   if match = command.match /today/i
-    date.push(_mergeDateTime(moment(), activeStart))
-    date.push(_mergeDateTime(moment(), activeEnd))
+    date.push moment()
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match /yesterday/i
     yesterday = moment().subtract(1, 'days')
-    date.push(_mergeDateTime(yesterday, activeStart))
-    date.push(_mergeDateTime(yesterday, activeEnd))
+    date.push yesterday
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.days
     today = moment()

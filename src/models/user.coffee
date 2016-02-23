@@ -39,6 +39,8 @@ class User
   constructor: (@name, @slack, @salary, @timetable, @row = null) ->
     @lastPunch = null
     @shouldHound = true
+    @lastMessage = null
+
   @parse: (row) ->
     headers = HEADERS.users
     temp = {}
