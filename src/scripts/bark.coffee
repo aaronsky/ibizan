@@ -7,11 +7,21 @@
 # Author:
 #   aaronsky
 
+https = require 'https'
+
+Logger = require '../helpers/logger'
+Organization = require('../models/organization').get()
+
 module.exports = (robot) ->
-  Organization = require('../models/organization').get()
   
   robot.hear /bark/i, (res) ->
     res.send "bark bark"
 
-  robot.respond /tell me a joke/i, (res) ->
-    res.send "woof"
+  robot.respond /tell me a story/i, (res) ->
+    https.get('https://yepi.io/api/quote', (r) ->
+      r.on "data", (chunk) ->
+        res.send((chunk + '').trim())
+    )
+    .on 'error', (err) ->
+      Logger.error err
+      res.send 'woof woof woof'
