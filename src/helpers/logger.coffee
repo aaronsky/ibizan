@@ -1,3 +1,4 @@
+
 class Logger
   constructor: () ->
   @log: (msg) ->

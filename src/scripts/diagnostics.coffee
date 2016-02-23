@@ -8,35 +8,77 @@
 # Author:
 #   aaronsky
 
+moment = require 'moment'
+
+Logger = require '../helpers/logger'
+Organization = require('../models/organization').get()
+
 module.exports = (robot) ->
-  Organization = require('../models/organization').get()
   
+  ADMINS = ['aaronsky', 'reidman']
+
+  isAdminUser = (user) ->
+    return user in ADMINS
+
+  isLogChannel = (channel) ->
+    return channel is 'ibizan-diagnostics'
+
   # Org statistics
+  robot.respond /!diag/i, (res) ->
+    if isLogChannel(res.message.user.room) and
+       isAdminUser(res.message.user.name)
+      msg = res.match.input
+      comps = msg.split(' ')
+      comps.shift()
+      comps.shift()
+      if comps[0] is 'list'
+        list(res, [comps[1]])
+      else if comps[0] is 'make'
+        make(res, [comps[1]])
+      else if comps[0] is 'reset'
+        reset(res, [comps[1]])
+      else if comps[0] is 'sync' or comps[0] is 'resync'
+        reset(res, ['org'])
+      else
+        info(res)
 
-  # list org users
-  robot.hear /!list users!/i, (res) ->
-    res.send JSON.stringify Organization.users
+  list = (res, comps) ->
+    if comps[0] is 'users'
+      res.send(JSON.stringify(Organization.users))
+    else if comps[0] is 'projects'
+      res.send(JSON.stringify(Organization.projects))
+    else if comps[0] is 'calendar'
+      res.send(JSON.stringify(Organization.calendar.holidays))
+    else
+      info(res)
 
-  # list org projects
+  make = (res, comps) ->
+    if comps[0] is 'report'
+      Organization.generateReport()
+      .done(
+        (numberDone) ->
+          res.send "Report generated for #{numberDone} employees"
+      )
+    else
+      info(res)
 
-  # generate report manually
-  robot.hear /!generate report!/i, (res) ->
-    Organization.generateReport().done(
-      (numberDone) ->
-        res.send "Report generated for #{numberDone} employees"
-    )
+  reset = (res, comps) ->
+    if comps[0] is 'hounding' or comps[0] is 'hound'
+      count = Organization.resetHounding()
+      res.send "Reset #{count}
+                 #{if count is 1 then "person's" else "peoples'"}
+                 hound status"
+    else if comps[0] is 'org'
+      Organization.sync()
+      .catch((err) -> res.send "Failed to resync.")
+      .done((status) ->
+        res.send "Re-synced with spreadsheet"
+      )
+    else
+      info(res)
 
-  # reset everyone's hound status manually
-  robot.hear /!reset hound status!/i, (res) ->
-    count = Organization.resetHounding()
-    res.send "Reset #{count}
-               #{if count is 1 then "person's" else "peoples'"}
-               hound status"
-
-  # manually invoke resync with spreadsheet
-  robot.hear /!sync!/i, (res) ->
-    Organization.sync()
-    .catch((err) -> res.send "Failed to resync.")
-    .done((status) ->
-      res.send "Re-synced with spreadsheet"
-    )
+  info = (res) ->
+    res.send "#{Organization.name}'s Ibizan has been up since
+               #{Organization.initTime.format()}
+               (#{moment().diff(Organization.initTime, 'hours', true)}
+               hours)"

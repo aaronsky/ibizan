@@ -1,5 +1,7 @@
 
+moment = require 'moment'
 Q = require 'q'
+
 Logger = require '../helpers/logger'
 Spreadsheet = require './sheet'
 
@@ -23,6 +25,7 @@ class Organization
       if CONFIG.sheet_id
         @spreadsheet = new Spreadsheet(CONFIG.sheet_id)
         Logger.log "Welcome to #{@name}!"
+        @initTime = moment()
         @sync()
         .done(() -> Logger.log('Options loaded'))
       else

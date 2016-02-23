@@ -1,3 +1,4 @@
+
 regex =
   ibizan:          /(?:@)?ibizan(?::)? ?/i
   modes:           /(in|out|vacation|sick|unpaid)/i
@@ -64,8 +65,6 @@ cellHeaders =
     holiday:             'holidayhours'
 
 Object.freeze cellHeaders
-
-
 
 module.exports =
   HEADERS: cellHeaders
