@@ -114,34 +114,34 @@ class Punch
     if @mode is 'in'
       # if mode is 'in' and user has not punched out
       if user.lastPunch
-        return false
+        return 'You haven\'t punched out yet.'
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
         for time in @times
           # if mode is 'in' and date is yesterday
           if time.isSame(yesterday, 'd')
-            return false
+            return 'You can\'t punch in for yesterday\'s date.'
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
-      return false
+      return 'You aren\'t eligible to punch for unpaid time.'
     else if @mode is 'vacation' or @mode is 'sick' or @mode is 'unpaid'
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         if @mode is 'vacation' and
            user.timetable.vacationAvailable < elapsed
-          return false
+          return 'This punch exceeds your remaining vacation time.'
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
                 user.timetable.sickAvailable < elapsed
-          return false
+          return 'This punch exceeds your remaining sick time.'
         # if mode is 'vacation' and time isn't divisible by 4
         # if mode is 'sick' and time isn't divisible by 4
         # if mode is 'unpaid' and time isn't divisible by 4
         else if elapsed % 4 isnt 0
-          return false
+          return 'This punch duration is not divisible by 4 hours.'
     # if date is more than 7 days from today
     else if date and moment().diff(date, 'days') >= 7
-      return false
+      return 'You cannot punch for a date older than 7 days.'
     return true
 
 _mergeDateTime = (date, time) ->

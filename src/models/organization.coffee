@@ -2,7 +2,7 @@
 moment = require 'moment'
 Q = require 'q'
 
-Logger = require '../helpers/logger'
+Logger = require('../helpers/logger')()
 Spreadsheet = require './sheet'
 
 CONFIG =

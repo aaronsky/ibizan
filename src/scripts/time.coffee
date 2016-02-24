@@ -32,14 +32,15 @@
 # Author:
 #   aaronsky
 
+constants = require '../helpers/constants'
+REGEX = constants.REGEX
+Organization = require('../models/organization').get()
+Punch = require('../models/punch')
+
 module.exports = (robot) ->
 
-  CONSTANTS = require '../helpers/constants'
-  REGEX = CONSTANTS.REGEX
-  Logger = require '../helpers/logger'
-  Organization = require('../models/organization').get()
-  Punch = require('../models/punch')
-
+  Logger = require('../helpers/logger')(robot)
+  
   isDM = (name, channel) ->
     name is channel
 
@@ -58,7 +59,8 @@ module.exports = (robot) ->
     if canPunchHere res.message.user.name, res.message.user.room
       user = Organization.getUserBySlackName res.message.user.name
       if not user
-        res.send "You aren\'t an employee at #{Organization.name}"
+        Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
+                            res.message.user.name
         return
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
@@ -67,11 +69,13 @@ module.exports = (robot) ->
         punch.projects.push Organization.getProjectByName(res.message.user.room)
       sendPunch punch, user, res
     else
-      res.send "Talk to me in private about this, please? ;)"
+      Logger.logToChannel "You cannot punch in ##{res.message.user.room}.
+       Try punching in ##{Organization.clockChannel},
+       a designated project channel, or here.", res.message.user.name
 
   sendPunch = (punch, user, res) ->
     if not punch
-      res.send 'Punch could not be parsed :('
+      res.send 'Something went wrong while punching '
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
@@ -84,13 +88,12 @@ module.exports = (robot) ->
         }
         client._apiCall 'reactions.add', params, (response) ->
           if not response.ok
-            res.send response.error
+            Logger.logToChannel response.error, res.message.user.name
     )
     .catch(
       (err) ->
         Logger.error err
-        robot.send {room: res.message.user.name},
-                  "Something is wrong with your punch, please don't punch dogs."
+        Logger.logToChannel err, res.message.user.name
     )
     .done()
       
@@ -109,15 +112,18 @@ module.exports = (robot) ->
       user.undoPunch()
       .then(
         () ->
-          res.send 'Undid your last punch action'
+          Logger.logToChannel 'Undid your last punch action',
+           res.message.user.name
       )
       .catch(
         (err) ->
           console.error err
-          res.send "Something went wrong while undoing your punch."
+          Logger.logToChannel "Something went wrong while undoing your punch.",
+           res.message.user.name
       )
       .done()
     else
-      res.send 'There\'s nothing for me to undo.'
+      Logger.logToChannel 'There\'s nothing for me to undo.',
+       res.message.user.name
 
 

@@ -9,11 +9,12 @@
 
 https = require 'https'
 
-Logger = require '../helpers/logger'
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
-  
+
+  Logger = require('../helpers/logger')(robot)
+
   robot.hear /bark/i, (res) ->
     res.send "bark bark"
 

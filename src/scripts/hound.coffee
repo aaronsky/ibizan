@@ -10,10 +10,12 @@
 
 moment = require 'moment'
 
-Logger = require '../helpers/logger'
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
+  
+  Logger = require('../helpers/logger')(robot)
+
   # Ibizan will DM an employee as soon as they’ve posted in Slack after
   # more than 3 hours of inactivity.
   #   If the user is logged out, the DM should say:

@@ -10,11 +10,11 @@
 
 moment = require 'moment'
 
-Logger = require '../helpers/logger'
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
-  
+
+  Logger = require('../helpers/logger')(robot)
   ADMINS = ['aaronsky', 'reidman']
 
   isAdminUser = (user) ->

@@ -4,7 +4,7 @@ Q = require 'q'
 
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
-Logger = require '../helpers/logger'
+Logger = require('../helpers/logger')()
 
 getPositiveNumber = (input, current) ->
   if not current

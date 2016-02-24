@@ -5,7 +5,7 @@ moment = require 'moment'
 
 require '../../lib/moment-holidays.js'
 constants = require '../helpers/constants'
-Logger = require '../helpers/logger'
+Logger = require('../helpers/logger')()
 HEADERS = constants.HEADERS
 Project = require './project'
 {User, Timetable} = require './user'
@@ -65,10 +65,11 @@ class Spreadsheet
 
   enterPunch: (punch, user) ->
     deferred = Q.defer()
+    valid = punch.isValid user
     if not punch or not user
       deferred.reject 'Invalid parameters passed: Punch or user is undefined.'
-    else if not punch.isValid(user)
-      deferred.reject 'Punch is invalid'
+    else if typeof valid is 'string'
+      deferred.reject valid
     else
       headers = HEADERS.rawdata
       if punch.mode is 'out'
