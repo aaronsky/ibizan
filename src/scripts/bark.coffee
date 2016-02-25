@@ -21,7 +21,7 @@ module.exports = (robot) ->
   robot.respond /tell me a story/i, (res) ->
     https.get('https://yepi.io/api/quote', (r) ->
       r.on "data", (chunk) ->
-        res.send((chunk + '').trim())
+        res.send("\"#{(chunk + '').trim()}\" -Kanye West")
     )
     .on 'error', (err) ->
       Logger.error err
