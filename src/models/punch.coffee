@@ -67,7 +67,7 @@ class Punch
         break
       if project not in @projects
         extraProjectCount += 1
-        @projects.push = project.name
+        @projects.push project
     if punch.notes
       @notes = "#{@notes}\n#{punch.notes}"
 
@@ -103,7 +103,12 @@ class Punch
     row
 
   assignRow: (row) ->
-    @row = row
+    if row? and
+       row.save? and
+       typeof row.save is 'function' and
+       row.del? and
+       typeof row.del is 'function'
+      @row = row
 
   isValid: (user) ->
     # fail cases

@@ -159,6 +159,72 @@ describe 'Punch', ->
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
       expect(punch.notes).to.be.empty
+  describe '#out(punch)', ->
+    beforeEach ->
+      start = moment('7:00 AM', 'hh:mm A')
+      end = moment('6:00 PM', 'hh:mm A')
+      timetable = new Timetable(start, end, 'Eastern')
+      timetable.setVacation(13, 0)
+      timetable.setSick(5, 0)
+      timetable.setUnpaid(0)
+      timetable.setLogged(0)
+      timetable.setAverageLogged(0)
+      @user = new User('Aaron Sky', 'aaronsky', true, timetable)
+    it 'should modify the punch to an out punch', ->
+      [start, end] = @user.activeHours()
+      punch = Punch.parse @user, "in #{start.format('hh:mma')} #production", 'in'
+      outPunch = Punch.parse @user, "out #{end.format('hh:mma')} #camp-fangamer", 'out'
+      punch.out outPunch
+      console.log punch
+      expect(punch.times).to.have.lengthOf 2
+      expect(punch.projects).to.have.lengthOf 2
+      expect(punch).to.have.deep.property 'projects[0].name',
+                                          'production'
+      expect(punch).to.have.deep.property 'projects[1].name',
+                                          'camp-fangamer'
+  describe '#toRawRow(name)', ->
+    beforeEach ->
+      start = moment().hour(7)
+      end = moment().hour(18)
+      timetable = new Timetable(start, end, 'Eastern')
+      timetable.setVacation(13, 0)
+      timetable.setSick(5, 0)
+      timetable.setUnpaid(0)
+      timetable.setLogged(0)
+      timetable.setAverageLogged(0)
+      @name = 'Aaron Sky'
+      user = new User(@name, 'aaronsky', true, timetable)
+      @punch = Punch.parse user, 'in', 'in'
+    it 'should return a raw object for use in Sheet', ->
+      raw = @punch.toRawRow @name
+      # This test sucks
+      expect(raw).to.exist
+  describe '#assignRow', ->
+    beforeEach ->
+      start = moment().hour(7)
+      end = moment().hour(18)
+      timetable = new Timetable(start, end, 'Eastern')
+      timetable.setVacation(13, 0)
+      timetable.setSick(5, 0)
+      timetable.setUnpaid(0)
+      timetable.setLogged(0)
+      timetable.setAverageLogged(0)
+      @user = new User('Aaron Sky', 'aaronsky', true, timetable)
+    it 'should not assign a row if no parameter is passed', ->
+      punch = Punch.parse @user, 'in', 'in'
+      punch.assignRow()
+      expect(punch.row).to.not.exist
+    it 'should not assign a row if an invalid row is passed', ->
+      punch = Punch.parse @user, 'in', 'in'
+      punch.assignRow({})
+      expect(punch.row).to.not.exist
+    it 'should assign a row if a row is passed in', ->
+      punch = Punch.parse @user, 'in', 'in'
+      punch.assignRow({
+        save: () -> ,
+        del: () ->
+      })
+      expect(punch.row).to.exist
   describe '#isValid(user)', ->
     beforeEach ->
       start = moment().hour(7)
@@ -167,8 +233,38 @@ describe 'Punch', ->
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)
-      timetable.setOvertime(0)
       timetable.setLogged(0)
       timetable.setAverageLogged(0)
       @user = new User('Aaron Sky', 'aaronsky', true, timetable)
-    
+    it 'should return a failure reason for a repetitive in punch', ->
+      @user.setLastPunch(Punch.parse(@user, 'in', 'in'))
+      punch = Punch.parse @user, 'in', 'in'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+    it 'should return a failure reason for an in punch dated yesterday', ->
+      punch = Punch.parse @user, 'in yesterday', 'in'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+    it 'should return a failure reason for an non-salary user punching unpaid time', ->
+      @user.salary = false
+      punch = Punch.parse @user, 'unpaid 9:50-10:00', 'unpaid'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+    it 'should return a failure reason for a vacation punch that exceeds available vacation time', ->
+      @user.timetable.setVacation(5, 2)
+      punch = Punch.parse @user, 'vacation today', 'vacation'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+    it 'should return a failure reason for a sick punch that exceeds available sick time', ->
+      @user.timetable.setSick(5, 2)
+      punch = Punch.parse @user, 'sick today', 'sick'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+    it 'should return a failure reason for a vacation/sick/unpaid punch that isn\'t divisible by 4', ->
+      punch = Punch.parse @user, 'vacation 9:50-10:00', 'vacation'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+      punch = Punch.parse @user, 'sick 9:50-10:00', 'sick'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+      punch = Punch.parse @user, 'unpaid 9:50-10:00', 'unpaid'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+    it 'should return a failure reason for any punch dated older than 7 days', ->
+      punch = Punch.parse @user, 'in Jul 6-8', 'in'
+      expect(punch.isValid(@user)).to.be.instanceof.String
+    it 'should return true for a valid punch', ->
+      punch = Punch.parse @user, 'in', 'in'
+      expect(punch.isValid(@user)).to.be.true
