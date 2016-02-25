@@ -72,7 +72,7 @@ class User
   activeHours: () ->
     [@timetable.start, @timetable.end]
   activeTime: () ->
-    return +(Math.round(@timetable.end.diff(@timetable.start, 'hours', true) + "e+2")  + "e-2")
+    return +(@timetable.end.diff(@timetable.start, 'hours', true).toFixed(2))
   isInactive: (current) ->
     current = current || moment()
     day = current.day()
