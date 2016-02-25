@@ -147,6 +147,7 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'sick Jul 6-8', 'sick'
       expect(punch).to.have.property 'mode', 'sick'
       expect(punch).to.have.property 'times'
+      expect(punch.elapsed).to.equal 33
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
@@ -155,6 +156,7 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'vacation 1/28 - 2/4', 'vacation'
       expect(punch).to.have.property 'mode', 'vacation'
       expect(punch).to.have.property 'times'
+      expect(punch.elapsed).to.equal 66
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
@@ -172,10 +174,11 @@ describe 'Punch', ->
       @user = new User('Aaron Sky', 'aaronsky', true, timetable)
     it 'should modify the punch to an out punch', ->
       [start, end] = @user.activeHours()
-      punch = Punch.parse @user, "in #{start.format('hh:mma')} #production", 'in'
-      outPunch = Punch.parse @user, "out #{end.format('hh:mma')} #camp-fangamer", 'out'
+      punch = Punch.parse @user,
+        "in #{start.format('hh:mma')} #production", 'in'
+      outPunch = Punch.parse @user,
+        "out #{end.format('hh:mma')} #camp-fangamer", 'out'
       punch.out outPunch
-      console.log punch
       expect(punch.times).to.have.lengthOf 2
       expect(punch.projects).to.have.lengthOf 2
       expect(punch).to.have.deep.property 'projects[0].name',

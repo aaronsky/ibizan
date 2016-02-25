@@ -109,8 +109,8 @@ class Spreadsheet
       else if punch.mode is 'vacation' or
               punch.mode is 'sick' or
               punch.mode is 'unpaid'
-        row = punch.toRawRow user.name
-        row[headers.project1] = punch.mode
+        row = punch.toRawRow name
+        row[headers.blockTime]
         @rawData.addRow row, (err) ->
           if err
             deferred.reject err

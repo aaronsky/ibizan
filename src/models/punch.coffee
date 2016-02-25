@@ -1,5 +1,6 @@
 
 moment = require 'moment'
+weekend = require 'moment-weekend'
 uuid = require 'node-uuid'
 
 { HEADERS, REGEX } = require '../helpers/constants'
@@ -48,12 +49,29 @@ class Punch
     if times.block?
       datetimes.block = times.block
     else if datetimes.length is 2
-      @elapsed = datetimes[1].diff(datetimes[0], 'hours', true)
+      elapsed = datetimes[1].diff(datetimes[0], 'hours', true)
+      if mode is 'vacation' or
+         mode is 'sick'
+        activeTime = user.activeTime()
+        inactiveTime = moment(start).add(1, 'days').diff(end, 'hours', true)
+        if dates.length is 2
+          numDays = dates[1].diff(dates[0], 'days', true)
+          numWorkdays = weekend.diff(dates[0], dates[1])
+          numWeekends = numDays - numWorkdays
+        if elapsed > activeTime and
+           numDays?
+          for i in [1..numDays]
+            elapsed -= inactiveTime
+          if numWeekends > 0
+            for i in [1..numWeekends]
+              elapsed -= activeTime
 
     [projects, command] = _parseProjects command
     notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
+    if elapsed
+      punch.elapsed = elapsed
     punch
 
   out: (punch) ->
@@ -95,11 +113,16 @@ class Punch
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
         row[headers.blockTime] = "#{hours}:#{minute_str}:00"
     row[headers.notes] = @notes
-    max = if @projects.length < 6 then @projects.length else 5
-    for i in [0..max]
-      project = @projects[i]
-      if project?
-        row[headers["project#{i + 1}"]] = "##{project.name}"
+    if @mode is 'vacation' or
+        @mode is 'sick' or
+        @mode is 'unpaid'
+      row[headers.project1] = @mode
+    else
+      max = if @projects.length < 6 then @projects.length else 5
+      for i in [0..max]
+        project = @projects[i]
+        if project?
+          row[headers["project#{i + 1}"]] = "##{project.name}"
     row
 
   assignRow: (row) ->
@@ -129,7 +152,9 @@ class Punch
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
       return 'You aren\'t eligible to punch for unpaid time.'
-    else if @mode is 'vacation' or @mode is 'sick' or @mode is 'unpaid'
+    else if @mode is 'vacation' or
+       @mode is 'sick' or
+       @mode is 'unpaid'
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         if @mode is 'vacation' and
@@ -144,6 +169,9 @@ class Punch
         # if mode is 'unpaid' and time isn't divisible by 4
         else if elapsed % 4 isnt 0
           return 'This punch duration is not divisible by 4 hours.'
+      else
+        # a vacation/sick/unpaid punch must be a range
+        return "A #{@mode} punch needs to either be a range or a block of time."
     # if date is more than 7 days from today
     else if date and moment().diff(date, 'days') >= 7
       return 'You cannot punch for a date older than 7 days.'
@@ -225,7 +253,11 @@ _parseDate = (command) ->
       month = ''
       for str in dateStrings
         str = str.trim()
-        date.push moment(str, "MMMM DD")
+        if not isNaN(str) and month?
+          str = month + ' ' + str
+        newDate = moment(str, "MMMM DD")
+        month = newDate.format('MMMM')
+        date.push newDate
     else
       absDate = moment(match[0], "MMMM DD")
       date.push absDate
