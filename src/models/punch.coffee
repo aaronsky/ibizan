@@ -111,7 +111,7 @@ class Punch
         hours = Math.floor @elapsed
         minutes = Math.round((@elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
-        row[headers.blockTime] = "#{hours}:#{minute_str}:00"
+        row[headers.totalTime] = "#{hours}:#{minute_str}:00"
     row[headers.notes] = @notes
     if @mode is 'vacation' or
         @mode is 'sick' or
