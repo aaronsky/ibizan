@@ -1,7 +1,7 @@
 
 expect = require('chai').expect
 
-Logger = require '../../src/helpers/logger'
+Logger = require('../../src/helpers/logger')()
 
 describe 'Logger', ->
   describe '#log', ->
