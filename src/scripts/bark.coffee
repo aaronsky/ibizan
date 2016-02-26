@@ -19,10 +19,4 @@ module.exports = (robot) ->
     res.send "bark bark"
 
   robot.respond /tell me a story/i, (res) ->
-    https.get('https://yepi.io/api/quote', (r) ->
-      r.on "data", (chunk) ->
-        res.send("\"#{(chunk + '').trim()}\" -Kanye West")
-    )
-    .on 'error', (err) ->
-      Logger.error err
-      res.send 'woof woof woof'
+    res.send 'woof woof woof'

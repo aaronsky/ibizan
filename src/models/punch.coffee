@@ -53,11 +53,21 @@ class Punch
       if mode is 'vacation' or
          mode is 'sick'
         activeTime = user.activeTime()
-        inactiveTime = +((moment(start).add(1, 'days').diff(end, 'hours', true)).toFixed(2))
+        inactiveTime = +moment(start).add(1, 'days').diff(end, 'hours', true).toFixed(2)
         if dates.length is 2
           numDays = dates[1].diff(dates[0], 'days')
-          numWorkdays = weekend.diff(dates[0], dates[1])
+
+          holidays = 0
+          currentDate = moment dates[0]
+          while currentDate.isSameOrBefore dates[1]
+            holiday_str = currentDate.holiday()
+            if holiday_str?
+              holidays += 1
+            currentDate.add 1, 'days'
+
+          numWorkdays = weekend.diff(dates[0], dates[1]) - holidays
           numWeekends = numDays - numWorkdays
+
         if elapsed > activeTime and
            numDays?
           for i in [1..numDays]
