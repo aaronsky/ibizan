@@ -13,5 +13,10 @@ module.exports = (robot) ->
         robot.send {room: channel}, msg
       else
         Logger.log msg
+    @errorToSlack; (msg, error) ->
+      if robot
+        robot.send {room: 'ibizan-diagnostics'}, "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
+      else
+        Logger.error msg, error
 
   Logger

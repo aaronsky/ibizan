@@ -15,18 +15,21 @@ Organization = require('../models/organization').get()
 module.exports = (robot) ->
 
   Logger = require('../helpers/logger')(robot)
-  ADMINS = ['aaronsky', 'reidman']
 
   isAdminUser = (user) ->
-    return user in ADMINS
+    return user? and user.is_admin
 
   isLogChannel = (channel) ->
     return channel is 'ibizan-diagnostics'
 
   # Org statistics
   robot.respond /!diag/i, (res) ->
+    if not isLogChannel(res.message.user.room)
+      res.send 'This isn\'t the diagnostics channel. If you want to check up on me, please visit #ibizan-diagnostics.'
+    else if not isAdminUser(res.message.user.slack)
+      Logger.logToChannel 'You don\'t have permission to do issue diagnostic commands.', 'ibizan-diagnostics'
     if isLogChannel(res.message.user.room) and
-       isAdminUser(res.message.user.name)
+       isAdminUser(res.message.user.slack)
       msg = res.match.input
       comps = msg.split(' ')
       comps.shift()
@@ -41,6 +44,7 @@ module.exports = (robot) ->
         reset(res, ['org'])
       else
         info(res)
+
 
   list = (res, comps) ->
     if comps[0] is 'users'
@@ -57,7 +61,7 @@ module.exports = (robot) ->
       Organization.generateReport()
       .done(
         (numberDone) ->
-          res.send "Report generated for #{numberDone} employees"
+          res.send "Salary report generated for #{numberDone} employees."
       )
     else
       info(res)
@@ -79,6 +83,6 @@ module.exports = (robot) ->
 
   info = (res) ->
     res.send "#{Organization.name}'s Ibizan has been up since
-               #{Organization.initTime.format()}
-               (#{moment().diff(Organization.initTime, 'hours', true)}
-               hours)"
+               #{Organization.initTime.toDate()}
+               (#{+moment().diff(Organization.initTime, 'minutes', true).toFixed(2)}
+               minutes)"
