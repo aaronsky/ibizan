@@ -107,11 +107,12 @@ class User
         @lastPunch.times.pop()
         @lastPunch.elapsed = null
         if @lastPunch.notes.lastIndexOf("\n") > 0
-          @lastPunch.notes = @lastPunch.notes.substring(0, @notes.lastIndexOf("\n"))
+          @lastPunch.notes = @lastPunch.notes
+                              .substring(0, @notes.lastIndexOf("\n"))
         @lastPunch.mode = 'in'
         @lastPunch.row[headers.out] =
-         @lastPunch.row[headers.totalTime] =
-         @lastPunch.row[headers.blockTime] = ''
+          @lastPunch.row[headers.totalTime] =
+          @lastPunch.row[headers.blockTime] = ''
         @lastPunch.row[headers.notes] = @lastPunch.notes
         
         savePromise = Q.nfbind(@lastPunch.row.save.bind(@lastPunch))
