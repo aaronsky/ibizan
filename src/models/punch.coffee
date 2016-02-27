@@ -1,9 +1,11 @@
 
-moment = require 'moment'
+moment = require 'moment-timezone'
 weekend = require 'moment-weekend'
 uuid = require 'node-uuid'
 
-{ HEADERS, REGEX } = require '../helpers/constants'
+constants = require '../helpers/constants'
+HEADERS = constants.HEADERS
+REGEX = constants.REGEX
 MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('../models/organization').get()
 
@@ -98,12 +100,14 @@ class Punch
         @projects.push project
     if punch.notes
       @notes = "#{@notes}\n#{punch.notes}"
+    @mode = punch.mode
 
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today] || moment().format('MM/DD/YYYY')
+    row[headers.today] = row[headers.today] ||
+                         moment.tz(constants.TIMEZONE).format('MM/DD/YYYY')
     row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block
@@ -114,7 +118,7 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          row[headers[MODES[i]]] = time.format('hh:mm:ss A')
+          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE).format('hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -159,6 +163,9 @@ class Punch
           # if mode is 'in' and date is yesterday
           if time.isSame(yesterday, 'd')
             return 'You can\'t punch in for yesterday\'s date.'
+    if @mode is 'out'
+      if user.lastPunch and user.lastPunch.mode is 'out'
+        return 'You cannot punch out before punching in.'
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
       return 'You aren\'t eligible to punch for unpaid time.'

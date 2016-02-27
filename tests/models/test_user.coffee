@@ -1,5 +1,7 @@
-moment = require 'moment'
+moment = require 'moment-timezone'
 expect = require('chai').expect
+
+constants = require '../../src/helpers/constants.coffee'
 {User, Timetable} = require '../../src/models/user.coffee'
 
 describe 'Timetable', ->
@@ -10,7 +12,9 @@ describe 'Timetable', ->
     end.setHours(18)
     @timetable = new Timetable(start, end, 'Eastern')
 
-  test_validate_set_values = (timetable, mode, total, expectedTotal, available, expectedAvailable) ->
+  test_validate_set_values = (timetable, mode,
+                               total, expectedTotal,
+                               available, expectedAvailable) ->
     timetable['set' + mode.charAt(0).toUpperCase() + mode.substring(1)](total, available)
     expect(timetable[mode+'Total']).to.eql expectedTotal
     if available and expectedAvailable
@@ -85,9 +89,9 @@ test_row =
 
 describe 'User', ->
   beforeEach ->
-    start = moment().hour(7)
-    end = moment().hour(18)
-    timetable = new Timetable(start, end, 'Eastern')
+    start = moment({day: 3, hour: 7})
+    end = moment({day: 3, hour: 18})
+    timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
     @user = new User('Jimmy Hendricks', 'jeff', false, timetable)
   describe '#parse(row)', ->
     it 'should return a new User when given a row', ->

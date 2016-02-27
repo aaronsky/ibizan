@@ -66,6 +66,10 @@ cellHeaders =
 
 Object.freeze cellHeaders
 
+timezone = 'America/Phoenix'
+Object.freeze timezone
+
 module.exports =
   HEADERS: cellHeaders
   REGEX: regex
+  TIMEZONE: timezone

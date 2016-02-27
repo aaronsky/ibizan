@@ -1,5 +1,5 @@
 
-moment = require 'moment'
+moment = require 'moment-timezone'
 Q = require 'q'
 
 constants = require '../helpers/constants'
@@ -51,9 +51,14 @@ class User
           row[header] = '12:00 am'
         else if row[header] is 'noon'
           row[header] = '12:00 pm'
-        temp[key] = moment(row[header], 'hh:mm a')
+        temp[key] = moment(row[header], 'hh:mm a').tz(constants.TIMEZONE)
       else if header is headers.salary
         temp[key] = row[header] is 'Y'
+      else if header is headers.timezone
+        if zone = moment.tz.zone row[header]
+          temp[key] = zone
+        else
+          temp[key] = row[header]
       else if header is headers.overtime
         continue
       else
@@ -90,6 +95,7 @@ class User
   undoPunch: () ->
     deferred = Q.defer()
     if @lastPunch
+      headers = HEADERS.rawdata
       if @lastPunch.mode is 'vacation' or
          @lastPunch.mode is 'sick' or
          @lastPunch.mode is 'unpaid'
@@ -100,9 +106,14 @@ class User
         # projects will not be touched
         @lastPunch.times.pop()
         @lastPunch.elapsed = null
-        if @notes.lastIndexOf("\n") > 0
-          @notes = @notes.substring(0, @notes.lastIndexOf("\n"))
+        if @lastPunch.notes.lastIndexOf("\n") > 0
+          @lastPunch.notes = @lastPunch.notes.substring(0, @notes.lastIndexOf("\n"))
         @lastPunch.mode = 'in'
+        @lastPunch.row[headers.out] =
+         @lastPunch.row[headers.totalTime] =
+         @lastPunch.row[headers.blockTime] = ''
+        @lastPunch.row[headers.notes] = @lastPunch.notes
+        
         savePromise = Q.nfbind(@lastPunch.row.save.bind(@lastPunch))
         deferred.resolve(savePromise())
       else if @lastPunch.mode is 'in'
@@ -113,7 +124,7 @@ class User
   toRawPayroll: () ->
     headers = HEADERS.payrollreports
     row = {}
-    row[headers.date] = moment().format('M/DD/YYYY')
+    row[headers.date] = moment.tz(constants.TIMEZONE).format('M/DD/YYYY')
     row[headers.name] = @name
     if @salary
       row[headers.paid] = 80 - @timetable.unpaidTotal
@@ -138,7 +149,7 @@ class User
       @row[headers.salary] = if @salary then 'Y' else 'N'
       @row[headers.start] = @timetable.start.format('H:MM A')
       @row[headers.end] = @timetable.end.format('H:MM A')
-      @row[headers.timezone] = @timetable.timezone
+      @row[headers.timezone] = @timetable.timezone.name || @timetable.timezone
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal
       @row[headers.sickAvailable] = @timetable.sickAvailable

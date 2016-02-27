@@ -77,8 +77,10 @@ module.exports = (robot) ->
 
   sendPunch = (punch, user, res) ->
     if not punch
-      Logger.errorToSlack "Somehow, a punch was not generated for \"#{user.slack}\". Punch:\n", res.match.input
-      Logger.logToChannel "An unexpected error occured while generating your punch.", res.message.user.name
+      Logger.errorToSlack "Somehow, a punch was not generated
+                           for \"#{user.slack}\". Punch:\n", res.match.input
+      Logger.logToChannel "An unexpected error occured while
+                           generating your punch.", res.message.user.name
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
@@ -96,7 +98,8 @@ module.exports = (robot) ->
     .catch(
       (err) ->
         Logger.error err
-        Logger.errorToSlack "\"#{err}\" was returned for #{user.slack}. Punch:\n", res.match.input
+        Logger.errorToSlack "\"#{err}\" was returned for
+                             #{user.slack}. Punch:\n", res.match.input
         Logger.logToChannel err, res.message.user.name
     )
     .done()
@@ -124,7 +127,8 @@ module.exports = (robot) ->
       .catch(
         (err) ->
           console.error err
-          Logger.errorToSlack "\"#{err}\" was returned for an undo operation by #{user.slack}"
+          Logger.errorToSlack "\"#{err}\" was returned for
+                               an undo operation by #{user.slack}"
           Logger.logToChannel "Something went wrong while undoing your punch.",
            res.message.user.name
       )
