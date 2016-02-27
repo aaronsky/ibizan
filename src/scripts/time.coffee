@@ -32,6 +32,8 @@
 # Author:
 #   aaronsky
 
+moment = require 'moment-timezone'
+
 constants = require '../helpers/constants'
 REGEX = constants.REGEX
 Organization = require('../models/organization').get()
@@ -75,7 +77,7 @@ module.exports = (robot) ->
 
   sendPunch = (punch, user, res) ->
     if not punch
-      Logger.errorToSlack "Somehow, a punch was not generated for \"#{res.match.input}\"", JSON.stringify(user)
+      Logger.errorToSlack "Somehow, a punch was not generated for \"#{user.slack}\". Punch:\n", res.match.input
       Logger.logToChannel "An unexpected error occured while generating your punch.", res.message.user.name
       return
     Organization.spreadsheet.enterPunch(punch, user)
@@ -94,7 +96,7 @@ module.exports = (robot) ->
     .catch(
       (err) ->
         Logger.error err
-        Logger.errorToSlack "\"#{err}\" was returned for #{res.match.input}", JSON.stringify(user)
+        Logger.errorToSlack "\"#{err}\" was returned for #{user.slack}. Punch:\n", res.match.input
         Logger.logToChannel err, res.message.user.name
     )
     .done()
@@ -102,10 +104,12 @@ module.exports = (robot) ->
 
   # respond to mode
   robot.respond REGEX.modes, (res) ->
+    moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, res.match[1]
 
   # respond to simple time block
   robot.respond REGEX.rel_time, (res) ->
+    moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, 'none'
 
   robot.respond /undo/i, (res) ->
@@ -120,7 +124,7 @@ module.exports = (robot) ->
       .catch(
         (err) ->
           console.error err
-          Logger.errorToSlack "\"#{err}\" was returned for an undo operation by: ", JSON.stringify(user)
+          Logger.errorToSlack "\"#{err}\" was returned for an undo operation by #{user.slack}"
           Logger.logToChannel "Something went wrong while undoing your punch.",
            res.message.user.name
       )
