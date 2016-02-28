@@ -144,12 +144,13 @@ class User
   updateRow: () ->
     deferred = Q.defer()
     if @row?
+      moment.tz.setDefault @timetable.timezone.name
       headers = HEADERS.users
       @row[headers.slackname] = @slack
       @row[headers.name] = @name
       @row[headers.salary] = if @salary then 'Y' else 'N'
-      @row[headers.start] = @timetable.start.format('H:MM A')
-      @row[headers.end] = @timetable.end.format('H:MM A')
+      @row[headers.start] = @timetable.start.tz(@timetable.timezone.name).format('h:mm a')
+      @row[headers.end] = @timetable.end.tz(@timetable.timezone.name).format('h:mm a')
       @row[headers.timezone] = @timetable.timezone.name || @timetable.timezone
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal

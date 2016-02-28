@@ -55,7 +55,10 @@ class Punch
       if mode is 'vacation' or
          mode is 'sick'
         activeTime = user.activeTime()
-        inactiveTime = +moment(start).add(1, 'days').diff(end, 'hours', true).toFixed(2)
+        inactiveTime = +moment(start)
+                        .add(1, 'days')
+                        .diff(end, 'hours', true)
+                        .toFixed(2)
         if dates.length is 2
           numDays = dates[1].diff(dates[0], 'days')
 
@@ -118,7 +121,8 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE).format('hh:mm:ss A')
+          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
+                                    .format('hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -153,9 +157,11 @@ class Punch
       elapsed = @times[0].diff(@times[1], 'hours', true)
     else if @times[0]
       date = @times[0]
-    if @mode is 'in'
+    if @mode is 'none' and not @times.block?
+      return 'Malformed punch. Something has gone wrong.'
+    else if @mode is 'in'
       # if mode is 'in' and user has not punched out
-      if user.lastPunch
+      if user.lastPunch and user.lastPunch.mode is 'in'
         return 'You haven\'t punched out yet.'
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
@@ -172,6 +178,8 @@ class Punch
     else if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
+      if user.lastPunch and user.lastPunch.mode is 'in'
+        return 'You haven\'t punched out yet.'
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         if @mode is 'vacation' and
