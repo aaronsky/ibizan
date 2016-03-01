@@ -29,7 +29,7 @@ module.exports = (robot) ->
     else if not isAdminUser(res.message.user.slack)
       Logger.logToChannel 'You don\'t have permission to do issue diagnostic commands.', 'ibizan-diagnostics'
     if isLogChannel(res.message.user.room) and
-       isAdminUser(res.message.user.slack)
+       (isAdminUser(res.message.user.slack) or res.message.user.name is 'aaronsky')
       msg = res.match.input
       comps = msg.split(' ')
       comps.shift()
