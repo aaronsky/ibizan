@@ -25,11 +25,17 @@ module.exports = (robot) ->
   # Org statistics
   robot.respond /!diag/i, (res) ->
     if not isLogChannel(res.message.user.room)
-      res.send 'This isn\'t the diagnostics channel. If you want to check up on me, please visit #ibizan-diagnostics.'
-    else if not isAdminUser(res.message.user.slack)
-      Logger.logToChannel 'You don\'t have permission to do issue diagnostic commands.', 'ibizan-diagnostics'
+      res.send "This isn\'t the diagnostics channel.
+                If you want to check up on me,
+                please visit #ibizan-diagnostics."
+    else if not isAdminUser(res.message.user.slack) and
+                res.message.user.name isnt 'aaronsky'
+      Logger.logToChannel 'You don\'t have permission to
+                           issue diagnostic commands.',
+                           'ibizan-diagnostics'
     if isLogChannel(res.message.user.room) and
-       (isAdminUser(res.message.user.slack) or res.message.user.name is 'aaronsky')
+       (isAdminUser(res.message.user.slack) or
+       res.message.user.name is 'aaronsky')
       msg = res.match.input
       comps = msg.split(' ')
       comps.shift()
@@ -45,8 +51,8 @@ module.exports = (robot) ->
       else
         info(res)
 
-
   list = (res, comps) ->
+    comps = comps || []
     if comps[0] is 'users'
       res.send(JSON.stringify(Organization.users))
     else if comps[0] is 'projects'
@@ -57,6 +63,7 @@ module.exports = (robot) ->
       info(res)
 
   make = (res, comps) ->
+    comps = comps || []
     if comps[0] is 'report'
       Organization.generateReport()
       .done(
@@ -65,8 +72,10 @@ module.exports = (robot) ->
       )
     else
       info(res)
+      help(res)
 
   reset = (res, comps) ->
+    comps = comps || []
     if comps[0] is 'hounding' or comps[0] is 'hound'
       count = Organization.resetHounding()
       res.send "Reset #{count}
@@ -80,9 +89,12 @@ module.exports = (robot) ->
       )
     else
       info(res)
+      help(res)
 
   info = (res) ->
     res.send "#{Organization.name}'s Ibizan has been up since
                #{Organization.initTime.toDate()}
-               (#{+moment().diff(Organization.initTime, 'minutes', true).toFixed(2)}
+               (#{+moment()
+                   .diff(Organization.initTime, 'minutes', true)
+                   .toFixed(2)}
                minutes)"
