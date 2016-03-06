@@ -37,7 +37,7 @@ class Timetable
 
 class User
   constructor: (@name, @slack, @salary, @timetable, @row = null) ->
-    @lastPunch = null
+    @punches = []
     @shouldHound = true
     @lastMessage = null
 
@@ -90,37 +90,36 @@ class User
       return false
     else
       return true
-  setLastPunch: (punch) ->
-    @lastPunch = punch
   undoPunch: () ->
     deferred = Q.defer()
-    if @lastPunch
+    if @punches and @punches.length > 0
+      lastPunch = @punches.slice(-1)[0]
       headers = HEADERS.rawdata
-      if @lastPunch.mode is 'vacation' or
-         @lastPunch.mode is 'sick' or
-         @lastPunch.mode is 'unpaid'
+      if lastPunch.mode is 'vacation' or
+         lastPunch.mode is 'sick' or
+         lastPunch.mode is 'unpaid'
         that = @
-        deletePromise = Q.nfbind(@lastPunch.row.del.bind(@lastPunch))
-        deferred.resolve(deletePromise().then(() -> that.setLastPunch(null)))
-      else if @lastPunch.mode is 'out'
+        deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
+        deferred.resolve(deletePromise().then(() -> that.punches.pop()))
+      else if lastPunch.mode is 'out'
         # projects will not be touched
-        @lastPunch.times.pop()
-        @lastPunch.elapsed = null
-        if @lastPunch.notes.lastIndexOf("\n") > 0
-          @lastPunch.notes = @lastPunch.notes
+        lastPunch.times.pop()
+        lastPunch.elapsed = null
+        if lastPunch.notes.lastIndexOf("\n") > 0
+          lastPunch.notes = lastPunch.notes
                               .substring(0, @notes.lastIndexOf("\n"))
-        @lastPunch.mode = 'in'
-        @lastPunch.row[headers.out] =
-          @lastPunch.row[headers.totalTime] =
-          @lastPunch.row[headers.blockTime] = ''
-        @lastPunch.row[headers.notes] = @lastPunch.notes
+        lastPunch.mode = 'in'
+        lastPunch.row[headers.out] =
+          lastPunch.row[headers.totalTime] =
+          lastPunch.row[headers.blockTime] = ''
+        lastPunch.row[headers.notes] = lastPunch.notes
         
-        savePromise = Q.nfbind(@lastPunch.row.save.bind(@lastPunch))
+        savePromise = Q.nfbind(lastPunch.row.save.bind(lastPunch))
         deferred.resolve(savePromise())
-      else if @lastPunch.mode is 'in'
+      else if lastPunch.mode is 'in'
         that = @
-        deletePromise = Q.nfbind(@lastPunch.row.del.bind(@lastPunch))
-        deferred.resolve(deletePromise().then(() -> that.setLastPunch(null)))
+        deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
+        deferred.resolve(deletePromise().then(() -> that.punches.pop()))
     deferred.promise
   toRawPayroll: () ->
     headers = HEADERS.payrollreports

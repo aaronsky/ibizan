@@ -117,7 +117,7 @@ module.exports = (robot) ->
 
   robot.respond /undo/i, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    if user.lastPunch
+    if user.punches and user.punches.length > 0
       user.undoPunch()
       .then(
         () ->

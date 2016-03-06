@@ -73,37 +73,40 @@ class Spreadsheet
     else
       headers = HEADERS.rawdata
       if punch.mode is 'out'
-        if user.lastPunch and user.lastPunch.mode is 'in'
-          last = user.lastPunch
-          last.out punch
-          row = last.toRawRow user.name
-          row.save (err) ->
-            if err
-              deferred.reject err
-            else
-              # add hours to project in projects
-              if last.times.block
-                workTime = last.times.block
+        if user.punches and
+           user.punches.length > 0
+          last = user.punches.slice(-1)[0]
+          if last.mode is 'in'
+            last.out punch
+            row = last.toRawRow user.name
+            row.save (err) ->
+              if err
+                deferred.reject err
               else
-                workTime = last.elapsed
-              user.timetable.setLogged(workTime)
-              # setAverage
-              # calculate project times
-              promises = []
-              for project in last.projects
-                project.total += workTime
-                promises.push (project.updateRow())
-              promises.push(user.updateRow())
-              Q.all(promises)
-              .then(
-                () ->
-                  deferred.resolve()
-              )
-              .catch(
-                (err) ->
-                  deferred.reject err
-              )
-              .done()
+                # add hours to project in projects
+                if last.times.block
+                  workTime = last.times.block
+                else
+                  workTime = last.elapsed
+                user.timetable.setLogged(workTime)
+                # calculate project times
+                promises = []
+                for project in last.projects
+                  project.total += workTime
+                  promises.push (project.updateRow())
+                promises.push(user.updateRow())
+                Q.all(promises)
+                .then(
+                  () ->
+                    deferred.resolve()
+                )
+                .catch(
+                  (err) ->
+                    deferred.reject err
+                )
+                .done()
+          else
+            deferred.reject 'out punch for no in punch'
         else
           deferred.reject 'out punch for no in punch'
       else if punch.mode is 'vacation' or
@@ -137,7 +140,7 @@ class Spreadsheet
             )
             .done(
               () ->
-                user.setLastPunch(null)
+                user.punches.pop()
                 deferred.resolve()
             )
         deferred.resolve()
@@ -156,7 +159,7 @@ class Spreadsheet
                   (r for r in rows when r[headers.id] is row[headers.id])[0]
                 # Logger.log !!row_match
                 punch.assignRow row_match
-                user.setLastPunch punch
+                user.punches.push punch
                 deferred.resolve()
     deferred.promise
 

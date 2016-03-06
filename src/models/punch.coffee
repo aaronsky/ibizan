@@ -88,6 +88,10 @@ class Punch
     if elapsed
       punch.elapsed = elapsed
     punch
+  
+  @parseRaw: (row) ->
+    if not row
+      return
 
   out: (punch) ->
     if not @times.block?
@@ -161,7 +165,9 @@ class Punch
       return 'Malformed punch. Something has gone wrong.'
     else if @mode is 'in'
       # if mode is 'in' and user has not punched out
-      if user.lastPunch and user.lastPunch.mode is 'in'
+      if user.punches and
+         user.punches.length > 0 and
+         user.punches.slice(-1)[0].mode is 'in'
         return 'You haven\'t punched out yet.'
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
@@ -170,7 +176,9 @@ class Punch
           if time.isSame(yesterday, 'd')
             return 'You can\'t punch in for yesterday\'s date.'
     if @mode is 'out'
-      if user.lastPunch and user.lastPunch.mode is 'out'
+      if user.punches and
+         user.punches.length > 0 and
+         user.punches.slice(-1)[0].mode is 'out'
         return 'You cannot punch out before punching in.'
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
@@ -178,7 +186,9 @@ class Punch
     else if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
-      if user.lastPunch and user.lastPunch.mode is 'in'
+      if user.punches and
+         user.punches.length > 0 and
+         user.punches.slice(-1)[0].mode is 'in'
         return 'You haven\'t punched out yet.'
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time

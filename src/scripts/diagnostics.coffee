@@ -2,7 +2,7 @@
 #   Your dog friend makes sure everything's in order
 #
 # Commands:
-#
+#   
 # Notes:
 #
 # Author:
@@ -95,6 +95,6 @@ module.exports = (robot) ->
     res.send "#{Organization.name}'s Ibizan has been up since
                #{Organization.initTime.toDate()}
                (#{+moment()
-                   .diff(Organization.initTime, 'minutes', true)
-                   .toFixed(2)}
+                  .diff(Organization.initTime, 'minutes', true)
+                  .toFixed(2)}
                minutes)"
