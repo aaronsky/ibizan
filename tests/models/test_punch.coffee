@@ -240,7 +240,7 @@ describe 'Punch', ->
       timetable.setAverageLogged(0)
       @user = new User('Aaron Sky', 'aaronsky', true, timetable)
     it 'should return a failure reason for a repetitive in punch', ->
-      @user.setLastPunch(Punch.parse(@user, 'in', 'in'))
+      @user.punches.push(Punch.parse(@user, 'in', 'in'))
       punch = Punch.parse @user, 'in', 'in'
       expect(punch.isValid(@user)).to.be.instanceof.String
     it 'should return a failure reason for an in punch dated yesterday', ->

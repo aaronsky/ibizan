@@ -130,10 +130,6 @@ describe 'User', ->
       end = @user.timetable.end
       time = moment(start).add(end.diff(start, 'hours') / 2, 'hours')
       expect(@user.isInactive(time)).to.be.false
-  describe '#setLastPunch(punch)', ->
-    it 'should set the last punch to null', ->
-      @user.setLastPunch null
-      expect(@user.lastPunch).to.be.null
   describe '#undoPunch()', ->
   describe '#toRawPayroll()', ->
     it 'should not return null', ->

@@ -92,7 +92,53 @@ class Punch
   @parseRaw: (row) ->
     if not row
       return
-
+    if not row.save or row.del
+      return
+    headers = HEADERS.rawdata
+    user = Organization.getUserByRealName row[headers.name]
+    if not user
+      return
+    if row[headers.project1] is 'vacation' or
+       row[headers.project1] is 'sick' or
+       row[headers.project1] is 'unpaid'
+      mode = row[headers.project1]
+    else if row[headers.in] and not row[headers.out]
+      mode = 'in'
+    else if row[headers.out] and row[headers.elapsed]
+      mode = 'out'
+    else
+      row = 'none'
+    datetimes = []
+    if row[headers.in]
+      datetimes.push moment(row[headers.today] + ' ' + row[headers.in]).tz(user.timetable.timezone.name)
+    if row[headers.out]
+      datetimes.push moment(row[headers.today] + ' ' + row[headers.out]).tz(user.timetable.timezone.name)
+    if row[headers.totalTime]
+      comps = row[headers.totalTime].split ':'
+      elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
+    if row[headers.blockTime]
+      comps = row[headers.blockTime].split ':'
+      block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
+      datetimes.block = block
+    projects = []
+    for i in [1..6]
+      projectStr = row[headers['project'+i]]
+      if not projectStr
+        break
+      else if projectStr is 'vacation' or
+         projectStr is 'sick' or
+         projectStr is 'unpaid'
+        break
+      else if project = Organization.getProjectByName projectStr
+        projects.push project
+        continue
+      else
+        break
+    notes = row[headers.notes]
+    punch = new Punch(mode, datetimes, projects, notes)
+    if elapsed
+      punch.elapsed = elapsed
+    punch
   out: (punch) ->
     if not @times.block?
       @times.push punch.times[0]
