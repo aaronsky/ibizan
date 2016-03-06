@@ -46,21 +46,27 @@ class Organization
         .catch((error) -> deferred.reject(error))
         .done(() -> deferred.resolve(true))
       deferred.promise
-    getUserBySlackName: (name) ->
-      if @users
-        for user in @users
+    getUserBySlackName: (name, users) ->
+      if not users
+        users = @users
+      if users
+        for user in users
           if name is user.slack
             return user
       Logger.log "user #{name} could not be found"
-    getUserByRealName: (name) ->
-      if @users
-        for user in @users
+    getUserByRealName: (name, users) ->
+      if not users
+        users = @users
+      if users
+        for user in users
           if name is user.name
             return user
       Logger.log "user #{name} could not be found"
-    getProjectByName: (name) ->
+    getProjectByName: (name, projects) ->
+      if not projects
+        projects = @projects
       name = name.replace '#', ''
-      if @projects
+      if projects
         for project in @projects
           if name is project.name
             return project

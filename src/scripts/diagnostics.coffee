@@ -54,7 +54,10 @@ module.exports = (robot) ->
   list = (res, comps) ->
     comps = comps || []
     if comps[0] is 'users'
-      res.send(JSON.stringify(Organization.users))
+      str = ''
+      for user in Organization.users
+        str += user.description() + '\n\n'
+      res.send str
     else if comps[0] is 'projects'
       res.send(JSON.stringify(Organization.projects))
     else if comps[0] is 'calendar'

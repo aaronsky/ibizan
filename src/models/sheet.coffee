@@ -53,8 +53,9 @@ class Spreadsheet
           deferred.reject 'worksheets failed to be associated properly'
         else
           @_loadVariables({})
-          .then(@_loadProjects.bind(this))
-          .then(@_loadEmployees.bind(this))
+          .then(@_loadProjects.bind(@))
+          .then(@_loadEmployees.bind(@))
+          .then(@_loadPunches.bind(@))
           .catch((error) -> deferred.reject("Couldn't download sheet data"))
           .done(
             (opts) =>
@@ -240,6 +241,26 @@ class Spreadsheet
           users.push user
         opts.users = users
         deferred.resolve opts
+    deferred.promise
+
+  _loadPunches: (opts) ->
+    # HACK: THIS IS CHEATING
+    Punch = require './punch'
+    deferred = Q.defer()
+    @rawData.getRows (err, rows) ->
+      if err
+        deferred.reject err
+      else
+        for row in rows
+          user = opts.users.filter((item, index, arr) ->
+            return item.name is row[HEADERS.rawdata.name]
+          )[0]
+          punch = Punch.parseRaw user, row
+          if punch and user
+            user.punches.push punch
+        deferred.resolve opts
+
+
     deferred.promise
 
 module.exports = Spreadsheet

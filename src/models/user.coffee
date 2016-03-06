@@ -168,5 +168,11 @@ class User
       deferred.reject 'Row is null'
     deferred.promise
 
+  description: () ->
+    return "User: #{@name} (#{@slack})\n
+            Number of punch records: #{(@punches || []).length}\n
+            Active time: #{@timetable.start.format('hh:mm a')} - #{@timetable.end.format('hh:mm a')}, #{@timetable.timezone.name}\n
+            Last message was #{+(moment().diff(@lastMessage, 'hours', true).toFixed(2))} hours ago"
+
 module.exports.User = User
 module.exports.Timetable = Timetable

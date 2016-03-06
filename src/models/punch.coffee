@@ -7,7 +7,7 @@ constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
 REGEX = constants.REGEX
 MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
-Organization = require('../models/organization').get()
+Organization = require('./organization').get()
 
 class Punch
   constructor: (@mode = 'none',
@@ -89,15 +89,15 @@ class Punch
       punch.elapsed = elapsed
     punch
   
-  @parseRaw: (row) ->
-    if not row
-      return
-    if not row.save or row.del
-      return
-    headers = HEADERS.rawdata
-    user = Organization.getUserByRealName row[headers.name]
+  @parseRaw: (user, row) ->
     if not user
       return
+    else if not row
+      return
+    else if not row.save or not row.del
+      return
+    headers = HEADERS.rawdata
+
     if row[headers.project1] is 'vacation' or
        row[headers.project1] is 'sick' or
        row[headers.project1] is 'unpaid'
@@ -138,7 +138,9 @@ class Punch
     punch = new Punch(mode, datetimes, projects, notes)
     if elapsed
       punch.elapsed = elapsed
+    punch.assignRow row
     punch
+
   out: (punch) ->
     if not @times.block?
       @times.push punch.times[0]
