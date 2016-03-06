@@ -2,7 +2,6 @@
 #   Bark with your dog friend
 #
 # Commands:
-#   bark - listens for a bark so it can reply
 #
 # Author:
 #   aaronsky
@@ -20,3 +19,6 @@ module.exports = (robot) ->
 
   robot.respond /tell me a story/i, (res) ->
     res.send 'woof woof woof'
+
+  robot.hear /good dog/i, (res) ->
+    res.send ':+1: :dog: :+1:'

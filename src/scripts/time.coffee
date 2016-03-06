@@ -27,7 +27,6 @@
 #   ibizan vacation 1/28 - 2/4
 #
 # Notes:
-#   <optional notes required for the script>
 #
 # Author:
 #   aaronsky

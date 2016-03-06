@@ -55,7 +55,8 @@ module.exports = (robot) ->
     else if user.lastMessage.diff(last, 'hours', true) < 3
       Logger.log 'user has been recently active'
     else
-      if user.punches and user.punches.length > 0 and user.punches.slice(-1)[0].mode is 'in'
+      if user.punches and user.punches.length > 0 and
+         user.punches.slice(-1)[0].mode is 'in'
         robot.send { room: slackuser.name }, "Don't forget to check out~"
       else
         robot.send { room: slackuser.name }, "Check in if you're on the clock~"

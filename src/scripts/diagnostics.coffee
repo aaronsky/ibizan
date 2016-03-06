@@ -3,9 +3,12 @@
 #
 # Commands:
 #   ibizan !diag - Get org name and server time
-#   ibizan !diag list users - Get a list of all users in the org
-#   ibizan !diag list projects - Get a list of all projects in the org
-#   ibizan !diag list calendar - Get a list of all important dates in the org
+#   ibizan !diag list <users|projects|calendar> - Get a list of all users/projects/holidays in the org
+#   ibizan !diag make report <start (MM/DD/YYYY)> <end (MM/DD/YYYY)> - Generate salary report between optional range
+#   ibizan !diag reset hound - Reset hound status for all org members
+#   ibizan !diag reset org - Resync org data stores with spreadsheet
+#   ibizan !diag sync - See `reset org`
+#   ibizan !diag resync - See `reset org`
 # Notes:
 #
 # Author:
