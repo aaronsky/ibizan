@@ -94,10 +94,12 @@ class User
     deferred = Q.defer()
     if @punches and @punches.length > 0
       lastPunch = @punches.slice(-1)[0]
+      console.log lastPunch
       headers = HEADERS.rawdata
       if lastPunch.mode is 'vacation' or
          lastPunch.mode is 'sick' or
-         lastPunch.mode is 'unpaid'
+         lastPunch.mode is 'unpaid' or
+         lastPunch.mode is 'none'
         that = @
         deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
         deferred.resolve(deletePromise().then(() -> that.punches.pop()))
@@ -113,7 +115,6 @@ class User
           lastPunch.row[headers.totalTime] =
           lastPunch.row[headers.blockTime] = ''
         lastPunch.row[headers.notes] = lastPunch.notes
-        
         savePromise = Q.nfbind(lastPunch.row.save.bind(lastPunch))
         deferred.resolve(savePromise())
       else if lastPunch.mode is 'in'

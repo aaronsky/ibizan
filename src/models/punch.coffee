@@ -97,22 +97,21 @@ class Punch
     else if not row.save or not row.del
       return
     headers = HEADERS.rawdata
-
     if row[headers.project1] is 'vacation' or
        row[headers.project1] is 'sick' or
        row[headers.project1] is 'unpaid'
       mode = row[headers.project1]
     else if row[headers.in] and not row[headers.out]
       mode = 'in'
-    else if row[headers.out] and row[headers.elapsed]
+    else if row[headers.out] and row[headers.totalTime]
       mode = 'out'
     else
       mode = 'none'
     datetimes = []
     if row[headers.in]
-      datetimes.push moment(row[headers.today] + ' ' + row[headers.in]).tz(user.timetable.timezone.name)
+      datetimes.push moment(row[headers.today] + ' ' + row[headers.in], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
     if row[headers.out]
-      datetimes.push moment(row[headers.today] + ' ' + row[headers.out]).tz(user.timetable.timezone.name)
+      datetimes.push moment(row[headers.today] + ' ' + row[headers.out], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
     if row[headers.totalTime]
       comps = row[headers.totalTime].split ':'
       elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
