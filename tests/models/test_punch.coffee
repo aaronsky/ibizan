@@ -70,6 +70,26 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'in 9:15', 'in'
       expect(punch).to.have.property 'mode', 'in'
       expect(punch).to.have.deep.property 'times[0]'
+      amPm = moment().format('A')
+      expect(punch.times[0].format('hh:mm:ss A')).to.equal "09:15:00 #{amPm}"
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
+    it 'in at a time with a period marker and no space between', ->
+      punch = Punch.parse @user, 'in 9:15pm', 'in'
+      expect(punch).to.have.property 'mode', 'in'
+      expect(punch).to.have.deep.property 'times[0]'
+      expect(punch.times[0].format('hh:mm:ss A')).to.equal "09:15:00 PM"
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
+    it 'in at a time with a period marker', ->
+      punch = Punch.parse @user, 'in 9:15 pm', 'in'
+      expect(punch).to.have.property 'mode', 'in'
+      expect(punch).to.have.deep.property 'times[0]'
+      expect(punch.times[0].format('hh:mm:ss A')).to.equal "09:15:00 PM"
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
@@ -78,6 +98,9 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'out 7pm yesterday', 'out'
       expect(punch).to.have.property 'mode', 'out'
       expect(punch).to.have.deep.property 'times[0]'
+      yesterday = moment().subtract(1, 'days')
+      expect(punch.times[0].format('MM/DD/YYYY hh:mm:ss A'))
+      .to.equal "#{yesterday.format('MM/DD/YYYY')} 07:00:00 PM"
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
@@ -86,6 +109,7 @@ describe 'Punch', ->
       punch = Punch.parse @user, "in 17:00 ##{@projectName}", 'in'
       expect(punch).to.have.property 'mode', 'in'
       expect(punch).to.have.deep.property 'times[0]'
+      expect(punch.times[0].format('hh:mm:ss A')).to.equal "05:00:00 PM"
       expect(punch).to.have.deep.property 'projects[0]'
       expect(punch).to.have.deep.property 'projects[0].name',
                                           @projectName

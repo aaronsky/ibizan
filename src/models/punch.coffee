@@ -109,9 +109,11 @@ class Punch
       mode = 'none'
     datetimes = []
     if row[headers.in]
-      datetimes.push moment(row[headers.today] + ' ' + row[headers.in], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
+      datetimes.push moment(row[headers.today] + ' ' +
+                            row[headers.in], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
     if row[headers.out]
-      datetimes.push moment(row[headers.today] + ' ' + row[headers.out], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
+      datetimes.push moment(row[headers.today] + ' ' +
+                            row[headers.out], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
     if row[headers.totalTime]
       comps = row[headers.totalTime].split ':'
       elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -303,7 +305,7 @@ _parseTime = (command, activeStart, activeEnd) ->
       hour = parseInt (hourStr[0].replace(':', ''))
       if hour <= 12
         isPM = today.format('a') is 'pm'
-        if not timeMatch.match /am?|pm?/i
+        if not timeMatch.match /(a|p)m?/i
           timeMatch = timeMatch + " #{today.format('a')}"
     today = moment(timeMatch, 'h:mm a')
     if isPM
