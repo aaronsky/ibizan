@@ -164,12 +164,12 @@ class Spreadsheet
                 deferred.resolve()
     deferred.promise
 
-  generateReport: (users) ->
+  generateReport: (users, start, end) ->
     deferred = Q.defer()
     numberDone = 0
 
     for user in users
-      row = user.toRawPayroll()
+      row = user.toRawPayroll(start, end)
       @payroll.addRow row, (err) ->
         if err
           deferred.reject err, numberDone
@@ -188,18 +188,24 @@ class Spreadsheet
         opts =
           vacation: 0
           sick: 0
-          holidays: {}
+          holidays: []
           clockChannel: ''
           exemptChannels: []
         VARIABLE_HEADERS = HEADERS.variables
         for row in rows
           for key, header of VARIABLE_HEADERS
             if row[header]
+              if header is VARIABLE_HEADERS.holidayOverride
+                  continue
               if header is VARIABLE_HEADERS.holidays
                 name = row[header]
-                date =
-                  moment().fromHolidayString(row[VARIABLE_HEADERS.holidayDate])
-                opts[key][name] = date
+                if row[VARIABLE_HEADERS.holidayOverride]
+                  date = moment row[VARIABLE_HEADERS.holidayOverride], 'MM/DD/YYYY'
+                else
+                  date = moment().fromHolidayString row[VARIABLE_HEADERS.holidays]
+                opts[key].push
+                  name: name
+                  date: date
               else if header is VARIABLE_HEADERS.exemptChannels
                 channel = row[header]
                 if channel

@@ -18,7 +18,7 @@ cellHeaders =
     clockChannel:        'timeloggingchannel'
     exemptChannels:      'houndingchannelexemptions'
     holidays:            'workholidays'
-    holidayDate:         'date'
+    holidayOverride:     'date'
   projects:
     name:                'project'
     start:               'weekstarting'

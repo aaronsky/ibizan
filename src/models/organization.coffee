@@ -16,6 +16,12 @@ NAME = process.env.ORG_NAME
 class Calendar
   constructor: (@vacation, @sick, @holidays) ->
 
+  description: () ->
+    str = "Organization calendar:\n"
+    for holiday in @holidays
+      str += "This year's #{holiday.name} is on #{holiday.date.format('MM/DD/YYYY')}\n"
+    return str
+
 # Singleton
 class Organization
   instance = null
@@ -71,10 +77,10 @@ class Organization
           if name is project.name
             return project
       Logger.log "Project #{name} could not be found"
-    generateReport: () ->
+    generateReport: (start, end) ->
       deferred = Q.defer()
       if @spreadsheet
-        @spreadsheet.generateReport(@users)
+        @spreadsheet.generateReport(@users, start, end)
         .done((numberDone) -> deferred.resolve(numberDone))
       else
         deferred.reject 'Spreadsheet was not loaded, report cannot be generated'

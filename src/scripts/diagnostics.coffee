@@ -2,7 +2,10 @@
 #   Your dog friend makes sure everything's in order
 #
 # Commands:
-#   
+#   ibizan !diag - Get org name and server time
+#   ibizan !diag list users - Get a list of all users in the org
+#   ibizan !diag list projects - Get a list of all projects in the org
+#   ibizan !diag list calendar - Get a list of all important dates in the org
 # Notes:
 #
 # Author:
@@ -43,7 +46,7 @@ module.exports = (robot) ->
       if comps[0] is 'list'
         list(res, [comps[1]])
       else if comps[0] is 'make'
-        make(res, [comps[1]])
+        make(res, comps.shift())
       else if comps[0] is 'reset'
         reset(res, [comps[1]])
       else if comps[0] is 'sync' or comps[0] is 'resync'
@@ -59,16 +62,28 @@ module.exports = (robot) ->
         str += user.description() + '\n\n'
       res.send str
     else if comps[0] is 'projects'
-      res.send(JSON.stringify(Organization.projects))
+      str = ''
+      for project in Organization.projects
+        str += project.description() + '\n\n'
+      res.send str
     else if comps[0] is 'calendar'
-      res.send(JSON.stringify(Organization.calendar.holidays))
+      res.send(Organization.calendar.description())
     else
       info(res)
 
   make = (res, comps) ->
     comps = comps || []
     if comps[0] is 'report'
-      Organization.generateReport()
+      if comps.length is 3
+        start = moment comps[1]
+        end = moment comps[2]
+      else if comps.length is 2
+        start = moment comps[1]
+        end = moment()
+      else
+        end = moment()
+        start = end.subtract 2, 'weeks'
+      Organization.generateReport(start, end)
       .done(
         (numberDone) ->
           res.send "Salary report generated for #{numberDone} employees."

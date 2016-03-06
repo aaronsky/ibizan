@@ -121,23 +121,43 @@ class User
         deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
         deferred.resolve(deletePromise().then(() -> that.punches.pop()))
     deferred.promise
-  toRawPayroll: () ->
+  toRawPayroll: (start, end) ->
     headers = HEADERS.payrollreports
     row = {}
     row[headers.date] = moment.tz(constants.TIMEZONE).format('M/DD/YYYY')
     row[headers.name] = @name
-    if @salary
-      row[headers.paid] = 80 - @timetable.unpaidTotal
-    else
-      row[headers.paid] = @timetable.loggedTotal +
-                          @timetable.vacationTotal +
-                          @timetable.sickTotal
+    dayLength = @activeTime()
+    loggedTime = unpaidTime = vacationTime = sickTime = 0
+    for punch in @punches
+      if punch.times[0].isBefore(start) or punch.times[0].isAfter(end)
+        continue
+      else if punch.mode is 'in'
+        continue
+      else if not punch.elapsed
+        continue
+      else if punch.mode is 'vacation'
+        vacationTime += punch.elapsed
+      else if punch.mode is 'unpaid'
+        unpaidTime += punch.elapsed
+      else if punch.mode is 'sick'
+        sickTime += punch.elapsed
+      else if punch.times.block
+        loggedTime += punch.times.block
+      else
+        loggedTime += punch.elapsed
 
-    row[headers.unpaid] = @timetable.unpaidTotal
-    row[headers.logged] = @timetable.loggedTotal
-    row[headers.vacation] = @timetable.vacationTotal
-    row[headers.sick] = @timetable.sickTotal
-    row[headers.overtime] = Math.max(0, @timetable.loggedTotal - 80)
+    if @salary
+      row[headers.paid] = 80 - unpaidTime
+    else
+      row[headers.paid] = loggedTime +
+                          vacationTime +
+                          sickTime
+
+    row[headers.unpaid] = unpaidTime
+    row[headers.logged] = loggedTime
+    row[headers.vacation] = vacationTime
+    row[headers.sick] = sickTime
+    row[headers.overtime] = Math.max(0, loggedTime - 80)
     row[headers.holiday] = @timetable.holiday
     row
   updateRow: () ->

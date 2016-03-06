@@ -39,5 +39,10 @@ class Project
     else
       deferred.reject 'Row is null'
     deferred.promise
+
+  description: () ->
+    return "Project: #{@name}\n
+            Start date: #{@start.format('MM/DD/YYYY')}\n
+            Total hours: #{@total}"
   
 module.exports = Project

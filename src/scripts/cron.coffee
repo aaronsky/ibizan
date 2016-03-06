@@ -21,7 +21,9 @@ module.exports = (robot) ->
 
   # Ibizan will export a Payroll Report every other Sunday night.
   generateReportJob = schedule.scheduleJob '0 17 * * 0', () ->
-    Organization.generateReport()
+    today = moment()
+    twoWeeksAgo = today.subtract(2, 'weeks')
+    Organization.generateReport twoWeeksAgo, today
 
   # Users should receive a DM “chime” every other Friday afternoon to
   # inform them that payroll runs on Monday, and that unaccounted-for
