@@ -304,12 +304,9 @@ _parseTime = (command, activeStart, activeEnd) ->
       hour = parseInt (hourStr[0].replace(':', ''))
       if hour <= 12
         period = moment().format('a')
-        isPM = period is 'pm'
         if not timeMatch.match /(a|p)m?/i
           timeMatch = "#{timeMatch} #{period}"
     today = moment(timeMatch, 'h:mm a')
-    if isPM
-      today.add(12, 'hours')
     time.push today
     command = command.replace ///#{match[0]} ?///i, ''
   # else if match = command.match regex for time ranges (???)
