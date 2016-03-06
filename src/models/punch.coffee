@@ -300,13 +300,13 @@ _parseTime = (command, activeStart, activeEnd) ->
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.time
     timeMatch = match[0]
-    today = moment()
-    if hourStr = timeMatch.match /\b(([0-1][0-9])|(2[0-3])):/i
+    if hourStr = timeMatch.match /\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i
       hour = parseInt (hourStr[0].replace(':', ''))
       if hour <= 12
-        isPM = today.format('a') is 'pm'
+        period = moment().format('a')
+        isPM = period is 'pm'
         if not timeMatch.match /(a|p)m?/i
-          timeMatch = timeMatch + " #{today.format('a')}"
+          timeMatch = "#{timeMatch} #{period}"
     today = moment(timeMatch, 'h:mm a')
     if isPM
       today.add(12, 'hours')
