@@ -107,7 +107,7 @@ class Punch
     else if row[headers.out] and row[headers.elapsed]
       mode = 'out'
     else
-      row = 'none'
+      mode = 'none'
     datetimes = []
     if row[headers.in]
       datetimes.push moment(row[headers.today] + ' ' + row[headers.in]).tz(user.timetable.timezone.name)

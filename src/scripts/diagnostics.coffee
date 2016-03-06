@@ -44,11 +44,14 @@ module.exports = (robot) ->
       comps.shift()
       comps.shift()
       if comps[0] is 'list'
-        list(res, [comps[1]])
+        comps.shift()
+        list(res, comps)
       else if comps[0] is 'make'
-        make(res, comps.shift())
+        comps.shift()
+        make(res, comps)
       else if comps[0] is 'reset'
-        reset(res, [comps[1]])
+        comps.shift()
+        reset(res, comps)
       else if comps[0] is 'sync' or comps[0] is 'resync'
         reset(res, ['org'])
       else
@@ -90,7 +93,6 @@ module.exports = (robot) ->
       )
     else
       info(res)
-      help(res)
 
   reset = (res, comps) ->
     comps = comps || []
