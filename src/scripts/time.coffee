@@ -68,6 +68,7 @@ module.exports = (robot) ->
       punch = Punch.parse user, msg, mode
       if not punch.projects.length and isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
+      console.log punch
       sendPunch punch, user, res
     else
       Logger.logToChannel "You cannot punch in ##{res.message.user.room}.

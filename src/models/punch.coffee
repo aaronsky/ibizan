@@ -208,6 +208,8 @@ class Punch
     # fail cases
     if @times.length is 2
       elapsed = @times[0].diff(@times[1], 'hours', true)
+    else if @times.block?
+      elapsed = @times.block
     else if @times[0]
       date = @times[0]
     if @mode is 'none' and not @times.block?
