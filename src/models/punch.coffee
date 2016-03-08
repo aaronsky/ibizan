@@ -86,6 +86,7 @@ class Punch
 
     punch = new Punch(mode, datetimes, projects, notes)
     if elapsed
+      console.log elapsed
       punch.elapsed = elapsed
     punch
   
@@ -108,12 +109,16 @@ class Punch
     else
       mode = 'none'
     datetimes = []
-    if row[headers.in]
-      datetimes.push moment(row[headers.today] + ' ' +
-                            row[headers.in], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
-    if row[headers.out]
-      datetimes.push moment(row[headers.today] + ' ' +
-                            row[headers.out], 'MM/DD/YYYY hh:mm:ss a').tz(user.timetable.timezone.name)
+    for i in [0..1]
+      if row[headers[MODES[i]]]
+        newDate = moment(row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
+        if not newDate or
+           not newDate.isValid() or
+           newDate.format('MM/DD/YYYY') isnt row[headers.today]
+          newDate = moment(row[headers.today] + ' ' +
+                              row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
+        datetimes.push newDate.tz(user.timetable.timezone.name)
+        console.log(datetimes.slice(-1)[0].format())
     if row[headers.totalTime]
       comps = row[headers.totalTime].split ':'
       elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -160,10 +165,10 @@ class Punch
 
   toRawRow: (name) ->
     headers = HEADERS.rawdata
+    today = moment.tz(constants.TIMEZONE)
     row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today] ||
-                         moment.tz(constants.TIMEZONE).format('MM/DD/YYYY')
+    row[headers.today] = row[headers.today]
     row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block
@@ -171,11 +176,16 @@ class Punch
       minutes = Math.round((block - hours) * 60)
       minute_str = if minutes < 10 then "0#{minutes}" else minutes
       row[headers.blockTime] = "#{hours}:#{minute_str}:00"
+      row[headers.today] = row[headers.today] || today.format('MM/DD/YYYY')
     else
       for i in [0..1]
         if time = @times[i]
-          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
-                                    .format('hh:mm:ss A')
+          if time.isSame(today.format('YYYY-MM-DD'))
+            row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
+                                      .format('hh:mm:ss A')
+          else
+            row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
+                                      .format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -206,10 +216,12 @@ class Punch
 
   isValid: (user) ->
     # fail cases
+    if @times.block?
+      elapsed = @times.block
+    else if @elapsed?
+      elapsed = @elapsed
     if @times.length is 2
       elapsed = @times[0].diff(@times[1], 'hours', true)
-    else if @times.block?
-      elapsed = @times.block
     else if @times[0]
       date = @times[0]
     if @mode is 'none' and not @times.block?
@@ -253,8 +265,8 @@ class Punch
         # if mode is 'vacation' and time isn't divisible by 4
         # if mode is 'sick' and time isn't divisible by 4
         # if mode is 'unpaid' and time isn't divisible by 4
-        else if elapsed % 4 isnt 0
-          return 'This punch duration is not divisible by 4 hours.'
+        # else if elapsed % 4 isnt 0
+        #   return 'This punch duration is not divisible by 4 hours.'
       else
         # a vacation/sick/unpaid punch must be a range
         return "A #{@mode} punch needs to either be a range or a block of time."
