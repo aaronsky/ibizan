@@ -86,7 +86,6 @@ class Punch
 
     punch = new Punch(mode, datetimes, projects, notes)
     if elapsed
-      console.log elapsed
       punch.elapsed = elapsed
     punch
   
@@ -118,7 +117,6 @@ class Punch
           newDate = moment(row[headers.today] + ' ' +
                               row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
         datetimes.push newDate.tz(user.timetable.timezone.name)
-        console.log(datetimes.slice(-1)[0].format())
     if row[headers.totalTime]
       comps = row[headers.totalTime].split ':'
       elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -168,7 +166,7 @@ class Punch
     today = moment.tz(constants.TIMEZONE)
     row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today]
+    row[headers.today] = row[headers.today] || today.format('MM/DD/YYYY')
     row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block

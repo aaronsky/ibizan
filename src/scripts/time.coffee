@@ -119,7 +119,8 @@ module.exports = (robot) ->
           op = words[0]
           words.shift()
           msg = words.join(' ').trim()
-          if op is 'project'
+          if op is 'project' or
+             op is 'projects'
             words = msg.split ' '
             for word in words
               if word.charAt(0) is '#'
