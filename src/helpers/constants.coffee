@@ -2,8 +2,9 @@
 regex =
   ibizan:          /(?:@)?ibizan(?::)? ?/i
   modes:           /(in|out|vacation|sick|unpaid)/i
+  append:          /(append|add)/i
   days:            /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i
-  rel_time:        /(half-day|(half day)|noon|midnight|([0-9]+(?:\.+[0-9]*)?) hours)/i
+  rel_time:        /(half-day|(half day)|noon|midnight|([0-9]+(?:\.+[0-9]*)?) hour(s)?)/i
   time:            /((\b([0-1][0-9])|(2[0-3])):([0-5][0-9])\b)|(\b(0?[1-9])|(1[0-2]))(?:(:[0-5][0-9] ?(am?|pm?)?)|(am?|pm?)\b)/i
   months:          /\b(?:Jan(?:uary)?|Mar(?:ch)?|May|Jul(?:y)?|Aug(?:ust)?|Oct(?:ober)?|Dec(?:ember)?|Sep(?:tember)?|Apr(?:il)?|Jun(?:e)?|Nov(?:ember)?|Feb(?:ruary)?)\b/i
   date:            /(\b(?:Jan(?:uary)?|Mar(?:ch)?|May|Jul(?:y)?|Aug(?:ust)?|Oct(?:ober)?|Dec(?:ember)?) (?:3[01]|[0-2]*[0-9])(?: ?- ?(3[01]|[0-2]*[0-9]))?\b)|(\b(?:Sep(?:tember)?|Apr(?:il)?|Jun(?:e)?|Nov(?:ember)?) (?:30|[0-2]*[0-9])(?: ?- ?(30|[0-2]*[0-9]))?\b)|(\b(?:Feb(?:ruary)?) (?:29|[0-2]*[0-8])(?: ?- ?(29|[0-2]*[0-8]))?\b)/i

@@ -8,7 +8,7 @@ constants = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 HEADERS = constants.HEADERS
 Project = require './project'
-{User, Timetable} = require './user'
+{ User, Timetable } = require './user'
 
 options = {}
 
