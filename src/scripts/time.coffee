@@ -71,8 +71,8 @@ module.exports = (robot) ->
       sendPunch punch, user, res
     else
       Logger.logToChannel "You cannot punch in ##{res.message.user.room}.
-       Try punching in ##{Organization.clockChannel},
-       a designated project channel, or here.", res.message.user.name
+                           Try punching in ##{Organization.clockChannel},
+                           a designated project channel, or here.", res.message.user.name
 
   sendPunch = (punch, user, res) ->
     if not punch
@@ -91,7 +91,9 @@ module.exports = (robot) ->
         Logger.error err
         Logger.errorToSlack "\"#{err}\" was returned for
                              #{user.slack}. Punch:\n", res.match.input
-        Logger.logToChannel err, res.message.user.name
+        Logger.logToChannel "#{err} You can see more details on the spreadsheet
+                             at #{Organization.spreadsheet.url}",
+                             res.message.user.name
     )
     .done()
       
