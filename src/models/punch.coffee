@@ -86,7 +86,6 @@ class Punch
 
     punch = new Punch(mode, datetimes, projects, notes)
     if elapsed
-      console.log elapsed
       punch.elapsed = elapsed
     punch
   
@@ -111,14 +110,13 @@ class Punch
     datetimes = []
     for i in [0..1]
       if row[headers[MODES[i]]]
-        newDate = moment(row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
+        newDate = moment(row[headers[MODES[i]]], 'M/D/YYYY hh:mm:ss a')
         if not newDate or
            not newDate.isValid() or
-           newDate.format('MM/DD/YYYY') isnt row[headers.today]
+           newDate.format('M/D/YYYY') isnt row[headers.today]
           newDate = moment(row[headers.today] + ' ' +
                               row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
         datetimes.push newDate.tz(user.timetable.timezone.name)
-        console.log(datetimes.slice(-1)[0].format())
     if row[headers.totalTime]
       comps = row[headers.totalTime].split ':'
       elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -168,7 +166,7 @@ class Punch
     today = moment.tz(constants.TIMEZONE)
     row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today]
+    row[headers.today] = row[headers.today] || today.format('MM/DD/YYYY')
     row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block
@@ -231,7 +229,9 @@ class Punch
       if user.punches and
          user.punches.length > 0 and
          user.punches.slice(-1)[0].mode is 'in'
-        return 'You haven\'t punched out yet.'
+        last = user.punches.slice(-1)[0]
+        time = last.times[0].tz(user.timetable.timezone.name)
+        return "You haven't punched out yet. Your last in-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
         for time in @times
@@ -242,7 +242,9 @@ class Punch
       if user.punches and
          user.punches.length > 0 and
          user.punches.slice(-1)[0].mode is 'out'
-        return 'You cannot punch out before punching in.'
+        last = user.punches.slice(-1)[0]
+        time = last.times[0].tz(user.timetable.timezone.name)
+        return "You cannot punch out before punching in. Your last out-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
       return 'You aren\'t eligible to punch for unpaid time.'
@@ -252,7 +254,9 @@ class Punch
       if user.punches and
          user.punches.length > 0 and
          user.punches.slice(-1)[0].mode is 'in'
-        return 'You haven\'t punched out yet.'
+        last = user.punches.slice(-1)[0]
+        time = last.times[0].tz(user.timetable.timezone.name)
+        return "You haven't punched out yet. Your last in-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         if @mode is 'vacation' and

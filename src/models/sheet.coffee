@@ -8,7 +8,7 @@ constants = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 HEADERS = constants.HEADERS
 Project = require './project'
-{User, Timetable} = require './user'
+{ User, Timetable } = require './user'
 
 options = {}
 
@@ -35,6 +35,11 @@ class Spreadsheet
         deferred.reject err
       else
         @title = info.title
+        @id = info.id
+        @id = @id.replace 'https://spreadsheets.google.com/feeds/worksheets/',
+                          ''
+        @id = @id.replace '/private/full', ''
+        @url = "https://docs.google.com/spreadsheets/d/#{@id}"
         for worksheet in info.worksheets
           title = worksheet.title
           words = title.split ' '
@@ -50,13 +55,13 @@ class Spreadsheet
                 @variables and
                 @projects and
                 @employees)
-          deferred.reject 'worksheets failed to be associated properly'
+          deferred.reject 'Worksheets failed to be associated properly'
         else
           @_loadVariables({})
           .then(@_loadProjects.bind(@))
           .then(@_loadEmployees.bind(@))
           .then(@_loadPunches.bind(@))
-          .catch((error) -> deferred.reject("Couldn't download sheet data"))
+          .catch((error) -> deferred.reject("Couldn't download sheet data: #{error}"))
           .done(
             (opts) =>
               @initialized = true
@@ -107,9 +112,9 @@ class Spreadsheet
                 )
                 .done()
           else
-            deferred.reject 'out punch for no in punch'
+            deferred.reject 'You haven\'t punched out yet.'
         else
-          deferred.reject 'out punch for no in punch'
+          deferred.reject 'You haven\'t punched out yet.'
       else if punch.mode is 'vacation' or
               punch.mode is 'sick' or
               punch.mode is 'unpaid'
@@ -196,11 +201,12 @@ class Spreadsheet
           for key, header of VARIABLE_HEADERS
             if row[header]
               if header is VARIABLE_HEADERS.holidayOverride
-                  continue
+                continue
               if header is VARIABLE_HEADERS.holidays
                 name = row[header]
                 if row[VARIABLE_HEADERS.holidayOverride]
-                  date = moment row[VARIABLE_HEADERS.holidayOverride], 'MM/DD/YYYY'
+                  date = moment row[VARIABLE_HEADERS.holidayOverride],
+                                'MM/DD/YYYY'
                 else
                   date = moment().fromHolidayString row[VARIABLE_HEADERS.holidays]
                 opts[key].push

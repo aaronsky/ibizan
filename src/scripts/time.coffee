@@ -71,8 +71,8 @@ module.exports = (robot) ->
       sendPunch punch, user, res
     else
       Logger.logToChannel "You cannot punch in ##{res.message.user.room}.
-       Try punching in ##{Organization.clockChannel},
-       a designated project channel, or here.", res.message.user.name
+                           Try punching in ##{Organization.clockChannel},
+                           a designated project channel, or here.", res.message.user.name
 
   sendPunch = (punch, user, res) ->
     if not punch
@@ -84,22 +84,16 @@ module.exports = (robot) ->
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
       () ->
-        client = robot.adapter.client
-        params = {
-          "name": "dog2",
-          "channel": res.message.rawMessage.channel,
-          "timestamp": res.message.id
-        }
-        client._apiCall 'reactions.add', params, (response) ->
-          if not response.ok
-            Logger.logToChannel response.error, res.message.user.name
+        Logger.reactToMessage 'dog2', res.message.user.name, res.message.rawMessage.channel, res.message.id
     )
     .catch(
       (err) ->
         Logger.error err
         Logger.errorToSlack "\"#{err}\" was returned for
                              #{user.slack}. Punch:\n", res.match.input
-        Logger.logToChannel err, res.message.user.name
+        Logger.logToChannel "#{err} You can see more details on the spreadsheet
+                             at #{Organization.spreadsheet.url}",
+                             res.message.user.name
     )
     .done()
       
@@ -113,6 +107,43 @@ module.exports = (robot) ->
   robot.respond REGEX.rel_time, (res) ->
     moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, 'none'
+
+  robot.respond REGEX.append, (res) ->
+    msg = res.match.input
+    msg = msg.replace REGEX.ibizan, ''
+    msg = msg.replace REGEX.append, ''
+    msg = msg.trim()
+    if user = Organization.getUserBySlackName res.message.user.name
+      if user.punches and
+         punch = user.punches.slice(-1)[0]
+        if punch.mode is 'in'
+          words = msg.split ' '
+          op = words[0]
+          words.shift()
+          msg = words.join(' ').trim()
+          if op is 'project' or
+             op is 'projects'
+            words = msg.split ' '
+            for word in words
+              if word.charAt(0) is '#'
+                if project = Organization.getProjectByName word
+                  punch.projects.push project
+              else
+                break
+          else if op is 'note' or
+                  op is 'notes'
+            if punch.notes.length > 0
+              punch.notes += '\n'
+            punch.notes += msg
+          row = punch.toRawRow user.name
+          row.save (err) ->
+            if err
+              Logger.logToChannel err, res.message.user.name
+            else
+              Logger.reactToMessage 'dog2',
+                                    res.message.user.name,
+                                    res.message.rawMessage.channel,
+                                    res.message.id
 
   robot.respond /undo/i, (res) ->
     user = Organization.getUserBySlackName res.message.user.name

@@ -256,7 +256,7 @@ describe 'Punch', ->
     beforeEach ->
       start = moment().hour(7)
       end = moment().hour(18)
-      timetable = new Timetable(start, end, 'Eastern')
+      timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)

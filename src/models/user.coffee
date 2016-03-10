@@ -94,7 +94,6 @@ class User
     deferred = Q.defer()
     if @punches and @punches.length > 0
       lastPunch = @punches.slice(-1)[0]
-      console.log lastPunch
       headers = HEADERS.rawdata
       if lastPunch.mode is 'vacation' or
          lastPunch.mode is 'sick' or

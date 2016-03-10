@@ -19,5 +19,17 @@ module.exports = (robot) ->
          "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
       else
         Logger.error msg, error
+    @reactToMessage: (reaction, user, channel, slack_ts) ->
+      if robot and
+         robot.adapter and
+         client = robot.adapter.client
+        params =
+          name: reaction,
+          channel: channel,
+          timestamp: slack_ts
+        client._apiCall 'reactions.add', params, (response) ->
+          if not response.ok
+            Logger.logToChannel response.error, user
+
 
   Logger
