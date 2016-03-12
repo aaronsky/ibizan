@@ -357,7 +357,7 @@ _calculateElapsed = (start, end, mode, user) ->
     inactiveTime = +moment(activeStart)
                     .add(1, 'days')
                     .diff(activeEnd, 'hours', true)
-                    .toFixed(2) + 1
+                    .toFixed(2)
     if start? and start.isValid() and end? and end.isValid()
       numDays = end.diff(start, 'days')
 
