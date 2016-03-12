@@ -129,7 +129,9 @@ class User
     dayLength = @activeTime()
     loggedTime = unpaidTime = vacationTime = sickTime = 0
     for punch in @punches
-      if punch.times[0].isBefore(start) or punch.times[0].isAfter(end)
+      if punch.times.block
+        loggedTime += punch.times.block
+      else if punch.times[0].isBefore(start) or punch.times[0].isAfter(end)
         continue
       else if punch.mode is 'in'
         continue
@@ -141,10 +143,13 @@ class User
         unpaidTime += punch.elapsed
       else if punch.mode is 'sick'
         sickTime += punch.elapsed
-      else if punch.times.block
-        loggedTime += punch.times.block
       else
         loggedTime += punch.elapsed
+
+    loggedTime = +loggedTime.toFixed(2)
+    vacationTime = +vacationTime.toFixed(2)
+    sickTime = +sickTime.toFixed(2)
+    unpaidTime = +unpaidTime.toFixed(2)
 
     if @salary
       row[headers.paid] = 80 - unpaidTime

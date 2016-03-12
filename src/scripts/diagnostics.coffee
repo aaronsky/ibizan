@@ -87,8 +87,8 @@ module.exports = (robot) ->
         start = moment comps[1]
         end = moment()
       else
+        start = moment().subtract 2, 'weeks'
         end = moment()
-        start = end.subtract 2, 'weeks'
       Organization.generateReport(start, end)
       .done(
         (numberDone) ->
