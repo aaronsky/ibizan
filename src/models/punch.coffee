@@ -351,8 +351,6 @@ _calculateElapsed = (start, end, mode, user) ->
   if mode is 'vacation' or
      mode is 'sick'
     [activeStart, activeEnd] = user.activeHours()
-    console.log(start.format() + ' - ' + end.format())
-    console.log(activeStart.format() + ' - ' + activeEnd.format())
     activeTime = user.activeTime()
     inactiveTime = +moment(activeStart)
                     .add(1, 'days')
