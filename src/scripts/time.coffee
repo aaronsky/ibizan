@@ -35,6 +35,7 @@ moment = require 'moment-timezone'
 
 constants = require '../helpers/constants'
 REGEX = constants.REGEX
+TIMEZONE = constants.TIMEZONE
 Organization = require('../models/organization').get()
 Punch = require('../models/punch')
 
@@ -69,6 +70,7 @@ module.exports = (robot) ->
       if not punch.projects.length and isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
       sendPunch punch, user, res
+      moment.tz.setDefault TIMEZONE
     else
       Logger.logToChannel "You cannot punch in ##{res.message.user.room}.
                            Try punching in ##{Organization.clockChannel},
@@ -124,12 +126,16 @@ module.exports = (robot) ->
           if op is 'project' or
              op is 'projects'
             words = msg.split ' '
+            projects = []
             for word in words
               if word.charAt(0) is '#'
                 if project = Organization.getProjectByName word
-                  punch.projects.push project
+                  projects.push project
               else
                 break
+            if not projects.length and isProjectChannel res.message.user.room
+              projects.push Organization.getProjectByName(res.message.user.room)
+            punch.projects.push.apply(punch.projects, projects)
           else if op is 'note' or
                   op is 'notes'
             if punch.notes.length > 0

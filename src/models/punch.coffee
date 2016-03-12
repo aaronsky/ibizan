@@ -51,35 +51,7 @@ class Punch
     if times.block?
       datetimes.block = times.block
     else if datetimes.length is 2
-      elapsed = datetimes[1].diff(datetimes[0], 'hours', true)
-      if mode is 'vacation' or
-         mode is 'sick'
-        activeTime = user.activeTime()
-        inactiveTime = +moment(start)
-                        .add(1, 'days')
-                        .diff(end, 'hours', true)
-                        .toFixed(2)
-        if dates.length is 2
-          numDays = dates[1].diff(dates[0], 'days')
-
-          holidays = 0
-          currentDate = moment dates[0]
-          while currentDate.isSameOrBefore dates[1]
-            holiday_str = currentDate.holiday()
-            if holiday_str?
-              holidays += 1
-            currentDate.add 1, 'days'
-
-          numWorkdays = weekend.diff(dates[0], dates[1]) - holidays
-          numWeekends = numDays - numWorkdays
-
-        if elapsed > activeTime and
-           numDays?
-          for i in [1..numDays]
-            elapsed -= inactiveTime
-          if numWeekends > 0
-            for i in [1..numWeekends]
-              elapsed -= activeTime
+      elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
 
     [projects, command] = _parseProjects command
     notes = command.trim()
@@ -373,6 +345,40 @@ _parseDate = (command) ->
       date.push absDate
     command = command.replace ///#{match[0]} ?///i, ''
   [date, command]
+
+_calculateElapsed = (start, end, mode, user) ->
+  elapsed = end.diff(start, 'hours', true)
+  if mode is 'vacation' or
+     mode is 'sick'
+    [activeStart, activeEnd] = user.activeHours()
+    console.log(start.format() + ' - ' + end.format())
+    console.log(activeStart.format() + ' - ' + activeEnd.format())
+    activeTime = user.activeTime()
+    inactiveTime = +moment(activeStart)
+                    .add(1, 'days')
+                    .diff(activeEnd, 'hours', true)
+                    .toFixed(2) + 1
+    if start? and start.isValid() and end? and end.isValid()
+      numDays = end.diff(start, 'days')
+
+      holidays = 0
+      currentDate = moment start
+      while currentDate.isSameOrBefore end
+        holiday_str = currentDate.holiday()
+        dayOfWeek = currentDate.day()
+        if holiday_str? and
+           dayOfWeek isnt 0 and
+           dayOfWeek isnt 6
+          holidays += 1
+        currentDate.add 1, 'days'
+
+      numWorkdays = weekend.diff(start, end) - holidays
+      numWeekends = numDays - numWorkdays
+
+    if elapsed > activeTime and
+       numDays?
+      elapsed -= (inactiveTime * numDays) + (activeTime * numWeekends)
+  elapsed
 
 _parseProjects = (command) ->
   projects = []
