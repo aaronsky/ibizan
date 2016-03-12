@@ -6,7 +6,7 @@ constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
 
 class Project
-  constructor: (@name = '', @start, @total, @row = null) ->
+  constructor: (@name = '', @start = moment(), @total, @row = null) ->
     @name = @name.replace '#', ''
   @parse: (row) ->
     if not row

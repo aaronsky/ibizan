@@ -15,9 +15,9 @@ Organization.projects = [
 describe 'Punch', ->
   describe '#parse(user, command, mode)', ->
     beforeEach ->
-      start = moment().hour(7)
-      end = moment().hour(18)
-      timetable = new Timetable(start, end, 'Eastern')
+      start = moment().hour(7).minute(0).second(0)
+      end = moment().hour(18).minute(0).second(0)
+      timetable = new Timetable(start, end, 'America/New_York')
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)
@@ -189,7 +189,7 @@ describe 'Punch', ->
     beforeEach ->
       start = moment('7:00 AM', 'hh:mm A')
       end = moment('6:00 PM', 'hh:mm A')
-      timetable = new Timetable(start, end, 'Eastern')
+      timetable = new Timetable(start, end, 'America/New_York')
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)
@@ -213,7 +213,7 @@ describe 'Punch', ->
     beforeEach ->
       start = moment().hour(7)
       end = moment().hour(18)
-      timetable = new Timetable(start, end, 'Eastern')
+      timetable = new Timetable(start, end, 'America/New_York')
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)
@@ -230,7 +230,7 @@ describe 'Punch', ->
     beforeEach ->
       start = moment().hour(7)
       end = moment().hour(18)
-      timetable = new Timetable(start, end, 'Eastern')
+      timetable = new Timetable(start, end, 'America/New_York')
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)
