@@ -19,7 +19,8 @@ class Calendar
   description: () ->
     str = "Organization calendar:\n"
     for holiday in @holidays
-      str += "This year's #{holiday.name} is on #{holiday.date.format('MM/DD/YYYY')}\n"
+      str += "This year's #{holiday.name} is on
+              #{holiday.date.format('MM/DD/YYYY')}\n"
     return str
 
 # Singleton
@@ -27,18 +28,20 @@ class Organization
   instance = null
 
   class OrganizationPrivate
-    constructor: (@name = NAME) ->
-      if CONFIG.sheet_id
-        @spreadsheet = new Spreadsheet(CONFIG.sheet_id)
+    constructor: (id) ->
+      @name = NAME || 'Bad user'
+      sheet_id = id || CONFIG.sheet_id
+      if sheet_id
+        @spreadsheet = new Spreadsheet(sheet_id)
         Logger.log "Welcome to #{@name}!"
         @initTime = moment()
-        @sync()
-        .done(() -> Logger.log('Options loaded'))
+        if @spreadsheet.sheet
+          @sync().done(() -> Logger.log('Options loaded'))
       else
         Logger.warn 'Sheet not initialized, no spreadsheet ID was provided'
-    sync: () ->
+    sync: (auth) ->
       deferred = Q.defer()
-      @spreadsheet.authorize(CONFIG.auth)
+      @spreadsheet.authorize(auth || CONFIG.auth)
       .then(@spreadsheet.loadOptions.bind(@spreadsheet))
       .then(
         (opts) =>
@@ -91,8 +94,8 @@ class Organization
         user.shouldHound = true
         i += 1
       i
-  @get: () ->
-    instance ?= new OrganizationPrivate()
+  @get: (id) ->
+    instance ?= new OrganizationPrivate(id)
     instance
 
 module.exports = Organization

@@ -2,7 +2,9 @@
 moment = require 'moment'
 expect = require('chai').expect
 
-Organization = require('../../src/models/organization').get()
+Organization = require('../../src/models/organization').get('test')
+MockSheet = require '../mocks/mock_sheet.js'
+Organization.spreadsheet.sheet = MockSheet
 Project = require '../../src/models/project'
 { User, Timetable } = require '../../src/models/user'
 Punch = require '../../src/models/punch'

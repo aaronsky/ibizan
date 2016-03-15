@@ -14,7 +14,10 @@ options = {}
 
 class Spreadsheet
   constructor: (sheet_id) ->
-    @sheet = new GoogleSpreadsheet(sheet_id)
+    if sheet_id and sheet_id isnt 'test'
+      @sheet = new GoogleSpreadsheet(sheet_id)
+    else
+      @sheet = false
     @initialized = false
 
   authorize: (auth) ->

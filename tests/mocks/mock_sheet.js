@@ -1,5 +1,5 @@
 
-var headers = require('../../src/helpers/constants.coffee').HEADERS;
+var headers = require('../../src/helpers/constants').HEADERS;
 
 var createDataSheet = function (name, file, headers) {
   function Row() {

@@ -1,3 +1,4 @@
+
 expect = require('chai').expect
 
 Project = require '../../src/models/project'

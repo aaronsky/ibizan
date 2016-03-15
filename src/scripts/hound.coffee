@@ -56,7 +56,7 @@ module.exports = (robot) ->
     hound user, { private: null, name: '' }
 
   robot.respond /(stop|disable) ibizan/i, (res) ->
-    user = Organization.getUserBySlackName(res.message.user.name)
+    user = Organization.getUserBySlackName res.message.user.name
     if not user
       return
     user.shouldHound = false

@@ -1,25 +1,24 @@
 
-moment = require('moment')
-chai = require('chai')
-Punch = require('../../src/models/punch')
+moment = require 'moment'
+chai = require 'chai'
 assert = chai.assert
 expect = chai.expect
 
-Spreadsheet = require '../../src/models/sheet.coffee'
-
+Spreadsheet = require '../../src/models/sheet'
 MockSheet = require '../mocks/mock_sheet.js'
+Punch = require '../../src/models/punch'
 
 describe 'Sheet', ->
   beforeEach ->
     sheet_id = 'bad id'
     @sheet = new Spreadsheet(sheet_id)
-    @sheet.sheet = MockSheet;
+    @sheet.sheet = MockSheet
   describe '#constructor', ->
   describe '#authorize(auth)', ->
     it 'should authorize', ->
       return @sheet.authorize({
-               client_email: 'bad@email.com',
-               private_key: 'bad key'
+                client_email: 'bad@email.com',
+                private_key: 'bad key'
               })
               .then(() -> assert.isOk(true))
               .catch((err) -> assert.fail('success', err))
