@@ -23,17 +23,7 @@ module.exports = (robot) ->
   #   If the user is logged in, the DM should say:
   #     Don’t forget to check out~
 
-  hound = (user, slack) ->
-    now = moment()
-    Logger.log 'hounding'
-    Logger.log slack
-    presence = slack.getPresence (res) ->
-      if res.ok
-        lastActivity = moment(res.lastActivity)
-        if now.diff(lastActivity, 'hours') >= 3
-          robot.sendMessage 'NO'
-
-  robot.adapter.client.on 'userTyping', (slackuser, channel) ->
+  hound = (slackuser, channel) ->
     if not channel.private
       channel.private = !!channel.is_im or !!channel.is_group
     user = Organization.getUserBySlackName slackuser.name
@@ -60,6 +50,10 @@ module.exports = (robot) ->
         robot.send { room: slackuser.name }, "Don't forget to check out~"
       else
         robot.send { room: slackuser.name }, "Check in if you're on the clock~"
+
+  robot.adapter.client.on 'userTyping', (user, channel) -> hound user, channel
+  robot.adapter.client.on 'presenceChange', (user, status) ->
+    hound user, { private: null, name: '' }
 
   robot.respond /(stop|disable) ibizan/i, (res) ->
     user = Organization.getUserBySlackName(res.message.user.name)
