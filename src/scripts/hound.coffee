@@ -24,14 +24,20 @@ module.exports = (robot) ->
   #     Don’t forget to check out~
 
   hound = (slackuser, channel) ->
-    if not channel.private
-      channel.private = !!channel.is_im or !!channel.is_group
+    if not Organization.ready()
+      Logger.log 'Don\'t hound, Organization isn\'t ready yet'
+      return
+    if robot.name is slackuser.name
+      Logger.log 'Caught myself, don\'t hound the hound.'
+      return
     user = Organization.getUserBySlackName slackuser.name
-
     if not user
       Logger.log 'user not found'
       return
 
+    if not channel.private
+      channel.private = !!channel.is_im or !!channel.is_group
+    
     last = user.lastMessage || moment()
     user.lastMessage = moment()
 
@@ -56,6 +62,9 @@ module.exports = (robot) ->
     hound user, { private: null, name: '' }
 
   robot.respond /(stop|disable) ibizan/i, (res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t disable hounding, Organization isn\'t ready yet'
+      return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
       return

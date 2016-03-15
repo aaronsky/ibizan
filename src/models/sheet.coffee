@@ -275,7 +275,7 @@ class Spreadsheet
           user = opts.users.filter((item, index, arr) ->
             return item.name is row[HEADERS.rawdata.name]
           )[0]
-          punch = Punch.parseRaw user, row
+          punch = Punch.parseRaw user, row, opts.projects
           if punch and user
             user.punches.push punch
         deferred.resolve opts

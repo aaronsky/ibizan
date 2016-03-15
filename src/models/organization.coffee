@@ -39,6 +39,10 @@ class Organization
           @sync().done(() -> Logger.log('Options loaded'))
       else
         Logger.warn 'Sheet not initialized, no spreadsheet ID was provided'
+    ready: () ->
+      if @spreadsheet
+        return @spreadsheet.initialized
+      return false
     sync: (auth) ->
       deferred = Q.defer()
       @spreadsheet.authorize(auth || CONFIG.auth)
@@ -62,7 +66,7 @@ class Organization
         for user in users
           if name is user.slack
             return user
-      Logger.log "user #{name} could not be found"
+      Logger.log "User #{name} could not be found"
     getUserByRealName: (name, users) ->
       if not users
         users = @users
@@ -70,7 +74,7 @@ class Organization
         for user in users
           if name is user.name
             return user
-      Logger.log "user #{name} could not be found"
+      Logger.log "User #{name} could not be found"
     getProjectByName: (name, projects) ->
       if not projects
         projects = @projects

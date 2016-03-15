@@ -61,7 +61,7 @@ class Punch
       punch.elapsed = elapsed
     punch
   
-  @parseRaw: (user, row) ->
+  @parseRaw: (user, row, projects = []) ->
     if not user
       return
     else if not row
@@ -96,7 +96,7 @@ class Punch
       comps = row[headers.blockTime].split ':'
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
       datetimes.block = block
-    projects = []
+    foundProjects = []
     for i in [1..6]
       projectStr = row[headers['project'+i]]
       if not projectStr
@@ -105,13 +105,20 @@ class Punch
          projectStr is 'sick' or
          projectStr is 'unpaid'
         break
-      else if project = Organization.getProjectByName projectStr
-        projects.push project
-        continue
       else
-        break
+        if Organization.ready() and projects.length is 0
+          project = Organization.getProjectByName projectStr
+        else if projects.length > 0
+          project = projects.filter((item, index, arr) ->
+            return item.name is projectStr
+          )[0]
+        if project
+          foundProjects.push project
+          continue
+        else
+          break
     notes = row[headers.notes]
-    punch = new Punch(mode, datetimes, projects, notes)
+    punch = new Punch(mode, datetimes, foundProjects, notes)
     if elapsed
       punch.elapsed = elapsed
     punch.assignRow row

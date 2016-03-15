@@ -40,7 +40,6 @@ Organization = require('../models/organization').get()
 Punch = require('../models/punch')
 
 module.exports = (robot) ->
-
   Logger = require('../helpers/logger')(robot)
   
   isDM = (name, channel) ->
@@ -102,15 +101,24 @@ module.exports = (robot) ->
 
   # respond to mode
   robot.respond REGEX.modes, (res) ->
+    if not Organization.ready()
+      Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
+      return
     moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, res.match[1]
 
   # respond to simple time block
   robot.respond REGEX.rel_time, (res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
+      return
     moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, 'none'
 
   robot.respond REGEX.append, (res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
+      return
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
     msg = msg.replace REGEX.append, ''
@@ -152,6 +160,9 @@ module.exports = (robot) ->
                                     res.message.id
 
   robot.respond /undo/i, (res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t undo, Organization isn\'t ready yet'
+      return
     user = Organization.getUserBySlackName res.message.user.name
     if user.punches and user.punches.length > 0
       user.undoPunch()
