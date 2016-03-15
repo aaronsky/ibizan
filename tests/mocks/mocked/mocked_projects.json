@@ -1,0 +1,25 @@
+[{
+    "project": "#production",
+    "weekstarting": "1/17/2016",
+    "totalofhours": "139"
+}, {
+    "project": "#production",
+    "weekstarting": "1/24/2016",
+    "totalofhours": "98"
+}, {
+    "project": "#design-art",
+    "weekstarting": "1/17/2016",
+    "totalofhours": "200"
+}, {
+    "project": "#design-art",
+    "weekstarting": "1/24/2016",
+    "totalofhours": "296"
+}, {
+    "project": "#camp-fangamer",
+    "weekstarting": "1/17/2016",
+    "totalofhours": "36"
+}, {
+    "project": "#camp-fangamer",
+    "weekstarting": "1/24/2016",
+    "totalofhours": "14"
+}]
