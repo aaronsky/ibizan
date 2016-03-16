@@ -7,7 +7,6 @@ if debugEnvStr = process.env.DEBUG
     DEBUG = true
 else
   DEBUG = true
-console.log DEBUG
 
 module.exports = (robot) ->
   class Logger
