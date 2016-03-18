@@ -2,7 +2,8 @@
 #   Your dog friend can keep you in line
 #
 # Commands:
-#
+#   ibizan stop ibizan - Disable hounding until the following morning
+#   ibizan disable ibizan - See `stop ibizan`
 # Notes:
 #
 # Author:
