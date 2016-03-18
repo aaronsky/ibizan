@@ -1,8 +1,8 @@
 moment = require 'moment-timezone'
 expect = require('chai').expect
 
-constants = require '../../src/helpers/constants.coffee'
-{User, Timetable} = require '../../src/models/user.coffee'
+constants = require '../../src/helpers/constants'
+{User, Timetable} = require '../../src/models/user'
 
 describe 'Timetable', ->
   beforeEach ->
@@ -131,8 +131,12 @@ describe 'User', ->
       time = moment(start).add(end.diff(start, 'hours') / 2, 'hours')
       expect(@user.isInactive(time)).to.be.false
   describe '#undoPunch()', ->
-  describe '#toRawPayroll()', ->
+  describe '#toRawPayroll(start, end)', ->
     it 'should not return null', ->
       payrollRow = @user.toRawPayroll()
       expect(payrollRow).to.not.be.null
   describe '#updateRow()', ->
+  describe '#description()', ->
+    it 'should return a description of the project for output', ->
+      description = @user.description()
+      expect(description).to.exist

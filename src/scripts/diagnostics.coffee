@@ -30,6 +30,9 @@ module.exports = (robot) ->
 
   # Org statistics
   robot.respond /!diag/i, (res) ->
+    if not Organization.ready()
+      Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
+      return
     if not isLogChannel(res.message.user.room)
       res.send "This isn\'t the diagnostics channel.
                 If you want to check up on me,

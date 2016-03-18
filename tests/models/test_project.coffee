@@ -1,3 +1,4 @@
+
 expect = require('chai').expect
 
 Project = require '../../src/models/project'
@@ -27,3 +28,7 @@ describe 'Project', ->
       expect(project).to.have.property 'name', 'production'
       expect(project).to.have.property 'start'
       expect(project).to.have.property 'total', 0
+  describe '#description()', ->
+    it 'should return a description of the project for output', ->
+      description = Project.parse(test_row).description()
+      expect(description).to.exist

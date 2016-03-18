@@ -4,29 +4,22 @@
 # Commands:
 #   ibizan in - Punch in at the current time and date
 #   ibizan out - Punch out at the current time and date
-#   ibizan in #project1 - Punch in at the current time and
-#                         assigns the current project to #project1
-#   ibizan out #project1 #project2 - Punch out at the current time and
-#                                    splits the worked time since last
-#                                    in-punch between #project1 and
-#                                    #project2
+#   ibizan in #project1 - Punch in at the current time and assigns the current project to #project1
+#   ibizan out #project1 #project2 - Punch out at the current time and splits the worked time since last in-punch between #project1 and #project2
 #   ibizan in 9:15 - Punch in at 9:15am today
 #   ibizan out 7pm yesterday - Punch out yesterday at 7pm
-#   ibizan in 17:00 #project3 - Punch in at 5pm and assigns the time
-#                               until next out-punch to #project3
+#   ibizan in 17:00 #project3 - Punch in at 5pm and assigns the time until next out-punch to #project3
 #   ibizan 1.5 hours - Append 1.5 hours to today's total time
 #   ibizan 2 hours yesterday - Append 2 hours on to yesterday's total time
-#   ibizan 3.25 hours tuesday #project1 - Append 3.25 hours on to
-#                                         Tuesday's total time and
-#                                         assigns it to #project1
+#   ibizan 3.25 hours tuesday #project1 - Append 3.25 hours on to Tuesday's total time and assigns it to #project1
 #   ibizan vacation today - flags the user’s entire day as vacation time
 #   ibizan sick half-day - flags half the user’s day as sick time
-#   ibizan vacation half-day yesterday - flags half the user’s previous
-#                                        day (4 hours) as vacation time
-#   ibizan sick Jul 6-8
-#   ibizan vacation 1/28 - 2/4
+#   ibizan vacation half-day yesterday - flags half the user’s previous day (4 hours) as vacation time
+#   ibizan sick Jul 6-8 - flags July 6-8 of this year as sick time
+#   ibizan vacation 1/28 - 2/4 - flags January 28th to February 4th of this year as vacation time.
 #
 # Notes:
+#   All dates are formatted in MM/DD notation with no support for overriding year. Ibizan will extrapolate year from your ranges, even if it stretches over multiple years.
 #
 # Author:
 #   aaronsky
@@ -40,7 +33,6 @@ Organization = require('../models/organization').get()
 Punch = require('../models/punch')
 
 module.exports = (robot) ->
-
   Logger = require('../helpers/logger')(robot)
   
   isDM = (name, channel) ->
@@ -102,15 +94,24 @@ module.exports = (robot) ->
 
   # respond to mode
   robot.respond REGEX.modes, (res) ->
+    if not Organization.ready()
+      Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
+      return
     moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, res.match[1]
 
   # respond to simple time block
   robot.respond REGEX.rel_time, (res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
+      return
     moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, 'none'
 
   robot.respond REGEX.append, (res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
+      return
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
     msg = msg.replace REGEX.append, ''
@@ -152,6 +153,9 @@ module.exports = (robot) ->
                                     res.message.id
 
   robot.respond /undo/i, (res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t undo, Organization isn\'t ready yet'
+      return
     user = Organization.getUserBySlackName res.message.user.name
     if user.punches and user.punches.length > 0
       user.undoPunch()

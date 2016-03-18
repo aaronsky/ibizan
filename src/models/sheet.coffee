@@ -14,7 +14,10 @@ options = {}
 
 class Spreadsheet
   constructor: (sheet_id) ->
-    @sheet = new GoogleSpreadsheet(sheet_id)
+    if sheet_id and sheet_id isnt 'test'
+      @sheet = new GoogleSpreadsheet(sheet_id)
+    else
+      @sheet = false
     @initialized = false
 
   authorize: (auth) ->
@@ -30,43 +33,17 @@ class Spreadsheet
 
   loadOptions: () ->
     deferred = Q.defer()
-    @sheet.getInfo (err, info) =>
-      if err
-        deferred.reject err
-      else
-        @title = info.title
-        @id = info.id
-        @id = @id.replace 'https://spreadsheets.google.com/feeds/worksheets/',
-                          ''
-        @id = @id.replace '/private/full', ''
-        @url = "https://docs.google.com/spreadsheets/d/#{@id}"
-        for worksheet in info.worksheets
-          title = worksheet.title
-          words = title.split ' '
-          title = words[0].toLowerCase()
-          i = 1
-          while title.length < 6 and i < words.length
-            title = title.concat(words[i])
-            i += 1
-          @[title] = worksheet
-
-        if not (@rawData and
-                @payroll and
-                @variables and
-                @projects and
-                @employees)
-          deferred.reject 'Worksheets failed to be associated properly'
-        else
-          @_loadVariables({})
-          .then(@_loadProjects.bind(@))
-          .then(@_loadEmployees.bind(@))
-          .then(@_loadPunches.bind(@))
-          .catch((error) -> deferred.reject("Couldn't download sheet data: #{error}"))
-          .done(
-            (opts) =>
-              @initialized = true
-              deferred.resolve opts
-          )
+    @_loadWorksheets()
+    .then(@_loadVariables.bind(@))
+    .then(@_loadProjects.bind(@))
+    .then(@_loadEmployees.bind(@))
+    .then(@_loadPunches.bind(@))
+    .catch((error) -> deferred.reject("Couldn't download sheet data: #{error}"))
+    .done(
+      (opts) =>
+        @initialized = true
+        deferred.resolve opts
+    )
     return deferred.promise
 
   enterPunch: (punch, user) ->
@@ -163,7 +140,6 @@ class Spreadsheet
               else
                 row_match =
                   (r for r in rows when r[headers.id] is row[headers.id])[0]
-                # Logger.log !!row_match
                 punch.assignRow row_match
                 user.punches.push punch
                 deferred.resolve()
@@ -183,6 +159,38 @@ class Spreadsheet
           if numberDone >= users.length
             deferred.resolve numberDone
     deferred.promise
+
+  _loadWorksheets: () ->
+    deferred = Q.defer()
+    @sheet.getInfo (err, info) =>
+      if err
+        deferred.reject err
+      else
+        @title = info.title
+        @id = info.id
+        @id = @id.replace 'https://spreadsheets.google.com/feeds/worksheets/',
+                          ''
+        @id = @id.replace '/private/full', ''
+        @url = "https://docs.google.com/spreadsheets/d/#{@id}"
+        for worksheet in info.worksheets
+          title = worksheet.title
+          words = title.split ' '
+          title = words[0].toLowerCase()
+          i = 1
+          while title.length < 6 and i < words.length
+            title = title.concat(words[i])
+            i += 1
+          @[title] = worksheet
+
+        if not (@rawData and
+                @payroll and
+                @variables and
+                @projects and
+                @employees)
+          deferred.reject 'Worksheets failed to be associated properly'
+        else
+          deferred.resolve {}
+    return deferred.promise
 
   _loadVariables: (opts) ->
     deferred = Q.defer()
@@ -267,7 +275,7 @@ class Spreadsheet
           user = opts.users.filter((item, index, arr) ->
             return item.name is row[HEADERS.rawdata.name]
           )[0]
-          punch = Punch.parseRaw user, row
+          punch = Punch.parseRaw user, row, opts.projects
           if punch and user
             user.punches.push punch
         deferred.resolve opts

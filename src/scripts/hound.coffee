@@ -2,7 +2,8 @@
 #   Your dog friend can keep you in line
 #
 # Commands:
-#
+#   ibizan stop ibizan - Disable hounding until the following morning
+#   ibizan disable ibizan - See `stop ibizan`
 # Notes:
 #
 # Author:
@@ -23,25 +24,21 @@ module.exports = (robot) ->
   #   If the user is logged in, the DM should say:
   #     Don’t forget to check out~
 
-  hound = (user, slack) ->
-    now = moment()
-    Logger.log 'hounding'
-    Logger.log slack
-    presence = slack.getPresence (res) ->
-      if res.ok
-        lastActivity = moment(res.lastActivity)
-        if now.diff(lastActivity, 'hours') >= 3
-          robot.sendMessage 'NO'
-
-  robot.adapter.client.on 'userTyping', (slackuser, channel) ->
-    if not channel.private
-      channel.private = !!channel.is_im or !!channel.is_group
+  hound = (slackuser, channel) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t hound, Organization isn\'t ready yet'
+      return
+    if robot.name is slackuser.name
+      Logger.log 'Caught myself, don\'t hound the hound.'
+      return
     user = Organization.getUserBySlackName slackuser.name
-
     if not user
       Logger.log 'user not found'
       return
 
+    if not channel.private
+      channel.private = !!channel.is_im or !!channel.is_group
+    
     last = user.lastMessage || moment()
     user.lastMessage = moment()
 
@@ -61,8 +58,15 @@ module.exports = (robot) ->
       else
         robot.send { room: slackuser.name }, "Check in if you're on the clock~"
 
+  robot.adapter.client.on 'userTyping', (user, channel) -> hound user, channel
+  robot.adapter.client.on 'presenceChange', (user, status) ->
+    hound user, { private: null, name: '' }
+
   robot.respond /(stop|disable) ibizan/i, (res) ->
-    user = Organization.getUserBySlackName(res.message.user.name)
+    if not Organization.ready()
+      Logger.log 'Don\'t disable hounding, Organization isn\'t ready yet'
+      return
+    user = Organization.getUserBySlackName res.message.user.name
     if not user
       return
     user.shouldHound = false
