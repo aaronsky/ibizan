@@ -20,7 +20,7 @@ module.exports = (robot) ->
     @error: (msg, error) ->
       if DEBUG
         console.error "[Ibizan] (#{new Date()}) ERROR: #{msg}", error || ''
-    @logToChannel: (msg, channel) ->
+    @logToChannel: (msg, channel, ephemeral) ->
       if DEBUG
         if robot
           robot.send {room: channel}, msg
