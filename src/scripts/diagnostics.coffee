@@ -16,6 +16,9 @@
 
 moment = require 'moment'
 
+constants = require '../helpers/constants'
+HEADERS = constants.HEADERS
+
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
@@ -124,3 +127,40 @@ module.exports = (robot) ->
                   .diff(Organization.initTime, 'minutes', true)
                   .toFixed(2)}
                minutes)"
+
+  # User feedback
+  robot.respond /(today|(for today)|hours)$/i, (res) ->
+    if not Organization.ready()
+      Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
+      return
+    user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
+                          res.message.user.name
+      return
+    report = user.toRawPayroll(moment({hour: 0, minute: 0, second: 0}), moment())
+    headers = HEADERS.payrollreports
+    loggedAny = false
+    if not report[headers.logged] and
+       not report[headers.vacation] and
+       not report[headers.sick] and
+       not report[headers.unpaid]
+      msg = 'You haven\'t recorded any hours today.'
+    else
+      if not report[headers.logged]
+        msg = 'You haven\'t recorded any paid work time'
+      else
+        msg = "You have #{report[headers.logged]} hours of paid work time"
+        loggedAny = true
+      for kind in ['vacation', 'sick', 'unpaid']
+        header = headers[kind]
+        if kind is 'unpaid'
+          kind = 'unpaid work'
+        if report[header]
+          if not loggedAny
+            msg += ", but you have #{report[header]} hours of #{kind} time"
+            loggedAny = true
+          else
+            msg += " and #{report[header]} hours of #{kind} time"
+      msg += ' recorded for today.'
+    Logger.logToChannel msg, res.message.user.room

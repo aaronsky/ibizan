@@ -129,10 +129,10 @@ class User
     dayLength = @activeTime()
     loggedTime = unpaidTime = vacationTime = sickTime = 0
     for punch in @punches
-      if punch.times.block
-        loggedTime += punch.times.block
-      else if punch.times[0].isBefore(start) or punch.times[0].isAfter(end)
+      if punch.date.isBefore(start) or punch.date.isAfter(end)
         continue
+      else if punch.times.block
+        loggedTime += punch.times.block
       else if punch.mode is 'in'
         continue
       else if not punch.elapsed
@@ -170,11 +170,11 @@ class User
     if @row?
       moment.tz.setDefault @timetable.timezone.name
       headers = HEADERS.users
-      @row[headers.slackname] = @slack
-      @row[headers.name] = @name
-      @row[headers.salary] = if @salary then 'Y' else 'N'
-      @row[headers.start] = @timetable.start.tz(@timetable.timezone.name).format('h:mm a')
-      @row[headers.end] = @timetable.end.tz(@timetable.timezone.name).format('h:mm a')
+      # @row[headers.slackname] = @slack
+      # @row[headers.name] = @name
+      # @row[headers.salary] = if @salary then 'Y' else 'N'
+      # @row[headers.start] = @timetable.start.tz(@timetable.timezone.name).format('h:mm a')
+      # @row[headers.end] = @timetable.end.tz(@timetable.timezone.name).format('h:mm a')
       @row[headers.timezone] = @timetable.timezone.name || @timetable.timezone
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal

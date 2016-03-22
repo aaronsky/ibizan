@@ -13,7 +13,8 @@ class Punch
   constructor: (@mode = 'none',
                 @times = [],
                 @projects = [],
-                @notes = '') ->
+                @notes = '',
+                @date = moment.tz(constants.TIMEZONE)) ->
     # ...
 
   @parse: (user, command, mode='none') ->
@@ -50,13 +51,15 @@ class Punch
 
     if times.block?
       datetimes.block = times.block
+      if mode is 'in'
+        mode = 'none'
     else if datetimes.length is 2
       elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
 
     [projects, command] = _parseProjects command
     notes = command.trim()
 
-    punch = new Punch(mode, datetimes, projects, notes)
+    punch = new Punch(mode, datetimes, projects, notes, datetimes[0])
     if elapsed
       punch.elapsed = elapsed
     punch
@@ -69,6 +72,7 @@ class Punch
     else if not row.save or not row.del
       return
     headers = HEADERS.rawdata
+    date = moment(row[headers.today], 'MM/DD/YYYY')
     if row[headers.project1] is 'vacation' or
        row[headers.project1] is 'sick' or
        row[headers.project1] is 'unpaid'
@@ -118,7 +122,7 @@ class Punch
         else
           break
     notes = row[headers.notes]
-    punch = new Punch(mode, datetimes, foundProjects, notes)
+    punch = new Punch(mode, datetimes, foundProjects, notes, date)
     if elapsed
       punch.elapsed = elapsed
     punch.assignRow row
@@ -128,24 +132,40 @@ class Punch
     if not @times.block?
       @times.push punch.times[0]
       @elapsed = @times[1].diff(@times[0], 'hours', true)
-
-    extraProjectCount = @projects.length
-    for project in punch.projects
-      if extraProjectCount >= 6
-        break
-      if project not in @projects
-        extraProjectCount += 1
-        @projects.push project
+    if punch.projects
+      @appendProjects punch.projects
     if punch.notes
-      @notes = "#{@notes}\n#{punch.notes}"
+      @appendNotes punch.notes
     @mode = punch.mode
+
+  appendProjects: (projects = []) ->
+    extraProjectCount = @projects.length
+    if extraProjectCount >= 6
+      return
+    for project in projects
+      if @projects.length > 6
+        return
+      if typeof project is 'string'
+        if project.charAt(0) is '#'
+          project = Organization.getProjectByName project
+        else
+          project = Organization.getProjectByName "##{project}"
+      if not project
+        continue
+      else if project not in @projects
+        @projects.push project
+
+  appendNotes: (notes = '') ->
+    if @notes and @notes.length > 0
+      punch.notes += '\n'
+    @notes += msg
 
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     today = moment.tz(constants.TIMEZONE)
     row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today] || today.format('MM/DD/YYYY')
+    row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
     row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block
@@ -153,7 +173,6 @@ class Punch
       minutes = Math.round((block - hours) * 60)
       minute_str = if minutes < 10 then "0#{minutes}" else minutes
       row[headers.blockTime] = "#{hours}:#{minute_str}:00"
-      row[headers.today] = row[headers.today] || today.format('MM/DD/YYYY')
     else
       for i in [0..1]
         if time = @times[i]

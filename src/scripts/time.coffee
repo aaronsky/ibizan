@@ -126,22 +126,14 @@ module.exports = (robot) ->
           msg = words.join(' ').trim()
           if op is 'project' or
              op is 'projects'
-            words = msg.split ' '
-            projects = []
-            for word in words
-              if word.charAt(0) is '#'
-                if project = Organization.getProjectByName word
-                  projects.push project
-              else
-                break
-            if not projects.length and isProjectChannel res.message.user.room
+            projects = msg.split ' '
+            if projects.length is 0 and
+               isProjectChannel res.message.user.room
               projects.push Organization.getProjectByName(res.message.user.room)
-            punch.projects.push.apply(punch.projects, projects)
+            punch.appendProjects projects
           else if op is 'note' or
                   op is 'notes'
-            if punch.notes.length > 0
-              punch.notes += '\n'
-            punch.notes += msg
+            punch.appendNotes msg
           row = punch.toRawRow user.name
           row.save (err) ->
             if err
