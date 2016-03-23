@@ -126,25 +126,34 @@ class User
     row = {}
     row[headers.date] = moment.tz(constants.TIMEZONE).format('M/DD/YYYY')
     row[headers.name] = @name
-    dayLength = @activeTime()
     loggedTime = unpaidTime = vacationTime = sickTime = 0
     for punch in @punches
       if punch.date.isBefore(start) or punch.date.isAfter(end)
         continue
-      else if punch.times.block
-        loggedTime += punch.times.block
+      else if not punch.elapsed and not punch.times.block
+        continue
       else if punch.mode is 'in'
         continue
-      else if not punch.elapsed
-        continue
       else if punch.mode is 'vacation'
-        vacationTime += punch.elapsed
+        if punch.times.block
+          vacationTime += punch.times.block
+        else
+          vacationTime += punch.elapsed
       else if punch.mode is 'unpaid'
-        unpaidTime += punch.elapsed
+        if punch.times.block
+          unpaidTime += punch.times.block
+        else
+          unpaidTime += punch.elapsed
       else if punch.mode is 'sick'
-        sickTime += punch.elapsed
+        if punch.times.block
+          sickTime += punch.times.block
+        else
+          sickTime += punch.elapsed
       else
-        loggedTime += punch.elapsed
+        if punch.times.block
+          loggedTime += punch.times.block
+        else
+          loggedTime += punch.elapsed
 
     loggedTime = +loggedTime.toFixed(2)
     vacationTime = +vacationTime.toFixed(2)
