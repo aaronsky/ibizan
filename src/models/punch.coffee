@@ -55,6 +55,8 @@ class Punch
         mode = 'none'
     else if datetimes.length is 2
       elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+      if mode is 'in'
+        mode = 'none'
 
     [projects, command] = _parseProjects command
     notes = command.trim()
@@ -176,6 +178,8 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
+          console.log MODES[i] + ' ' + time.format()
+          console.log MODES[i] + ' ' + time.tz(constants.TIMEZONE).format()
           if time.isSame(today.format('YYYY-MM-DD'))
             row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
                                       .format('hh:mm:ss A')
@@ -220,7 +224,7 @@ class Punch
       elapsed = @times[0].diff(@times[1], 'hours', true)
     else if @times[0]
       date = @times[0]
-    if @mode is 'none' and not @times.block?
+    if @mode is 'none' and not elapsed
       return 'Malformed punch. Something has gone wrong.'
     else if @mode is 'in'
       # if mode is 'in' and user has not punched out
@@ -239,7 +243,8 @@ class Punch
     if @mode is 'out'
       if user.punches and
          user.punches.length > 0 and
-         user.punches.slice(-1)[0].mode is 'out'
+         user.punches.slice(-1)[0].mode is 'out' and
+         @times.length isnt 2
         last = user.punches.slice(-1)[0]
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You cannot punch out before punching in. Your last out-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
@@ -251,7 +256,8 @@ class Punch
        @mode is 'unpaid'
       if user.punches and
          user.punches.length > 0 and
-         user.punches.slice(-1)[0].mode is 'in'
+         user.punches.slice(-1)[0].mode is 'in' and
+         not @times.block?
         last = user.punches.slice(-1)[0]
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
@@ -278,14 +284,18 @@ class Punch
     return true
 
 _mergeDateTime = (date, time) ->
-  return moment({
+  if date.zoneName() is time.zoneName()
+    tz = time.zoneName()
+  else
+    tz = time.zoneName()
+  return moment.tz({
     year: date.get('year'),
     month: date.get('month'),
     date: date.get('date'),
     hour: time.get('hour'),
     minute: time.get('minute'),
     second: time.get('second')
-  })
+  }, tz)
 
 _parseMode = (command) ->
   comps = command.split ' '
@@ -300,12 +310,19 @@ _parseMode = (command) ->
 _parseTime = (command, activeStart, activeEnd) ->
   # parse time component
   command = command.trimLeft() || ''
+  activeTime = (activeEnd.diff(activeStart, 'hours', true).toFixed(2))
   time = []
   if match = command.match REGEX.rel_time
     if match[0] is 'half-day' or match[0] is 'half day'
-      copy = moment(activeStart)
-      copy.hour(activeStart.hour() - 4)
-      time.push copy, activeEnd
+      halfTime = activeTime / 2
+      midTime = moment(activeStart).add(halfTime, 'hours')
+      period = moment().diff(activeStart, 'hours', true) <= halfTime ? 'early': 'later'
+      if period is 'early'
+        # start to mid
+        time.push moment(activeStart), midTime
+      else
+        # mid to end
+        time.push midTime, moment(activeEnd)
     else if match[0] is 'noon'
       time.push moment({hour: 12, minute: 0})
     else if match[0] is 'midnight'

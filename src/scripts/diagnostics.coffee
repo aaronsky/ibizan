@@ -138,7 +138,8 @@ module.exports = (robot) ->
       Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
                           res.message.user.name
       return
-    report = user.toRawPayroll(moment({hour: 0, minute: 0, second: 0}), moment())
+    report = user.toRawPayroll(moment({hour: 0, minute: 0, second: 0}),
+                               moment())
     headers = HEADERS.payrollreports
     loggedAny = false
     if not report[headers.logged] and

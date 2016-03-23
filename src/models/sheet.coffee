@@ -59,7 +59,9 @@ class Spreadsheet
         if user.punches and
            user.punches.length > 0
           last = user.punches.slice(-1)[0]
-          if last.mode is 'in'
+          if last.mode is 'in' or
+             (last.mode is 'out' and
+              punch.times.length is 2)
             last.out punch
             row = last.toRawRow user.name
             row.save (err) ->

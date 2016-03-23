@@ -58,6 +58,7 @@ module.exports = (robot) ->
         return
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
+      moment.tz.setDefault res.message.user.slack.tz
       punch = Punch.parse user, msg, mode
       if not punch.projects.length and isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
@@ -66,7 +67,8 @@ module.exports = (robot) ->
     else
       Logger.logToChannel "You cannot punch in ##{res.message.user.room}.
                            Try punching in ##{Organization.clockChannel},
-                           a designated project channel, or here.", res.message.user.name
+                           a designated project channel, or here.",
+                          res.message.user.name
 
   sendPunch = (punch, user, res) ->
     if not punch
@@ -78,7 +80,10 @@ module.exports = (robot) ->
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
       () ->
-        Logger.reactToMessage 'dog2', res.message.user.name, res.message.rawMessage.channel, res.message.id
+        Logger.reactToMessage 'dog2',
+                              res.message.user.name,
+                              res.message.rawMessage.channel,
+                              res.message.id
     )
     .catch(
       (err) ->
@@ -97,7 +102,6 @@ module.exports = (robot) ->
     if not Organization.ready()
       Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
       return
-    moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, res.match[1]
 
   # respond to simple time block
@@ -105,7 +109,7 @@ module.exports = (robot) ->
     if not Organization.ready()
       Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
       return
-    moment.tz.setDefault res.message.user.slack.tz
+    # moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, 'none'
 
   robot.respond REGEX.append, (res) ->

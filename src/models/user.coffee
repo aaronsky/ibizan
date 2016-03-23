@@ -194,10 +194,31 @@ class User
     deferred.promise
 
   description: () ->
+    if @punches.length > 0
+      punch = @punches.slice(-1)[0]
+      if punch.times.length > 0
+        time = punch.times.slice(-1)[0]
+        if time.isSame(moment(), 'day')
+          date = 'today'
+        else if time.isSame(moment().subtract(1, 'days'), 'day')
+          date = 'yesterday'
+        else
+          date = 'on ' + time.format('MMM Do')
+        punchTime = "#{date}, #{time.format('h:mm a')}"
+      else if punch.times.block
+        if punch.mode is 'none'
+          type = ' '
+        else if punch.mode is 'vacation' or
+                punch.mode is 'sick' or
+                punch.mode is 'unpaid'
+          type = punch.mode + ' '
+        punchTime = "a #{punch.times.block} hour #{type}block punch"
     return "User: #{@name} (#{@slack})\n
-            Number of punch records: #{(@punches || []).length}\n
-            Active time: #{@timetable.start.format('hh:mm a')} - #{@timetable.end.format('hh:mm a')}, #{@timetable.timezone.name}\n
-            Last message was #{+(moment().diff(@lastMessage, 'hours', true).toFixed(2))} hours ago"
+            They have #{(@punches || []).length} punches on record\n
+            Last punch was #{punchTime}\n
+            Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
+            They are in #{@timetable.timezone.name}\n
+            The last time they sent a message was #{+(moment().diff(@lastMessage, 'hours', true).toFixed(2))} hours ago"
 
 module.exports.User = User
 module.exports.Timetable = Timetable
