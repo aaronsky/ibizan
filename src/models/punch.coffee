@@ -17,7 +17,7 @@ class Punch
                 @date = moment.tz(constants.TIMEZONE)) ->
     # ...
 
-  @parse: (user, command, mode='none') ->
+  @parse: (user, command, mode='none', timezone='') ->
     if not user or not command
       return
     if mode and mode isnt 'none'
@@ -27,36 +27,43 @@ class Punch
     [times, command] = _parseTime command, start, end
     [dates, command] = _parseDate command
 
+    tz = timezone || user.timetable.timezone.name
+
     datetimes = []
     if dates.length is 0 and times.length is 0
-      datetimes.push(moment())
+      datetimes.push(moment.tz(tz))
     else if dates.length > 0 and times.length is 0
-      datetimes.push(_mergeDateTime(dates[0], start))
-      datetimes.push(_mergeDateTime(dates[dates.length - 1], end))
+      datetimes.push(_mergeDateTime(dates[0], start, tz))
+      datetimes.push(_mergeDateTime(dates[dates.length - 1], end, tz))
     else if dates.length is 0 and times.length > 0
       for time in times
-        datetimes.push(_mergeDateTime(moment(), time))
+        datetimes.push(_mergeDateTime(moment.tz(tz), time, tz))
     else
       if dates.length is 2 and times.length is 2
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
-        datetimes.push(_mergeDateTime(dates[1], times[1]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
+        datetimes.push(_mergeDateTime(dates[1], times[1], tz))
       else if dates.length is 2 and times.length is 1
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
-        datetimes.push(_mergeDateTime(dates[1], times[0]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
+        datetimes.push(_mergeDateTime(dates[1], times[0], tz))
       else if dates.length is 1 and times.length is 2
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
-        datetimes.push(_mergeDateTime(dates[0], times[1]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
+        datetimes.push(_mergeDateTime(dates[0], times[1], tz))
       else
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
 
     if times.block?
       datetimes.block = times.block
       if mode is 'in'
         mode = 'none'
     else if datetimes.length is 2
-      elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
-      if mode is 'in'
-        mode = 'none'
+      if mode is 'out'
+        return
+      else
+        if datetimes[1].isBefore datetimes[0]
+          datetimes[1] = datetimes[1].add(1, 'days')
+        elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+        if mode is 'in'
+          mode = 'none'
 
     [projects, command] = _parseProjects command
     notes = command.trim()
@@ -95,13 +102,13 @@ class Punch
           newDate = moment(row[headers.today] + ' ' +
                               row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
         datetimes.push newDate.tz(user.timetable.timezone.name)
-    if row[headers.totalTime]
-      comps = row[headers.totalTime].split ':'
-      elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
     if row[headers.blockTime]
       comps = row[headers.blockTime].split ':'
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
       datetimes.block = block
+    else if datetimes.length is 2
+      elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+    
     foundProjects = []
     for i in [1..6]
       projectStr = row[headers['project'+i]]
@@ -195,8 +202,8 @@ class Punch
         row[headers.totalTime] = "#{hours}:#{minute_str}:00"
     row[headers.notes] = @notes
     if @mode is 'vacation' or
-        @mode is 'sick' or
-        @mode is 'unpaid'
+       @mode is 'sick' or
+       @mode is 'unpaid'
       row[headers.project1] = @mode
     else
       max = if @projects.length < 6 then @projects.length else 5
@@ -283,11 +290,7 @@ class Punch
       return 'You cannot punch for a date older than 7 days.'
     return true
 
-_mergeDateTime = (date, time) ->
-  if date.zoneName() is time.zoneName()
-    tz = time.zoneName()
-  else
-    tz = time.zoneName()
+_mergeDateTime = (date, time, tz) ->
   return moment.tz({
     year: date.get('year'),
     month: date.get('month'),

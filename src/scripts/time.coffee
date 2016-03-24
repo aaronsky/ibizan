@@ -50,20 +50,21 @@ module.exports = (robot) ->
     isProjectChannel(channel)
 
   parse = (res, msg, mode) ->
-    if canPunchHere res.message.user.name, res.message.user.room
+    if canPunchHere res?.message?.user?.name, res?.message?.user?.room
       user = Organization.getUserBySlackName res.message.user.name
       if not user
         Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
                             res.message.user.name
         return
-      msg = res.match.input
-      msg = msg.replace REGEX.ibizan, ''
-      moment.tz.setDefault res.message.user.slack.tz
-      punch = Punch.parse user, msg, mode
+      msg = res.match?.input
+      msg = msg?.replace REGEX.ibizan, ''
+      if tz = res?.message?.user?.slack?.tz
+        moment.tz.setDefault res.message.user.slack.tz
+      punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
-      sendPunch punch, user, res
       moment.tz.setDefault TIMEZONE
+      sendPunch punch, user, res
     else
       Logger.logToChannel "You cannot punch in ##{res.message.user.room}.
                            Try punching in ##{Organization.clockChannel},

@@ -20,7 +20,8 @@ getPositiveNumber = (input, current) ->
 
 class Timetable
   constructor: (@start, @end, @timezone) ->
-    # code
+    if typeof @timezone is 'string'
+      @timezone = moment.tz.zone(@timezone)
 
   setVacation: (total, available) ->
     @vacationTotal = getPositiveNumber(total, @vacationTotal)
