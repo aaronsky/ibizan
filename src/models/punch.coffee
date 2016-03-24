@@ -245,12 +245,18 @@ class Punch
           # if mode is 'in' and date is yesterday
           if time.isSame(yesterday, 'd')
             return 'You can\'t punch in for yesterday\'s date.'
-    if @mode is 'out'
+    else if @mode is 'out'
       if user.punches and
-         user.punches.length > 0 and
-         user.punches.slice(-1)[0].mode is 'out' and
-         @times.length isnt 2
-        last = user.punches.slice(-1)[0]
+         user.punches.length > 0
+        len = user.punches.length
+        for i in [len-1..0]
+          last = user.punches[i]
+          if last.mode is 'in'
+            return true
+          else if last.mode is 'out'
+            break
+          else if last.times.length is 2
+            break
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You cannot punch out before punching in. Your last out-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
     # if mode is 'unpaid' and user is non-salary

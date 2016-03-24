@@ -30,11 +30,12 @@ constants = require '../helpers/constants'
 REGEX = constants.REGEX
 TIMEZONE = constants.TIMEZONE
 Organization = require('../models/organization').get()
-Punch = require('../models/punch')
+Punch = require '../models/punch'
+User = require '../models/user'
 
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
-  
+
   isDM = (name, channel) ->
     name is channel
 
@@ -68,14 +69,16 @@ module.exports = (robot) ->
     else
       user.directMessage "You cannot punch in ##{res.message.user.room}.
                            Try punching in ##{Organization.clockChannel},
-                           a designated project channel, or here."
+                           a designated project channel, or here.",
+                         Logger
 
   sendPunch = (punch, user, res) ->
     if not punch
       Logger.errorToSlack "Somehow, a punch was not generated
                            for \"#{user.slack}\". Punch:\n", res.match.input
       user.directMessage "An unexpected error occured while
-                           generating your punch."
+                           generating your punch.",
+                         Logger
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
@@ -91,7 +94,8 @@ module.exports = (robot) ->
         Logger.errorToSlack "\"#{err}\" was returned for
                              #{user.slack}. Punch:\n", res.match.input
         user.directMessage "#{err} You can see more details on the spreadsheet
-                             at #{Organization.spreadsheet.url}"
+                             at #{Organization.spreadsheet.url}",
+                           Logger
     )
     .done()
       
@@ -140,7 +144,8 @@ module.exports = (robot) ->
           row = punch.toRawRow user.name
           row.save (err) ->
             if err
-              user.directMessage err
+              user.directMessage err,
+                                 Logger
             else
               Logger.reactToMessage 'dog2',
                                     res.message.user.name,
@@ -160,17 +165,20 @@ module.exports = (robot) ->
       user.undoPunch()
       .then(
         () ->
-          user.directMessage 'Undid your last punch action'
+          user.directMessage 'Undid your last punch action',
+                             Logger
       )
       .catch(
         (err) ->
           console.error err
           Logger.errorToSlack "\"#{err}\" was returned for
                                an undo operation by #{user.slack}"
-          user.directMessage "Something went wrong while undoing your punch."
+          user.directMessage "Something went wrong while undoing your punch.",
+                             Logger
       )
       .done()
     else
-      user.directMessage 'There\'s nothing for me to undo.'
+      user.directMessage 'There\'s nothing for me to undo.',
+                         Logger
 
 
