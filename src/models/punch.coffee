@@ -187,8 +187,8 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          console.log MODES[i] + ' ' + time.format()
-          console.log MODES[i] + ' ' + time.tz(constants.TIMEZONE).format()
+          # console.log MODES[i] + ' ' + time.format()
+          # console.log MODES[i] + ' ' + time.tz(constants.TIMEZONE).format()
           row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
                                     .format('MM/DD/YYYY hh:mm:ss A')
         else
