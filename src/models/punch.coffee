@@ -140,6 +140,8 @@ class Punch
   out: (punch) ->
     if not @times.block?
       @times.push punch.times[0]
+      if @times[1].isBefore @times[0]
+        @times[1] = @times[1].add(1, 'days')
       @elapsed = @times[1].diff(@times[0], 'hours', true)
     if punch.projects
       @appendProjects punch.projects
@@ -187,12 +189,8 @@ class Punch
         if time = @times[i]
           console.log MODES[i] + ' ' + time.format()
           console.log MODES[i] + ' ' + time.tz(constants.TIMEZONE).format()
-          if time.isSame(today.format('YYYY-MM-DD'))
-            row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
-                                      .format('hh:mm:ss A')
-          else
-            row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
-                                      .format('MM/DD/YYYY hh:mm:ss A')
+          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
+                                    .format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed

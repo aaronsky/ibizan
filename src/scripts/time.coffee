@@ -50,15 +50,15 @@ module.exports = (robot) ->
     isProjectChannel(channel)
 
   parse = (res, msg, mode) ->
-    if canPunchHere res?.message?.user?.name, res?.message?.user?.room
-      user = Organization.getUserBySlackName res.message.user.name
-      if not user
-        Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
-                            res.message.user.name
-        return
-      msg = res.match?.input
-      msg = msg?.replace REGEX.ibizan, ''
-      if tz = res?.message?.user?.slack?.tz
+    user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
+                          res.message.user.name
+      return
+    if canPunchHere res.message.user.name, res.message.user.room
+      msg = res.match.input
+      msg = msg.replace REGEX.ibizan, ''
+      if tz = res.message.user.slack.tz
         moment.tz.setDefault res.message.user.slack.tz
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and isProjectChannel res.message.user.room
@@ -66,17 +66,16 @@ module.exports = (robot) ->
       moment.tz.setDefault TIMEZONE
       sendPunch punch, user, res
     else
-      Logger.logToChannel "You cannot punch in ##{res.message.user.room}.
+      user.directMessage "You cannot punch in ##{res.message.user.room}.
                            Try punching in ##{Organization.clockChannel},
-                           a designated project channel, or here.",
-                          res.message.user.name
+                           a designated project channel, or here."
 
   sendPunch = (punch, user, res) ->
     if not punch
       Logger.errorToSlack "Somehow, a punch was not generated
                            for \"#{user.slack}\". Punch:\n", res.match.input
-      Logger.logToChannel "An unexpected error occured while
-                           generating your punch.", res.message.user.name
+      user.directMessage "An unexpected error occured while
+                           generating your punch."
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
@@ -91,9 +90,8 @@ module.exports = (robot) ->
         Logger.error err
         Logger.errorToSlack "\"#{err}\" was returned for
                              #{user.slack}. Punch:\n", res.match.input
-        Logger.logToChannel "#{err} You can see more details on the spreadsheet
-                             at #{Organization.spreadsheet.url}",
-                             res.message.user.name
+        user.directMessage "#{err} You can see more details on the spreadsheet
+                             at #{Organization.spreadsheet.url}"
     )
     .done()
       
@@ -142,7 +140,7 @@ module.exports = (robot) ->
           row = punch.toRawRow user.name
           row.save (err) ->
             if err
-              Logger.logToChannel err, res.message.user.name
+              user.directMessage err
             else
               Logger.reactToMessage 'dog2',
                                     res.message.user.name,
@@ -154,24 +152,25 @@ module.exports = (robot) ->
       Logger.log 'Don\'t undo, Organization isn\'t ready yet'
       return
     user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
+                          res.message.user.name
+      return
     if user.punches and user.punches.length > 0
       user.undoPunch()
       .then(
         () ->
-          Logger.logToChannel 'Undid your last punch action',
-           res.message.user.name
+          user.directMessage 'Undid your last punch action'
       )
       .catch(
         (err) ->
           console.error err
           Logger.errorToSlack "\"#{err}\" was returned for
                                an undo operation by #{user.slack}"
-          Logger.logToChannel "Something went wrong while undoing your punch.",
-           res.message.user.name
+          user.directMessage "Something went wrong while undoing your punch."
       )
       .done()
     else
-      Logger.logToChannel 'There\'s nothing for me to undo.',
-       res.message.user.name
+      user.directMessage 'There\'s nothing for me to undo.'
 
 

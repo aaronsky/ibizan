@@ -202,6 +202,8 @@ class User
     else
       deferred.reject 'Row is null'
     deferred.promise
+  directMessage: (msg) ->
+    Logger.logToChannel msg, @slack
 
   description: () ->
     if @punches.length > 0
