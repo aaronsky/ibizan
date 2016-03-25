@@ -14,13 +14,11 @@ Organization.projects = [
   new Project('#camp-fangamer')
 ]
 
-today = moment()
-
 describe 'Punch', ->
   describe '#parse(user, command, mode)', ->
     beforeEach ->
-      start = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 7}, 'America/New_York')
-      end = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 18}, 'America/New_York')
+      start = moment.tz({hour: 7}, 'America/New_York')
+      end = moment.tz({hour: 18}, 'America/New_York')
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -191,8 +189,8 @@ describe 'Punch', ->
       expect(punch.notes).to.be.empty
   describe '#out(punch)', ->
     beforeEach ->
-      start = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 7}, 'America/New_York')
-      end = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 18}, 'America/New_York')
+      start = moment.tz({hour: 7}, 'America/New_York')
+      end = moment.tz({hour: 18}, 'America/New_York')
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -217,8 +215,8 @@ describe 'Punch', ->
                                           'camp-fangamer'
   describe '#toRawRow(name)', ->
     beforeEach ->
-      start = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 7}, 'America/New_York')
-      end = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 18}, 'America/New_York')
+      start = moment.tz({hour: 7}, 'America/New_York')
+      end = moment.tz({hour: 18}, 'America/New_York')
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -234,8 +232,8 @@ describe 'Punch', ->
       expect(raw).to.exist
   describe '#assignRow', ->
     beforeEach ->
-      start = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 7}, 'America/New_York')
-      end = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 18}, 'America/New_York')
+      start = moment.tz({hour: 7}, 'America/New_York')
+      end = moment.tz({hour: 18}, 'America/New_York')
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -260,8 +258,8 @@ describe 'Punch', ->
       expect(punch.row).to.exist
   describe '#isValid(user)', ->
     beforeEach ->
-      start = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 7}, 'America/New_York')
-      end = moment.tz({year: today.year(), month: today.month(), date: today.date(), hour: 18}, 'America/New_York')
+      start = moment.tz({hour: 7}, 'America/New_York')
+      end = moment.tz({hour: 18}, 'America/New_York')
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
