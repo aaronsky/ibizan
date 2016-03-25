@@ -39,8 +39,8 @@ module.exports = (robot) ->
       response = "#{Organization.name}'s Ibizan has been up since
                   #{Organization.initTime.toDate()}
                   (#{+moment()
-                     .diff(Organization.initTime, 'minutes', true)
-                     .toFixed(2)}
+                    .diff(Organization.initTime, 'minutes', true)
+                    .toFixed(2)}
                   minutes)"
     else
       res.status 401
