@@ -32,9 +32,9 @@ module.exports = (robot) ->
     return channel is 'ibizan-diagnostics'
 
   # Org statistics
-  robot.router.post '/ibizan/diagnostics/status', (req, res) ->
+  robot.router.post '/ibizan/diagnostics/info', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_STATUS_TOKEN
+    if body.token is process.env.SLASH_INFO_TOKEN
       res.status 200
       response = "#{Organization.name}'s Ibizan has been up since
                   #{Organization.initTime.toDate()}
