@@ -86,11 +86,15 @@ class Organization
       Logger.log "Project #{name} could not be found"
     generateReport: (start, end) ->
       deferred = Q.defer()
-      if @spreadsheet
-        @spreadsheet.generateReport(@users, start, end)
-        .done((numberDone) -> deferred.resolve(numberDone))
-      else
-        deferred.reject 'Spreadsheet was not loaded, report cannot be generated'
+      if not @spreadsheet
+        deferred.reject 'No spreadsheet is loaded, report cannot be generated'
+        return
+      else if not start or not end
+        deferred.reject 'No start or end date were passed as arguments'
+        return
+      Logger.log "Generating payroll from #{start.format('MMM Do, YYYY')} to #{end.format('MMM Do, YYYY')}"
+      @spreadsheet.generateReport(@users, start, end)
+      .done((numberDone) -> deferred.resolve(numberDone))
       deferred.promise
     resetHounding: () ->
       i = 0
