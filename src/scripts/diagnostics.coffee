@@ -18,6 +18,8 @@ moment = require 'moment'
 
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
+# TODO: FIX THIS FOR WIDE RELEASE
+ADMINS = ['aaronsky', 'reid', 'ryan']
 
 Organization = require('../models/organization').get()
 
@@ -26,10 +28,7 @@ module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
   isAdminUser = (user) ->
-    return user? and user.is_admin
-
-  isLogChannel = (channel) ->
-    return channel is 'ibizan-diagnostics'
+    return user? and user in ADMINS
 
   # Org statistics
   robot.router.post '/ibizan/diagnostics/info', (req, res) ->
@@ -52,7 +51,8 @@ module.exports = (robot) ->
 
   robot.router.post '/ibizan/diagnostics/users', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_USERS_TOKEN
+    if body.token is process.env.SLASH_USERS_TOKEN and
+       isAdminUser body.user_name
       res.status 200
       response = ''
       for user in Organization.users
@@ -66,7 +66,8 @@ module.exports = (robot) ->
     
   robot.router.post '/ibizan/diagnostics/projects', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_PROJECTS_TOKEN
+    if body.token is process.env.SLASH_PROJECTS_TOKEN and
+       isAdminUser body.user_name
       res.status 200
       response = ''
       for project in Organization.projects
@@ -80,7 +81,8 @@ module.exports = (robot) ->
     
   robot.router.post '/ibizan/diagnostics/calendar', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_CALENDAR_TOKEN
+    if body.token is process.env.SLASH_CALENDAR_TOKEN and
+       isAdminUser body.user_name
       res.status 200
       response = Organization.calendar.description()
     else
@@ -92,7 +94,8 @@ module.exports = (robot) ->
     
   robot.router.post '/ibizan/diagnostics/resethounding', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_RESETHOUNDING_TOKEN
+    if body.token is process.env.SLASH_RESETHOUNDING_TOKEN and
+       isAdminUser body.user_name
       res.status 200
       count = Organization.resetHounding()
       response = "Reset #{count}
@@ -107,7 +110,8 @@ module.exports = (robot) ->
 
   robot.router.post '/ibizan/diagnostics/payroll', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_SYNC_TOKEN
+    if body.token is process.env.SLASH_SYNC_TOKEN and
+       isAdminUser body.user_name
       comps = body.text || []
       start = if comps[0] then moment comps[0] else moment().subtract 2, 'weeks'
       end = if comps[1] then moment comps[1] else moment()
