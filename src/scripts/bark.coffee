@@ -6,8 +6,7 @@
 # Author:
 #   aaronsky
 
-https = require 'https'
-
+moment = require 'moment'
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
@@ -20,5 +19,11 @@ module.exports = (robot) ->
   robot.respond /tell me a story/i, (res) ->
     res.send 'woof woof woof'
 
-  robot.hear /good dog/i, (res) ->
-    res.send ':+1: :dog: :+1:'
+  robot.hear /good (dog|boy|pup|puppy|ibizan|ibi)/i, (res) ->
+    res.send ':ok_hand:'
+
+  robot.router.get '/', (req, res) ->
+    res.json {
+      'name': process.env.ORG_NAME + '\'s Ibizan',
+      'time': moment().format()
+    }
