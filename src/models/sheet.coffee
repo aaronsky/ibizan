@@ -58,40 +58,45 @@ class Spreadsheet
       if punch.mode is 'out'
         if user.punches and
            user.punches.length > 0
-          last = user.punches.slice(-1)[0]
-          if last.mode is 'in'
-            last.out punch
-            row = last.toRawRow user.name
-            row.save (err) ->
-              if err
-                deferred.reject err
-              else
-                # add hours to project in projects
-                if last.times.block
-                  workTime = last.times.block
-                else
-                  workTime = last.elapsed
-                user.timetable.setLogged(workTime)
-                # calculate project times
-                promises = []
-                for project in last.projects
-                  project.total += workTime
-                  promises.push (project.updateRow())
-                promises.push(user.updateRow())
-                Q.all(promises)
-                .then(
-                  () ->
-                    deferred.resolve()
-                )
-                .catch(
-                  (err) ->
-                    deferred.reject err
-                )
-                .done()
-          else
+          len = user.punches.length
+          for i in [len-1..0]
+            last = user.punches[i]
+            if last.mode is 'in'
+              break
+            else if last.mode is 'out'
+              continue
+            else if last.times.length is 2
+              continue
+          if not last?
             deferred.reject 'You haven\'t punched out yet.'
-        else
-          deferred.reject 'You haven\'t punched out yet.'
+          last.out punch
+          row = last.toRawRow user.name
+          row.save (err) ->
+            if err
+              deferred.reject err
+            else
+              # add hours to project in projects
+              if last.times.block
+                workTime = last.times.block
+              else
+                workTime = last.elapsed
+              user.timetable.setLogged(workTime)
+              # calculate project times
+              promises = []
+              for project in last.projects
+                project.total += workTime
+                promises.push (project.updateRow())
+              promises.push(user.updateRow())
+              Q.all(promises)
+              .then(
+                () ->
+                  deferred.resolve()
+              )
+              .catch(
+                (err) ->
+                  deferred.reject err
+              )
+              .done()
       else if punch.mode is 'vacation' or
               punch.mode is 'sick' or
               punch.mode is 'unpaid'

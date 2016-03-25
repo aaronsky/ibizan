@@ -13,10 +13,11 @@ class Punch
   constructor: (@mode = 'none',
                 @times = [],
                 @projects = [],
-                @notes = '') ->
+                @notes = '',
+                @date = moment.tz(constants.TIMEZONE)) ->
     # ...
 
-  @parse: (user, command, mode='none') ->
+  @parse: (user, command, mode='none', timezone='') ->
     if not user or not command
       return
     if mode and mode isnt 'none'
@@ -26,37 +27,48 @@ class Punch
     [times, command] = _parseTime command, start, end
     [dates, command] = _parseDate command
 
+    tz = timezone || user.timetable.timezone.name
+
     datetimes = []
     if dates.length is 0 and times.length is 0
-      datetimes.push(moment())
+      datetimes.push(moment.tz(tz))
     else if dates.length > 0 and times.length is 0
-      datetimes.push(_mergeDateTime(dates[0], start))
-      datetimes.push(_mergeDateTime(dates[dates.length - 1], end))
+      datetimes.push(_mergeDateTime(dates[0], start, tz))
+      datetimes.push(_mergeDateTime(dates[dates.length - 1], end, tz))
     else if dates.length is 0 and times.length > 0
       for time in times
-        datetimes.push(_mergeDateTime(moment(), time))
+        datetimes.push(_mergeDateTime(moment.tz(tz), time, tz))
     else
       if dates.length is 2 and times.length is 2
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
-        datetimes.push(_mergeDateTime(dates[1], times[1]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
+        datetimes.push(_mergeDateTime(dates[1], times[1], tz))
       else if dates.length is 2 and times.length is 1
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
-        datetimes.push(_mergeDateTime(dates[1], times[0]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
+        datetimes.push(_mergeDateTime(dates[1], times[0], tz))
       else if dates.length is 1 and times.length is 2
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
-        datetimes.push(_mergeDateTime(dates[0], times[1]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
+        datetimes.push(_mergeDateTime(dates[0], times[1], tz))
       else
-        datetimes.push(_mergeDateTime(dates[0], times[0]))
+        datetimes.push(_mergeDateTime(dates[0], times[0], tz))
 
     if times.block?
       datetimes.block = times.block
+      if mode is 'in'
+        mode = 'none'
     else if datetimes.length is 2
-      elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+      if mode is 'out'
+        return
+      else
+        if datetimes[1].isBefore datetimes[0]
+          datetimes[1] = datetimes[1].add(1, 'days')
+        elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+        if mode is 'in'
+          mode = 'none'
 
     [projects, command] = _parseProjects command
     notes = command.trim()
 
-    punch = new Punch(mode, datetimes, projects, notes)
+    punch = new Punch(mode, datetimes, projects, notes, datetimes[0])
     if elapsed
       punch.elapsed = elapsed
     punch
@@ -69,6 +81,7 @@ class Punch
     else if not row.save or not row.del
       return
     headers = HEADERS.rawdata
+    date = moment(row[headers.today], 'MM/DD/YYYY')
     if row[headers.project1] is 'vacation' or
        row[headers.project1] is 'sick' or
        row[headers.project1] is 'unpaid'
@@ -89,13 +102,13 @@ class Punch
           newDate = moment(row[headers.today] + ' ' +
                               row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
         datetimes.push newDate.tz(user.timetable.timezone.name)
-    if row[headers.totalTime]
-      comps = row[headers.totalTime].split ':'
-      elapsed = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
     if row[headers.blockTime]
       comps = row[headers.blockTime].split ':'
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
       datetimes.block = block
+    else if datetimes.length is 2
+      elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+    
     foundProjects = []
     for i in [1..6]
       projectStr = row[headers['project'+i]]
@@ -118,7 +131,7 @@ class Punch
         else
           break
     notes = row[headers.notes]
-    punch = new Punch(mode, datetimes, foundProjects, notes)
+    punch = new Punch(mode, datetimes, foundProjects, notes, date)
     if elapsed
       punch.elapsed = elapsed
     punch.assignRow row
@@ -127,25 +140,43 @@ class Punch
   out: (punch) ->
     if not @times.block?
       @times.push punch.times[0]
+      if @times[1].isBefore @times[0]
+        @times[1] = @times[1].add(1, 'days')
       @elapsed = @times[1].diff(@times[0], 'hours', true)
-
-    extraProjectCount = @projects.length
-    for project in punch.projects
-      if extraProjectCount >= 6
-        break
-      if project not in @projects
-        extraProjectCount += 1
-        @projects.push project
+    if punch.projects
+      @appendProjects punch.projects
     if punch.notes
-      @notes = "#{@notes}\n#{punch.notes}"
+      @appendNotes punch.notes
     @mode = punch.mode
+
+  appendProjects: (projects = []) ->
+    extraProjectCount = @projects.length
+    if extraProjectCount >= 6
+      return
+    for project in projects
+      if @projects.length > 6
+        return
+      if typeof project is 'string'
+        if project.charAt(0) is '#'
+          project = Organization.getProjectByName project
+        else
+          project = Organization.getProjectByName "##{project}"
+      if not project
+        continue
+      else if project not in @projects
+        @projects.push project
+
+  appendNotes: (notes = '') ->
+    if @notes and @notes.length > 0
+      punch.notes += '\n'
+    @notes += msg
 
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     today = moment.tz(constants.TIMEZONE)
     row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today] || today.format('MM/DD/YYYY')
+    row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
     row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block
@@ -153,16 +184,13 @@ class Punch
       minutes = Math.round((block - hours) * 60)
       minute_str = if minutes < 10 then "0#{minutes}" else minutes
       row[headers.blockTime] = "#{hours}:#{minute_str}:00"
-      row[headers.today] = row[headers.today] || today.format('MM/DD/YYYY')
     else
       for i in [0..1]
         if time = @times[i]
-          if time.isSame(today.format('YYYY-MM-DD'))
-            row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
-                                      .format('hh:mm:ss A')
-          else
-            row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
-                                      .format('MM/DD/YYYY hh:mm:ss A')
+          # console.log MODES[i] + ' ' + time.format()
+          # console.log MODES[i] + ' ' + time.tz(constants.TIMEZONE).format()
+          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
+                                    .format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -172,8 +200,8 @@ class Punch
         row[headers.totalTime] = "#{hours}:#{minute_str}:00"
     row[headers.notes] = @notes
     if @mode is 'vacation' or
-        @mode is 'sick' or
-        @mode is 'unpaid'
+       @mode is 'sick' or
+       @mode is 'unpaid'
       row[headers.project1] = @mode
     else
       max = if @projects.length < 6 then @projects.length else 5
@@ -201,7 +229,7 @@ class Punch
       elapsed = @times[0].diff(@times[1], 'hours', true)
     else if @times[0]
       date = @times[0]
-    if @mode is 'none' and not @times.block?
+    if @mode is 'none' and not elapsed
       return 'Malformed punch. Something has gone wrong.'
     else if @mode is 'in'
       # if mode is 'in' and user has not punched out
@@ -217,11 +245,18 @@ class Punch
           # if mode is 'in' and date is yesterday
           if time.isSame(yesterday, 'd')
             return 'You can\'t punch in for yesterday\'s date.'
-    if @mode is 'out'
+    else if @mode is 'out'
       if user.punches and
-         user.punches.length > 0 and
-         user.punches.slice(-1)[0].mode is 'out'
-        last = user.punches.slice(-1)[0]
+         user.punches.length > 0
+        len = user.punches.length
+        for i in [len-1..0]
+          last = user.punches[i]
+          if last.mode is 'in'
+            return true
+          else if last.mode is 'out'
+            break
+          else if last.times.length is 2
+            break
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You cannot punch out before punching in. Your last out-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
     # if mode is 'unpaid' and user is non-salary
@@ -232,7 +267,8 @@ class Punch
        @mode is 'unpaid'
       if user.punches and
          user.punches.length > 0 and
-         user.punches.slice(-1)[0].mode is 'in'
+         user.punches.slice(-1)[0].mode is 'in' and
+         not @times.block?
         last = user.punches.slice(-1)[0]
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
@@ -258,15 +294,15 @@ class Punch
       return 'You cannot punch for a date older than 7 days.'
     return true
 
-_mergeDateTime = (date, time) ->
-  return moment({
+_mergeDateTime = (date, time, tz) ->
+  return moment.tz({
     year: date.get('year'),
     month: date.get('month'),
     date: date.get('date'),
     hour: time.get('hour'),
     minute: time.get('minute'),
     second: time.get('second')
-  })
+  }, tz)
 
 _parseMode = (command) ->
   comps = command.split ' '
@@ -281,12 +317,19 @@ _parseMode = (command) ->
 _parseTime = (command, activeStart, activeEnd) ->
   # parse time component
   command = command.trimLeft() || ''
+  activeTime = (activeEnd.diff(activeStart, 'hours', true).toFixed(2))
   time = []
   if match = command.match REGEX.rel_time
     if match[0] is 'half-day' or match[0] is 'half day'
-      copy = moment(activeStart)
-      copy.hour(activeStart.hour() - 4)
-      time.push copy, activeEnd
+      halfTime = activeTime / 2
+      midTime = moment(activeStart).add(halfTime, 'hours')
+      period = moment().diff(activeStart, 'hours', true) <= halfTime ? 'early': 'later'
+      if period is 'early'
+        # start to mid
+        time.push moment(activeStart), midTime
+      else
+        # mid to end
+        time.push midTime, moment(activeEnd)
     else if match[0] is 'noon'
       time.push moment({hour: 12, minute: 0})
     else if match[0] is 'midnight'

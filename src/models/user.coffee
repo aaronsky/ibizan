@@ -20,7 +20,8 @@ getPositiveNumber = (input, current) ->
 
 class Timetable
   constructor: (@start, @end, @timezone) ->
-    # code
+    if typeof @timezone is 'string'
+      @timezone = moment.tz.zone(@timezone)
 
   setVacation: (total, available) ->
     @vacationTotal = getPositiveNumber(total, @vacationTotal)
@@ -126,25 +127,34 @@ class User
     row = {}
     row[headers.date] = moment.tz(constants.TIMEZONE).format('M/DD/YYYY')
     row[headers.name] = @name
-    dayLength = @activeTime()
     loggedTime = unpaidTime = vacationTime = sickTime = 0
     for punch in @punches
-      if punch.times.block
-        loggedTime += punch.times.block
-      else if punch.times[0].isBefore(start) or punch.times[0].isAfter(end)
+      if punch.date.isBefore(start) or punch.date.isAfter(end)
+        continue
+      else if not punch.elapsed and not punch.times.block
         continue
       else if punch.mode is 'in'
         continue
-      else if not punch.elapsed
-        continue
       else if punch.mode is 'vacation'
-        vacationTime += punch.elapsed
+        if punch.times.block
+          vacationTime += punch.times.block
+        else
+          vacationTime += punch.elapsed
       else if punch.mode is 'unpaid'
-        unpaidTime += punch.elapsed
+        if punch.times.block
+          unpaidTime += punch.times.block
+        else
+          unpaidTime += punch.elapsed
       else if punch.mode is 'sick'
-        sickTime += punch.elapsed
+        if punch.times.block
+          sickTime += punch.times.block
+        else
+          sickTime += punch.elapsed
       else
-        loggedTime += punch.elapsed
+        if punch.times.block
+          loggedTime += punch.times.block
+        else
+          loggedTime += punch.elapsed
 
     loggedTime = +loggedTime.toFixed(2)
     vacationTime = +vacationTime.toFixed(2)
@@ -170,11 +180,11 @@ class User
     if @row?
       moment.tz.setDefault @timetable.timezone.name
       headers = HEADERS.users
-      @row[headers.slackname] = @slack
-      @row[headers.name] = @name
-      @row[headers.salary] = if @salary then 'Y' else 'N'
-      @row[headers.start] = @timetable.start.tz(@timetable.timezone.name).format('h:mm a')
-      @row[headers.end] = @timetable.end.tz(@timetable.timezone.name).format('h:mm a')
+      # @row[headers.slackname] = @slack
+      # @row[headers.name] = @name
+      # @row[headers.salary] = if @salary then 'Y' else 'N'
+      # @row[headers.start] = @timetable.start.tz(@timetable.timezone.name).format('h:mm a')
+      # @row[headers.end] = @timetable.end.tz(@timetable.timezone.name).format('h:mm a')
       @row[headers.timezone] = @timetable.timezone.name || @timetable.timezone
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal
@@ -192,12 +202,36 @@ class User
     else
       deferred.reject 'Row is null'
     deferred.promise
+  
+  directMessage: (msg, logger=Logger) ->
+    logger.logToChannel msg, @slack
 
   description: () ->
+    if @punches.length > 0
+      punch = @punches.slice(-1)[0]
+      if punch.times.length > 0
+        time = punch.times.slice(-1)[0]
+        if time.isSame(moment(), 'day')
+          date = 'today'
+        else if time.isSame(moment().subtract(1, 'days'), 'day')
+          date = 'yesterday'
+        else
+          date = 'on ' + time.format('MMM Do')
+        punchTime = "#{date}, #{time.format('h:mm a')}"
+      else if punch.times.block
+        if punch.mode is 'none'
+          type = ' '
+        else if punch.mode is 'vacation' or
+                punch.mode is 'sick' or
+                punch.mode is 'unpaid'
+          type = punch.mode + ' '
+        punchTime = "a #{punch.times.block} hour #{type}block punch"
     return "User: #{@name} (#{@slack})\n
-            Number of punch records: #{(@punches || []).length}\n
-            Active time: #{@timetable.start.format('hh:mm a')} - #{@timetable.end.format('hh:mm a')}, #{@timetable.timezone.name}\n
-            Last message was #{+(moment().diff(@lastMessage, 'hours', true).toFixed(2))} hours ago"
+            They have #{(@punches || []).length} punches on record\n
+            Last punch was #{punchTime}\n
+            Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
+            They are in #{@timetable.timezone.name}\n
+            The last time they sent a message was #{+(moment().diff(@lastMessage, 'hours', true).toFixed(2))} hours ago"
 
 module.exports.User = User
 module.exports.Timetable = Timetable
