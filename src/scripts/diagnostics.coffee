@@ -110,7 +110,7 @@ module.exports = (robot) ->
 
   robot.router.post '/ibizan/diagnostics/payroll', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_SYNC_TOKEN and
+    if body.token is process.env.SLASH_PAYROLL_TOKEN and
        isAdminUser body.user_name
       comps = body.text || []
       start = if comps[0] then moment comps[0] else moment().subtract 2, 'weeks'
