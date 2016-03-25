@@ -32,101 +32,126 @@ module.exports = (robot) ->
     return channel is 'ibizan-diagnostics'
 
   # Org statistics
-  robot.respond /!diag/i, (res) ->
-    if not Organization.ready()
-      Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
-      return
-    if not isLogChannel(res.message.user.room)
-      res.send "This isn\'t the diagnostics channel.
-                If you want to check up on me,
-                please visit #ibizan-diagnostics."
-    else if not isAdminUser(res.message.user.slack) and
-                res.message.user.name isnt 'aaronsky'
-      Logger.logToChannel 'You don\'t have permission to
-                           issue diagnostic commands.',
-                           'ibizan-diagnostics'
-    if isLogChannel(res.message.user.room) and
-       (isAdminUser(res.message.user.slack) or
-       res.message.user.name is 'aaronsky')
-      msg = res.match.input
-      comps = msg.split(' ')
-      comps.shift()
-      comps.shift()
-      if comps[0] is 'list'
-        comps.shift()
-        list(res, comps)
-      else if comps[0] is 'make'
-        comps.shift()
-        make(res, comps)
-      else if comps[0] is 'reset'
-        comps.shift()
-        reset(res, comps)
-      else if comps[0] is 'sync' or comps[0] is 'resync'
-        reset(res, ['org'])
-      else
-        info(res)
-
-  list = (res, comps) ->
-    comps = comps || []
-    if comps[0] is 'users'
-      str = ''
-      for user in Organization.users
-        str += user.description() + '\n\n'
-      res.send str
-    else if comps[0] is 'projects'
-      str = ''
-      for project in Organization.projects
-        str += project.description() + '\n\n'
-      res.send str
-    else if comps[0] is 'calendar'
-      res.send(Organization.calendar.description())
+  robot.router.post '/ibizan/diagnostics/status', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_STATUS_TOKEN
+      res.status 200
+      response = "#{Organization.name}'s Ibizan has been up since
+                  #{Organization.initTime.toDate()}
+                  (#{+moment()
+                     .diff(Organization.initTime, 'minutes', true)
+                     .toFixed(2)}
+                  minutes)"
     else
-      info(res)
+      res.status 401
+      response = "Bad token in Ibizan configuration"
+    res.json {
+      "response_type": "in_channel",
+      "text": response
+    }
 
-  make = (res, comps) ->
-    comps = comps || []
-    if comps[0] is 'report'
-      if comps.length is 3
-        start = moment comps[1]
-        end = moment comps[2]
-      else if comps.length is 2
-        start = moment comps[1]
-        end = moment()
-      else
-        start = moment().subtract 2, 'weeks'
-        end = moment()
+  robot.router.post '/ibizan/diagnostics/users', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_USERS_TOKEN
+      res.status 200
+      response = ''
+      for user in Organization.users
+        response += user.description() + '\n\n'
+    else
+      res.status 401
+      response = "Bad token in Ibizan configuration"
+    res.json {
+      "text": response
+    }
+    
+  robot.router.post '/ibizan/diagnostics/projects', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_PROJECTS_TOKEN
+      res.status 200
+      response = ''
+      for project in Organization.projects
+        response += project.description() + '\n\n'
+    else
+      res.status 401
+      response = "Bad token in Ibizan configuration"
+    res.json {
+      "text": response
+    }
+    
+  robot.router.post '/ibizan/diagnostics/calendar', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_CALENDAR_TOKEN
+      res.status 200
+      response = Organization.calendar.description()
+    else
+      res.status 401
+      response = "Bad token in Ibizan configuration"
+    res.json {
+      "text": response
+    }
+    
+  robot.router.post '/ibizan/diagnostics/resethounding', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_RESETHOUNDING_TOKEN
+      res.status 200
+      count = Organization.resetHounding()
+      response = "Reset #{count}
+                  #{if count is 1 then "person's" else "peoples'"}
+                  hound status"
+    else
+      res.status 401
+      response = "Bad token in Ibizan configuration"
+    res.json {
+      "text": response
+    }
+
+  robot.router.post '/ibizan/diagnostics/payroll', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_SYNC_TOKEN
+      comps = body.text || []
+      start = if comps[0] then moment comps[0] else moment().subtract 2, 'weeks'
+      end = if comps[1] then moment comps[1] else moment()
       Organization.generateReport(start, end)
+      .catch((err) ->
+        res.status 500
+        res.json {
+          "text": "Failed to produce a salary report"
+        }
+      )
       .done(
         (numberDone) ->
-          res.send "Salary report generated for #{numberDone} employees."
+          res.status 200
+          res.json {
+            "text": "Salary report generated for #{numberDone} employees"
+          }
       )
     else
-      info(res)
-
-  reset = (res, comps) ->
-    comps = comps || []
-    if comps[0] is 'hounding' or comps[0] is 'hound'
-      count = Organization.resetHounding()
-      res.send "Reset #{count}
-                 #{if count is 1 then "person's" else "peoples'"}
-                 hound status"
-    else if comps[0] is 'org'
+      res.status 401
+      res.json {
+        "text": "Bad token in Ibizan configuration"
+      }
+    
+  robot.router.post '/ibizan/diagnostics/sync', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_SYNC_TOKEN
       Organization.sync()
-      .catch((err) -> res.send "Failed to resync.")
+      .catch((err) ->
+        res.status 500
+        res.json {
+          "text": "Failed to resync"
+        }
+      )
       .done((status) ->
-        res.send "Re-synced with spreadsheet"
+        res.status 200
+        res.json {
+          "text": "Re-synced with spreadsheet"
+        }
       )
     else
-      info(res)
-      help(res)
-
-  info = (res) ->
-    res.send "#{Organization.name}'s Ibizan has been up since
-               #{Organization.initTime.toDate()}
-               (#{+moment()
-                  .diff(Organization.initTime, 'minutes', true)
-                  .toFixed(2)}
-               minutes)"
+      res.status 401
+      res.json {
+        "text": "Bad token in Ibizan configuration"
+      }
 
   # User feedback
   robot.respond /(today|(for today)|hours)$/i, (res) ->
