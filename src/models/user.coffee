@@ -4,6 +4,7 @@ Q = require 'q'
 
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
+TIMEZONE = constants.TIMEZONE
 Logger = require('../helpers/logger')()
 
 getPositiveNumber = (input, current) ->
@@ -231,7 +232,7 @@ class User
             Last punch was #{punchTime}\n
             Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
             They are in #{@timetable.timezone.name}\n
-            The last time they sent a message was #{+(moment().diff(@lastMessage, 'hours', true).toFixed(2))} hours ago"
+            The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
 
 module.exports.User = User
 module.exports.Timetable = Timetable
