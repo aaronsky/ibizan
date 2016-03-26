@@ -242,12 +242,10 @@ class Punch
       return 'Malformed punch. Something has gone wrong.'
     else if @mode is 'in'
       # if mode is 'in' and user has not punched out
-      if user.punches and
-         user.punches.length > 0 and
-         user.punches.slice(-1)[0].mode is 'in'
-        last = user.punches.slice(-1)[0]
+      if last = user.lastPunch 'in'
         time = last.times[0].tz(user.timetable.timezone.name)
-        return "You haven't punched out yet. Your last in-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
+        return "You haven't punched out yet. Your last in-punch was at
+                #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
         for time in @times
@@ -255,32 +253,24 @@ class Punch
           if time.isSame(yesterday, 'd')
             return 'You can\'t punch in for yesterday\'s date.'
     else if @mode is 'out'
-      if user.punches and
-         user.punches.length > 0
-        len = user.punches.length
-        for i in [len-1..0]
-          last = user.punches[i]
-          if last.mode is 'in'
-            return true
-          else if last.mode is 'out'
-            break
-          else if last.times.length is 2
-            break
-        time = last.times[0].tz(user.timetable.timezone.name)
-        return "You cannot punch out before punching in. Your last out-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
+      if lastIn = user.lastPunch 'in'
+        return true
+      last = user.lastPunch 'out', 'vacation', 'unpaid', 'sick'
+      time = last.times[0].tz(user.timetable.timezone.name)
+      return "You cannot punch out before punching in. Your last
+              out-punch was at #{time.format('h:mma')} on
+              #{time.format('dddd, MMMM Do')}."
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
       return 'You aren\'t eligible to punch for unpaid time.'
     else if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
-      if user.punches and
-         user.punches.length > 0 and
-         user.punches.slice(-1)[0].mode is 'in' and
+      if last = user.lastPunch 'in' and
          not @times.block?
-        last = user.punches.slice(-1)[0]
         time = last.times[0].tz(user.timetable.timezone.name)
-        return "You haven't punched out yet. Your last in-punch was at #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
+        return "You haven't punched out yet. Your last in-punch was at
+                #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         if @mode is 'vacation' and

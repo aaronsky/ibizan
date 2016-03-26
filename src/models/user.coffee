@@ -76,10 +76,13 @@ class User
     timetable.setAverageLogged(temp.averageLogged)
     user = new User(temp.name, temp.slackname, temp.salary, timetable, row)
     user
+  
   activeHours: () ->
     [@timetable.start, @timetable.end]
+  
   activeTime: () ->
     return +(@timetable.end.diff(@timetable.start, 'hours', true).toFixed(2))
+
   isInactive: (current) ->
     current = current || moment()
     day = current.day()
@@ -92,37 +95,53 @@ class User
       return false
     else
       return true
+
+  lastPunch: (modes) ->
+    if typeof modes is 'string'
+      modes = [modes]
+    if not modes || modes.length is 0
+      return @punches.slice(-1)[0]
+    if @punches and @punches.length > 0
+      len = @punches.length
+      for i in [len-1..0]
+        last = @punches[i]
+        if 'in' in modes and last.mode is 'out'
+          return
+        else if last.mode in modes
+          return last
+    return
+
   undoPunch: () ->
     deferred = Q.defer()
-    if @punches and @punches.length > 0
-      lastPunch = @punches.slice(-1)[0]
-      headers = HEADERS.rawdata
-      if lastPunch.mode is 'vacation' or
-         lastPunch.mode is 'sick' or
-         lastPunch.mode is 'unpaid' or
-         lastPunch.mode is 'none'
-        that = @
-        deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
-        deferred.resolve(deletePromise().then(() -> that.punches.pop()))
-      else if lastPunch.mode is 'out'
-        # projects will not be touched
-        lastPunch.times.pop()
-        lastPunch.elapsed = null
-        if lastPunch.notes.lastIndexOf("\n") > 0
-          lastPunch.notes = lastPunch.notes
-                              .substring(0, @notes.lastIndexOf("\n"))
-        lastPunch.mode = 'in'
-        lastPunch.row[headers.out] =
-          lastPunch.row[headers.totalTime] =
-          lastPunch.row[headers.blockTime] = ''
-        lastPunch.row[headers.notes] = lastPunch.notes
-        savePromise = Q.nfbind(lastPunch.row.save.bind(lastPunch))
-        deferred.resolve(savePromise())
-      else if lastPunch.mode is 'in'
-        that = @
-        deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
-        deferred.resolve(deletePromise().then(() -> that.punches.pop()))
+    lastPunch = @lastPunch()
+    headers = HEADERS.rawdata
+    if lastPunch.mode is 'vacation' or
+       lastPunch.mode is 'sick' or
+       lastPunch.mode is 'unpaid' or
+       lastPunch.mode is 'none'
+      that = @
+      deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
+      deferred.resolve(deletePromise().then(() -> that.punches.pop()))
+    else if lastPunch.mode is 'out'
+      # projects will not be touched
+      lastPunch.times.pop()
+      lastPunch.elapsed = null
+      if lastPunch.notes.lastIndexOf("\n") > 0
+        lastPunch.notes = lastPunch.notes
+                            .substring(0, @notes.lastIndexOf("\n"))
+      lastPunch.mode = 'in'
+      lastPunch.row[headers.out] =
+        lastPunch.row[headers.totalTime] =
+        lastPunch.row[headers.blockTime] = ''
+      lastPunch.row[headers.notes] = lastPunch.notes
+      savePromise = Q.nfbind(lastPunch.row.save.bind(lastPunch))
+      deferred.resolve(savePromise())
+    else if lastPunch.mode is 'in'
+      that = @
+      deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
+      deferred.resolve(deletePromise().then(() -> that.punches.pop()))
     deferred.promise
+
   toRawPayroll: (start, end) ->
     headers = HEADERS.payrollreports
     row = {}
@@ -209,7 +228,7 @@ class User
 
   description: () ->
     if @punches.length > 0
-      punch = @punches.slice(-1)[0]
+      punch = @lastPunch()
       if punch.times.length > 0
         time = punch.times.slice(-1)[0]
         if time.isSame(moment(), 'day')

@@ -92,7 +92,8 @@ class Organization
       else if not start or not end
         deferred.reject 'No start or end date were passed as arguments'
         return
-      Logger.log "Generating payroll from #{start.format('MMM Do, YYYY')} to #{end.format('MMM Do, YYYY')}"
+      Logger.log "Generating payroll from #{start.format('MMM Do, YYYY')}
+                  to #{end.format('MMM Do, YYYY')}"
       @spreadsheet.generateReport(@users, start, end)
       .done((numberDone) -> deferred.resolve(numberDone))
       deferred.promise

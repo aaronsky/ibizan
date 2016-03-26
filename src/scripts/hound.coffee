@@ -46,16 +46,24 @@ module.exports = (robot) ->
       channel.private = !!channel.is_im or !!channel.is_group
     
     now = moment.tz TIMEZONE
-    last = user.lastMessage || { time: now, channel: channel.name, lastPing: null }
-    user.lastMessage = { time: now, channel: channel.name, lastPing: null }
+    last = user.lastMessage || { time: now, channel: channel.name }
+    user.lastMessage = {
+      time: now,
+      channel: channel.name,
+      lastPing: last.lastPing
+    }
 
     timeSinceLastMessage = user.lastMessage.time.diff last.time, 'hours', true
-    timeSinceLastPing = user.lastMessage.lastPing?.diff(last.lastPing, 'hours', true) || 0
+    timeSinceLastPing = user
+                        .lastMessage
+                        .lastPing?.diff(last.lastPing, 'hours', true) || 0
 
     if timeSinceLastMessage < 3
-      Logger.log "#{user.slack} was active
-                 #{if last.channel then "in ##{last.channel} " else ''}recently
-                 (#{last.time.format('MMM Do, YYYY h:mma')})"
+      status = "#{user.slack} was active "
+      if last.channel
+        status += "in ##{last.channel} "
+      status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
+      Logger.log status
       return
 
     if not user.shouldHound
@@ -64,8 +72,7 @@ module.exports = (robot) ->
         user.shouldHound = true
       return
 
-    if user.punches and user.punches.length > 0 and
-       user.punches.slice(-1)[0].mode is 'in'
+    if user.lastPunch 'in'
       robot.send { room: slackuser.name }, "Don't forget to check out~"
       user.shouldHound = false
       user.lastMessage.lastPing = now
