@@ -25,7 +25,7 @@ module.exports = (robot) ->
   #   If the user is logged in, the DM should say:
   #     Don’t forget to check out~
 
-  hound = (slackuser, channel) ->
+  hound = (slackuser, channel, forceHound=false) ->
     if not channel.private
       channel.private = !!channel.is_im or !!channel.is_group
     if not Organization.ready()
@@ -65,7 +65,7 @@ module.exports = (robot) ->
         user.shouldHound = true
       return
 
-    if timeSinceLastMessage >= 3 or timeSinceLastPunch >= 3
+    if timeSinceLastMessage >= 3 or timeSinceLastPunch >= 3 or forceHound
       if lastPunch.mode is 'in'
         user.directMessage "Don't forget to check out~", Logger
         user.shouldHound = false
@@ -92,7 +92,7 @@ module.exports = (robot) ->
       Logger.log "Don\'t run scheduled reset, Organization isn\'t ready yet"
       return
     for user in Organization.users
-      hound { name: user.slack}, { private: null , name: ''}
+      hound { name: user.slack}, { private: null , name: ''}, true
 
 
   # Every morning, reset hound status for each users
