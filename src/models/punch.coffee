@@ -95,12 +95,16 @@ class Punch
     datetimes = []
     for i in [0..1]
       if row[headers[MODES[i]]]
-        newDate = moment(row[headers[MODES[i]]], 'M/D/YYYY hh:mm:ss a')
+        newDate = moment.tz(row[headers[MODES[i]]],
+                            'M/D/YYYY hh:mm:ss a',
+                            constants.TIMEZONE)
         if not newDate or
            not newDate.isValid() or
-           newDate.format('M/D/YYYY') isnt row[headers.today]
-          newDate = moment(row[headers.today] + ' ' +
-                              row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a')
+           not newDate.isSame(date, 'day')
+          newDate = moment.tz(row[headers.today] + ' ' +
+                              row[headers[MODES[i]]],
+                              'MM/DD/YYYY hh:mm:ss a',
+                              constants.TIMEZONE)
         datetimes.push newDate.tz(user.timetable.timezone.name)
     if row[headers.blockTime]
       comps = row[headers.blockTime].split ':'
@@ -137,18 +141,6 @@ class Punch
     punch.assignRow row
     punch
 
-  out: (punch) ->
-    if not @times.block?
-      @times.push punch.times[0]
-      if @times[1].isBefore @times[0]
-        @times[1] = @times[1].add(1, 'days')
-      @elapsed = @times[1].diff(@times[0], 'hours', true)
-    if punch.projects
-      @appendProjects punch.projects
-    if punch.notes
-      @appendNotes punch.notes
-    @mode = punch.mode
-
   appendProjects: (projects = []) ->
     extraProjectCount = @projects.length
     if extraProjectCount >= 6
@@ -170,6 +162,23 @@ class Punch
     if @notes and @notes.length > 0
       punch.notes += '\n'
     @notes += msg
+
+  out: (punch) ->
+    if not @times.block? and @times.length is 1
+      if punch.block?
+        @times.push moment(@times[0]).add(punch.block, 'hours')
+      else
+        @times.push moment(punch.times[0])
+        if @times[1].isBefore @times[0]
+          @times[1] = @times[1].add(1, 'days')
+      console.log @times[0].format('Z')
+      console.log @times[1].format('Z')
+      @elapsed = @times[1].diff(@times[0], 'hours', true)
+    if punch.projects
+      @appendProjects punch.projects
+    if punch.notes
+      @appendNotes punch.notes
+    @mode = punch.mode
 
   toRawRow: (name) ->
     headers = HEADERS.rawdata

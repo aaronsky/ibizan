@@ -69,7 +69,7 @@ module.exports = (robot) ->
       robot.send { room: slackuser.name }, "Don't forget to check out~"
       user.shouldHound = false
       user.lastMessage.lastPing = now
-    else
+    else if not user.isInactive()
       robot.send { room: slackuser.name }, "Check in if you're on the clock~"
       user.shouldHound = false
       user.lastMessage.lastPing = now

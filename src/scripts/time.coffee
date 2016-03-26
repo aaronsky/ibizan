@@ -59,8 +59,7 @@ module.exports = (robot) ->
     if canPunchHere res.message.user.name, res.message.user.room
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
-      if tz = res.message.user.slack.tz
-        moment.tz.setDefault res.message.user.slack.tz
+      tz = res.message.user.slack.tz
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
