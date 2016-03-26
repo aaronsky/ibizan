@@ -16,17 +16,6 @@ module.exports = (robot) ->
   Organization = require('../models/organization').get()
   # Weeks ‘start’ on Sunday morning.
   
-  # Every morning, reset hound status for each users
-  resetHoundJob = schedule.scheduleJob '0 6 * * 1-5', () ->
-    if not Organization.ready()
-      Logger.log "Don\'t run scheduled reset, Organization isn\'t ready yet"
-      return
-    count = Organization.resetHounding()
-    response = "Reset #{count}
-                #{if count is 1 then "person's" else "peoples'"}
-                hound status for the morning"
-    Logger.logToChannel response, 'ibizan-diagnostics'
-
   # Ibizan will export a Payroll Report every other Sunday night.
   generateReportJob = schedule.scheduleJob '0 17 * * 0', () ->
     if not Organization.ready()

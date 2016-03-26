@@ -17,8 +17,8 @@ Organization.projects = [
 describe 'Punch', ->
   describe '#parse(user, command, mode)', ->
     beforeEach ->
-      start = moment.tz({hour: 7}, 'America/New_York')
-      end = moment.tz({hour: 18}, 'America/New_York')
+      start = moment({day: 3, hour: 7})
+      end = moment({day: 3, hour: 18})
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -189,8 +189,8 @@ describe 'Punch', ->
       expect(punch.notes).to.be.empty
   describe '#out(punch)', ->
     beforeEach ->
-      start = moment.tz({hour: 7}, 'America/New_York')
-      end = moment.tz({hour: 18}, 'America/New_York')
+      start = moment({day: 3, hour: 7})
+      end = moment({day: 3, hour: 18})
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -206,8 +206,8 @@ describe 'Punch', ->
         "out #{end.format('hh:mma')} #camp-fangamer", 'out'
       punch.out outPunch
       expect(punch.times).to.have.lengthOf 2
-      expect(punch.times[0].format()).to.equal start.format()
-      expect(punch.times[1].format()).to.equal end.format()
+      expect(punch.times[0].format('hh:mma')).to.equal start.format('hh:mma')
+      expect(punch.times[1].format('hh:mma')).to.equal end.format('hh:mma')
       expect(punch.projects).to.have.lengthOf 2
       expect(punch).to.have.deep.property 'projects[0].name',
                                           'production'
@@ -215,8 +215,8 @@ describe 'Punch', ->
                                           'camp-fangamer'
   describe '#toRawRow(name)', ->
     beforeEach ->
-      start = moment.tz({hour: 7}, 'America/New_York')
-      end = moment.tz({hour: 18}, 'America/New_York')
+      start = moment({day: 3, hour: 7})
+      end = moment({day: 3, hour: 18})
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -232,8 +232,8 @@ describe 'Punch', ->
       expect(raw).to.exist
   describe '#assignRow', ->
     beforeEach ->
-      start = moment.tz({hour: 7}, 'America/New_York')
-      end = moment.tz({hour: 18}, 'America/New_York')
+      start = moment({day: 3, hour: 7})
+      end = moment({day: 3, hour: 18})
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
@@ -258,8 +258,8 @@ describe 'Punch', ->
       expect(punch.row).to.exist
   describe '#isValid(user)', ->
     beforeEach ->
-      start = moment.tz({hour: 7}, 'America/New_York')
-      end = moment.tz({hour: 18}, 'America/New_York')
+      start = moment({day: 3, hour: 7})
+      end = moment({day: 3, hour: 18})
       timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
