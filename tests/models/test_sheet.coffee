@@ -75,10 +75,9 @@ describe 'Sheet', ->
       return @sheet.loadOptions()
               .then((opts) ->
                 user = opts.users[0]
-                if last = user.punches.slice(-1)[0]
-                  if last.mode is 'in'
-                    outPunch = Punch.parse user, 'out', 'out'
-                    promise = that.sheet.enterPunch outPunch, user
+                if last = user.lastPunch 'in'
+                  outPunch = Punch.parse user, 'out', 'out'
+                  promise = that.sheet.enterPunch outPunch, user
                 if promise
                   return promise
                 else

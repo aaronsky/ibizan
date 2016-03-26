@@ -59,8 +59,7 @@ module.exports = (robot) ->
     if canPunchHere res.message.user.name, res.message.user.room
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
-      if tz = res.message.user.slack.tz
-        moment.tz.setDefault res.message.user.slack.tz
+      tz = res.message.user.slack.tz
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
@@ -124,33 +123,31 @@ module.exports = (robot) ->
     msg = msg.replace REGEX.append, ''
     msg = msg.trim()
     if user = Organization.getUserBySlackName res.message.user.name
-      if user.punches and
-         punch = user.punches.slice(-1)[0]
-        if punch.mode is 'in'
-          words = msg.split ' '
-          op = words[0]
-          words.shift()
-          msg = words.join(' ').trim()
-          if op is 'project' or
-             op is 'projects'
-            projects = msg.split ' '
-            if projects.length is 0 and
-               isProjectChannel res.message.user.room
-              projects.push Organization.getProjectByName(res.message.user.room)
-            punch.appendProjects projects
-          else if op is 'note' or
-                  op is 'notes'
-            punch.appendNotes msg
-          row = punch.toRawRow user.name
-          row.save (err) ->
-            if err
-              user.directMessage err,
-                                 Logger
-            else
-              Logger.reactToMessage 'dog2',
-                                    res.message.user.name,
-                                    res.message.rawMessage.channel,
-                                    res.message.id
+      if punch = user.lastPunch 'in'
+        words = msg.split ' '
+        op = words[0]
+        words.shift()
+        msg = words.join(' ').trim()
+        if op is 'project' or
+           op is 'projects'
+          projects = msg.split ' '
+          if projects.length is 0 and
+             isProjectChannel res.message.user.room
+            projects.push Organization.getProjectByName(res.message.user.room)
+          punch.appendProjects projects
+        else if op is 'note' or
+                op is 'notes'
+          punch.appendNotes msg
+        row = punch.toRawRow user.name
+        row.save (err) ->
+          if err
+            user.directMessage err,
+                               Logger
+          else
+            Logger.reactToMessage 'dog2',
+                                  res.message.user.name,
+                                  res.message.rawMessage.channel,
+                                  res.message.id
 
   robot.respond /undo/i, (res) ->
     if not Organization.ready()

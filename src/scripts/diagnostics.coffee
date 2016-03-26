@@ -2,13 +2,7 @@
 #   Your dog friend makes sure everything's in order
 #
 # Commands:
-#   ibizan !diag - Get org name and server time
-#   ibizan !diag list <users|projects|calendar> - Get a list of all users/projects/holidays in the org
-#   ibizan !diag make report <start (MM/DD/YYYY)> <end (MM/DD/YYYY)> - Generate salary report between optional range
-#   ibizan !diag reset hound - Reset hound status for all org members
-#   ibizan !diag reset org - Resync org data stores with spreadsheet
-#   ibizan !diag sync - See `reset org`
-#   ibizan !diag resync - See `reset org`
+#
 # Notes:
 #
 # Author:
@@ -35,19 +29,21 @@ module.exports = (robot) ->
     body = req.body
     if body.token is process.env.SLASH_INFO_TOKEN
       res.status 200
-      response = "#{Organization.name}'s Ibizan has been up since
+      response = {
+        "text": "#{Organization.name}'s Ibizan has been up since
                   #{Organization.initTime.toDate()}
                   (#{+moment()
                     .diff(Organization.initTime, 'minutes', true)
                     .toFixed(2)}
-                  minutes)"
+                  minutes)",
+        "response_type": "in_channel"
+      }
     else
       res.status 401
-      response = "Bad token in Ibizan configuration"
-    res.json {
-      "response_type": "in_channel",
-      "text": response
-    }
+      response =  {
+        "text": "Bad token in Ibizan configuration"
+      }
+    res.json response
 
   robot.router.post '/ibizan/diagnostics/users', (req, res) ->
     body = req.body

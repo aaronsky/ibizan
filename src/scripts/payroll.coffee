@@ -19,7 +19,8 @@ module.exports = (robot) ->
   # Ibizan will export a Payroll Report every other Sunday night.
   generateReportJob = schedule.scheduleJob '0 17 * * 0', () ->
     if not Organization.ready()
-      Logger.log "Don\'t make scheduled payroll report, Organization isn\'t ready yet"
+      Logger.log "Don\'t make scheduled payroll report,
+                  Organization isn\'t ready yet"
       return
     today = moment()
     twoWeeksAgo = today.subtract(2, 'weeks')
@@ -29,7 +30,8 @@ module.exports = (robot) ->
       )
       .done(
         (numberDone) ->
-          Logger.logToChannel "Salary report generated for #{numberDone} employees",
+          Logger.logToChannel "Salary report generated for
+                               #{numberDone} employees",
                               'ibizan-diagnostics'
       )
 
