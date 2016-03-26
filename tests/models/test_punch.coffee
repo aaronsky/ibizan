@@ -189,9 +189,10 @@ describe 'Punch', ->
       expect(punch.notes).to.be.empty
   describe '#out(punch)', ->
     beforeEach ->
-      start = moment({day: 3, hour: 7})
-      end = moment({day: 3, hour: 18})
-      timetable = new Timetable(start, end, moment.tz.zone('America/New_York'))
+      zone = 'America/New_York'
+      start = moment.tz({hour: 7}, zone)
+      end = moment.tz({hour: 18}, zone)
+      timetable = new Timetable(start, end, zone)
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
       timetable.setUnpaid(0)
@@ -206,8 +207,8 @@ describe 'Punch', ->
         "out #{end.format('hh:mma')} #camp-fangamer", 'out'
       punch.out outPunch
       expect(punch.times).to.have.lengthOf 2
-      expect(punch.times[0].format('hh:mma')).to.equal start.format('hh:mma')
-      expect(punch.times[1].format('hh:mma')).to.equal end.format('hh:mma')
+      expect(punch.times[0].format()).to.equal start.format()
+      expect(punch.times[1].format()).to.equal end.format()
       expect(punch.projects).to.have.lengthOf 2
       expect(punch).to.have.deep.property 'projects[0].name',
                                           'production'
@@ -223,12 +224,21 @@ describe 'Punch', ->
       timetable.setUnpaid(0)
       timetable.setLogged(0)
       timetable.setAverageLogged(0)
-      @name = 'Aaron Sky'
-      user = new User(@name, 'aaronsky', true, timetable)
-      @punch = Punch.parse user, 'in', 'in'
-    it 'should return a raw object for use in Sheet', ->
-      raw = @punch.toRawRow @name
-      # This test sucks
+      name = 'Aaron Sky'
+      @user = new User(name, 'aaronsky', true, timetable)
+    it 'should return a raw object for use with Sheet', ->
+      punch = Punch.parse @user, 'in', 'in'
+      raw = punch.toRawRow @user.name
+      expect(raw).to.exist
+    it 'should return a raw object for an in punch', ->
+      punch = Punch.parse @user, 'in', 'in'
+      raw = punch.toRawRow @user.name
+      expect(raw).to.exist
+    it 'should return a raw object for an out punch', ->
+      punch = Punch.parse @user, 'in 9:00am', 'in'
+      outPunch = Punch.parse @user, 'out 10:30am', 'out'
+      punch.out outPunch
+      raw = punch.toRawRow @user.name
       expect(raw).to.exist
   describe '#assignRow', ->
     beforeEach ->

@@ -6,6 +6,7 @@ uuid = require 'node-uuid'
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
 REGEX = constants.REGEX
+Logger = require('../helpers/logger')()
 MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('./organization').get()
 
@@ -13,11 +14,10 @@ class Punch
   constructor: (@mode = 'none',
                 @times = [],
                 @projects = [],
-                @notes = '',
-                @date = moment.tz(constants.TIMEZONE)) ->
+                @notes = '') ->
     # ...
 
-  @parse: (user, command, mode='none', timezone='') ->
+  @parse: (user, command, mode='none', timezone) ->
     if not user or not command
       return
     if mode and mode isnt 'none'
@@ -27,8 +27,7 @@ class Punch
     [times, command] = _parseTime command, start, end
     [dates, command] = _parseDate command
 
-    tz = timezone || user.timetable.timezone.name
-
+    tz = timezone ? user.timetable.timezone.name
     datetimes = []
     if dates.length is 0 and times.length is 0
       datetimes.push(moment.tz(tz))
@@ -68,7 +67,9 @@ class Punch
     [projects, command] = _parseProjects command
     notes = command.trim()
 
-    punch = new Punch(mode, datetimes, projects, notes, datetimes[0])
+    punch = new Punch(mode, datetimes, projects, notes)
+    punch.date = datetimes[0]
+    punch.timezone = tz
     if elapsed
       punch.elapsed = elapsed
     punch
@@ -93,6 +94,7 @@ class Punch
     else
       mode = 'none'
     datetimes = []
+    tz = user.timetable.timezone.name
     for i in [0..1]
       if row[headers[MODES[i]]]
         newDate = moment.tz(row[headers[MODES[i]]],
@@ -105,7 +107,7 @@ class Punch
                               row[headers[MODES[i]]],
                               'MM/DD/YYYY hh:mm:ss a',
                               constants.TIMEZONE)
-        datetimes.push newDate.tz(user.timetable.timezone.name)
+        datetimes.push newDate.tz(tz)
     if row[headers.blockTime]
       comps = row[headers.blockTime].split ':'
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -135,7 +137,9 @@ class Punch
         else
           break
     notes = row[headers.notes]
-    punch = new Punch(mode, datetimes, foundProjects, notes, date)
+    punch = new Punch(mode, datetimes, foundProjects, notes)
+    punch.date = date
+    punch.timezone = tz
     if elapsed
       punch.elapsed = elapsed
     punch.assignRow row
@@ -164,16 +168,19 @@ class Punch
     @notes += msg
 
   out: (punch) ->
-    if not @times.block? and @times.length is 1
+    if @mode is 'out'
+      return
+    if not @times.block? and
+       @mode is 'in' and
+       @times.length is 1
       if punch.block?
-        @times.push moment(@times[0]).add(punch.block, 'hours')
+        newTime = moment.tz(@times[0], @timezone).add(punch.block, 'hours')
       else
-        @times.push moment(punch.times[0])
-        if @times[1].isBefore @times[0]
-          @times[1] = @times[1].add(1, 'days')
-      console.log @times[0].format('Z')
-      console.log @times[1].format('Z')
-      @elapsed = @times[1].diff(@times[0], 'hours', true)
+        newTime = moment.tz(punch.times[0], punch.timezone)
+        if newTime.isBefore @times[0]
+          newTime.add(1, 'days')
+      @elapsed = newTime.diff(@times[0], 'hours', true)
+      @times.push newTime
     if punch.projects
       @appendProjects punch.projects
     if punch.notes
@@ -183,10 +190,10 @@ class Punch
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     today = moment.tz(constants.TIMEZONE)
-    row = @row || {}
-    row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
-    row[headers.name] = row[headers.name] || name
+    row = @row ? {}
+    row[headers.id] = row[headers.id] ? uuid.v1()
+    row[headers.today] = row[headers.today] ? @date.format('MM/DD/YYYY')
+    row[headers.name] = row[headers.name] ? name
     if @times.block?
       block = @times.block
       hours = Math.floor block
@@ -196,10 +203,8 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          # console.log MODES[i] + ' ' + time.format()
-          # console.log MODES[i] + ' ' + time.tz(constants.TIMEZONE).format()
-          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE)
-                                    .format('MM/DD/YYYY hh:mm:ss A')
+          row[headers[MODES[i]]] = row[headers[MODES[i]]] ?
+                                   time.tz(constants.TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -293,7 +298,7 @@ class Punch
       return 'You cannot punch for a date older than 7 days.'
     return true
 
-_mergeDateTime = (date, time, tz) ->
+_mergeDateTime = (date, time, tz=constants.TIMEZONE) ->
   return moment.tz({
     year: date.get('year'),
     month: date.get('month'),
@@ -306,8 +311,8 @@ _mergeDateTime = (date, time, tz) ->
 _parseMode = (command) ->
   comps = command.split ' '
   [mode, command] = [comps.shift(), comps.join ' ']
-  mode = (mode || '').trim()
-  command = (command || '').trim()
+  mode = (mode ? '').trim()
+  command = (command ? '').trim()
   if mode in MODES
     [mode, command]
   else
@@ -315,14 +320,14 @@ _parseMode = (command) ->
 
 _parseTime = (command, activeStart, activeEnd) ->
   # parse time component
-  command = command.trimLeft() || ''
+  command = command.trimLeft() ? ''
   activeTime = (activeEnd.diff(activeStart, 'hours', true).toFixed(2))
   time = []
   if match = command.match REGEX.rel_time
     if match[0] is 'half-day' or match[0] is 'half day'
       halfTime = activeTime / 2
       midTime = moment(activeStart).add(halfTime, 'hours')
-      period = moment().diff(activeStart, 'hours', true) <= halfTime ? 'early': 'later'
+      period = if moment().diff(activeStart, 'hours', true) <= halfTime then 'early' else 'later'
       if period is 'early'
         # start to mid
         time.push moment(activeStart), midTime
@@ -352,7 +357,7 @@ _parseTime = (command, activeStart, activeEnd) ->
   [time, command]
 
 _parseDate = (command) ->
-  command = command.trimLeft() || ''
+  command = command.trimLeft() ? ''
   date = []
   if match = command.match /today/i
     date.push moment()
@@ -429,7 +434,7 @@ _calculateElapsed = (start, end, mode, user) ->
 
 _parseProjects = (command) ->
   projects = []
-  command = command.trimLeft() || ''
+  command = command.trimLeft() ? ''
   command_copy = command.split(' ').slice()
 
   for word in command_copy
