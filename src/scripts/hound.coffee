@@ -26,6 +26,8 @@ module.exports = (robot) ->
   #     Don’t forget to check out~
 
   hound = (slackuser, channel) ->
+    if not channel.private
+      channel.private = !!channel.is_im or !!channel.is_group
     if not Organization.ready()
       Logger.log 'Don\'t hound, Organization isn\'t ready yet'
       return
@@ -41,9 +43,6 @@ module.exports = (robot) ->
     if not user
       Logger.log 'user not found'
       return
-
-    if not channel.private
-      channel.private = !!channel.is_im or !!channel.is_group
     
     now = moment.tz TIMEZONE
     last = user.lastMessage || { time: now, channel: channel.name }
@@ -57,14 +56,8 @@ module.exports = (robot) ->
     timeSinceLastPing = user
                         .lastMessage
                         .lastPing?.diff(last.lastPing, 'hours', true) || 0
-
-    if timeSinceLastMessage < 3
-      status = "#{user.slack} was active "
-      if last.channel
-        status += "in ##{last.channel} "
-      status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
-      Logger.log status
-      return
+    lastPunch = user.lastPunch 'in', 'out'
+    timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
 
     if not user.shouldHound
       Logger.log 'User is safe from hounding'
@@ -72,15 +65,21 @@ module.exports = (robot) ->
         user.shouldHound = true
       return
 
-    if user.lastPunch 'in'
-      robot.send { room: slackuser.name }, "Don't forget to check out~"
-      user.shouldHound = false
-      user.lastMessage.lastPing = now
-    else if not user.isInactive()
-      robot.send { room: slackuser.name }, "Check in if you're on the clock~"
-      user.shouldHound = false
-      user.lastMessage.lastPing = now
-
+    if timeSinceLastMessage >= 3 or timeSinceLastPunch >= 3
+      if lastPunch.mode is 'in'
+        user.directMessage "Don't forget to check out~", Logger
+        user.shouldHound = false
+        user.lastMessage.lastPing = now
+      else if not user.isInactive()
+        user.directMessage "Check in if you're on the clock~", Logger
+        user.shouldHound = false
+        user.lastMessage.lastPing = now
+    else
+      status = "#{user.slack} was active "
+      if last.channel
+        status += "in ##{last.channel} "
+      status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
+      Logger.log status
 
   robot.adapter.client.on 'userTyping', (user, channel) ->
     hound user, channel
