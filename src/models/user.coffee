@@ -105,7 +105,7 @@ class User
       len = @punches.length
       for i in [len-1..0]
         last = @punches[i]
-        if 'in' in modes and last.mode is 'out'
+        if 'in' in modes and not 'out' in modes and last.mode is 'out'
           return
         else if last.mode in modes
           return last
