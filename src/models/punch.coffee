@@ -203,8 +203,7 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          row[headers[MODES[i]]] = row[headers[MODES[i]]] ?
-                                   time.tz(constants.TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
+          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
