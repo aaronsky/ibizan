@@ -27,7 +27,7 @@ class Punch
     [times, command] = _parseTime command, start, end
     [dates, command] = _parseDate command
 
-    tz = timezone ? user.timetable.timezone.name
+    tz = timezone || user.timetable.timezone.name
     datetimes = []
     if dates.length is 0 and times.length is 0
       datetimes.push(moment.tz(tz))
@@ -191,9 +191,9 @@ class Punch
     headers = HEADERS.rawdata
     today = moment.tz(constants.TIMEZONE)
     row = @row ? {}
-    row[headers.id] = row[headers.id] ? uuid.v1()
-    row[headers.today] = row[headers.today] ? @date.format('MM/DD/YYYY')
-    row[headers.name] = row[headers.name] ? name
+    row[headers.id] = row[headers.id] || uuid.v1()
+    row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
+    row[headers.name] = row[headers.name] || name
     if @times.block?
       block = @times.block
       hours = Math.floor block
@@ -310,8 +310,8 @@ _mergeDateTime = (date, time, tz=constants.TIMEZONE) ->
 _parseMode = (command) ->
   comps = command.split ' '
   [mode, command] = [comps.shift(), comps.join ' ']
-  mode = (mode ? '').trim()
-  command = (command ? '').trim()
+  mode = (mode || '').trim()
+  command = (command || '').trim()
   if mode in MODES
     [mode, command]
   else
@@ -319,7 +319,7 @@ _parseMode = (command) ->
 
 _parseTime = (command, activeStart, activeEnd) ->
   # parse time component
-  command = command.trimLeft() ? ''
+  command = command.trimLeft() || ''
   activeTime = (activeEnd.diff(activeStart, 'hours', true).toFixed(2))
   time = []
   if match = command.match REGEX.rel_time
@@ -356,7 +356,7 @@ _parseTime = (command, activeStart, activeEnd) ->
   [time, command]
 
 _parseDate = (command) ->
-  command = command.trimLeft() ? ''
+  command = command.trimLeft() || ''
   date = []
   if match = command.match /today/i
     date.push moment()
@@ -433,7 +433,7 @@ _calculateElapsed = (start, end, mode, user) ->
 
 _parseProjects = (command) ->
   projects = []
-  command = command.trimLeft() ? ''
+  command = command.trimLeft() || ''
   command_copy = command.split(' ').slice()
 
   for word in command_copy
