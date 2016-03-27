@@ -108,23 +108,33 @@ module.exports = (robot) ->
     body = req.body
     if body.token is process.env.SLASH_PAYROLL_TOKEN and
        isAdminUser body.user_name
-      comps = body.text || []
-      start = if comps[0] then moment comps[0] else moment().subtract 2, 'weeks'
-      end = if comps[1] then moment comps[1] else moment()
-      Organization.generateReport(start, end)
-      .catch((err) ->
+      response_url = body.response_url
+      if response_url
+        comps = body.text || []
+        start = if comps[0] then moment comps[0] else moment().subtract 2, 'weeks'
+        end = if comps[1] then moment comps[1] else moment()
+        Organization.generateReport(start, end)
+        .catch(
+          (err) ->
+            robot.http(response_url)
+            .header('Content-Type', 'application/json')
+            .post({
+              "text": "Failed to produce a salary report"
+            })
+        )
+        .done(
+          (numberDone) ->
+            robot.http(response_url)
+            .header('Content-Type', 'application/json')
+            .post({
+                "text": "Salary report generated for #{numberDone} employees"
+            })
+        )
+      else
         res.status 500
         res.json {
-          "text": "Failed to produce a salary report"
+          "text": "No return url provided by Slack"
         }
-      )
-      .done(
-        (numberDone) ->
-          res.status 200
-          res.json {
-            "text": "Salary report generated for #{numberDone} employees"
-          }
-      )
     else
       res.status 401
       res.json {
@@ -134,19 +144,30 @@ module.exports = (robot) ->
   robot.router.post '/ibizan/diagnostics/sync', (req, res) ->
     body = req.body
     if body.token is process.env.SLASH_SYNC_TOKEN
-      Organization.sync()
-      .catch((err) ->
+      response_url = body.response_url
+      if response_url
+        Organization.sync()
+        .catch(
+          (err) ->
+            robot.http(response_url)
+            .header('Content-Type', 'application/json')
+            .post({
+              "text": "Failed to resync"
+            })
+        )
+        .done(
+          (status) ->
+            robot.http(response_url)
+            .header('Content-Type', 'application/json')
+            .post({
+              "text": "Re-synced with spreadsheet"
+            })
+        )
+      else
         res.status 500
         res.json {
-          "text": "Failed to resync"
+          "text": "No return url provided by Slack"
         }
-      )
-      .done((status) ->
-        res.status 200
-        res.json {
-          "text": "Re-synced with spreadsheet"
-        }
-      )
     else
       res.status 401
       res.json {

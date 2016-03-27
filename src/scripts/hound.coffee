@@ -66,7 +66,7 @@ module.exports = (robot) ->
       return
 
     if timeSinceLastMessage >= 3 or timeSinceLastPunch >= 3 or forceHound
-      if lastPunch.mode is 'in'
+      if lastPunch?.mode is 'in'
         user.directMessage "Don't forget to check out~", Logger
         user.shouldHound = false
         user.lastMessage.lastPing = now
