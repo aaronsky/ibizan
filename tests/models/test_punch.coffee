@@ -190,8 +190,9 @@ describe 'Punch', ->
   describe '#out(punch)', ->
     beforeEach ->
       zone = 'America/New_York'
-      start = moment.tz({hour: 7}, zone)
-      end = moment.tz({hour: 18}, zone)
+      now = moment.tz zone
+      start = moment.tz({year: now.year(), month: now.month(), day: now.date(), hour: 7}, zone)
+      end = moment.tz({year: now.year(), month: now.month(), day: now.date(), hour: 18}, zone)
       timetable = new Timetable(start, end, zone)
       timetable.setVacation(13, 0)
       timetable.setSick(5, 0)
