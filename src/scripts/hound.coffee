@@ -41,7 +41,7 @@ module.exports = (robot) ->
 
     user = Organization.getUserBySlackName slackuser.name
     if not user
-      Logger.log 'user not found'
+      Logger.log "#{slackuser.name} couldn't be found while attempting to hound"
       return
     
     now = moment.tz TIMEZONE
@@ -60,12 +60,14 @@ module.exports = (robot) ->
     timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
 
     if not user.shouldHound
-      Logger.log 'User is safe from hounding'
+      qualifier = ''
       if timeSinceLastPing > 1
         user.shouldHound = true
+        qualifier = "for another #{timeSinceLastPing} hours"
+      Logger.log "#{user.slack} is safe from hounding#{qualifier}"
       return
 
-    if timeSinceLastMessage >= 3 or timeSinceLastPunch >= 3 or forceHound
+    if (timeSinceLastMessage >= 3 or forceHound) and timeSinceLastPunch >= 3
       if lastPunch?.mode is 'in'
         user.directMessage "Don't forget to check out~", Logger
         user.shouldHound = false

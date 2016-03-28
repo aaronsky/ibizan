@@ -111,26 +111,35 @@ module.exports = (robot) ->
       response_url = body.response_url
       if response_url
         comps = body.text || []
-        now = moment()
-        start = if comps[0] then moment(comps[0]) else now.subtract(2, 'weeks')
-        end = if comps[1] then moment(comps[1]) else now
+        start = if comps[0] then moment(comps[0]) else moment().subtract(2, 'weeks')
+        end = if comps[1] then moment(comps[1]) else moment()
         Organization.generateReport(start, end)
         .catch(
           (err) ->
+            Logger.errorToSlack "Failed to produce a salary report", err
             Logger.log "POSTing to #{response_url}"
+            payload =
+              text: 'Failed to produce a salary report'
             robot.http(response_url)
             .header('Content-Type', 'application/json')
-            .post({
-              "text": "Failed to produce a salary report"
-            })
+            .post(JSON.stringify(payload))
         )
         .done(
           (numberDone) ->
+            Logger.log "Payroll has been generated"
+            Logger.log "POSTing to #{response_url}"
+            payload =
+              text: "Salary report generated for #{numberDone} employees"
             robot.http(response_url)
             .header('Content-Type', 'application/json')
-            .post({
-                "text": "Salary report generated for #{numberDone} employees"
-            })
+            .post(JSON.stringify(payload)) (err, response, body) ->
+              if err
+                response.send "Encountered an error :( #{err}"
+                return
+              if res.statusCode isnt 200
+                response.send "Request didn't come back HTTP 200 :("
+                return
+              Logger.log body
         )
         res.status 200
         res.json {
@@ -156,21 +165,29 @@ module.exports = (robot) ->
         .catch(
           (err) ->
             Logger.errorToSlack "Failed to resync", err
+            Logger.log "POSTing to #{response_url}"
+            payload =
+              text: 'Failed to resync'
             robot.http(response_url)
             .header('Content-Type', 'application/json')
-            .post({
-              "text": "Failed to resync"
-            })
+            .post(JSON.stringify(payload))
         )
         .done(
           (status) ->
             Logger.log "Options have been re-loaded"
             Logger.log "POSTing to #{response_url}"
+            payload =
+              text: 'Re-synced with spreadsheet'
             robot.http(response_url)
             .header('Content-Type', 'application/json')
-            .post({
-              "text": "Re-synced with spreadsheet"
-            })
+            .post(JSON.stringify(payload)) (err, response, body) ->
+              if err
+                response.send "Encountered an error :( #{err}"
+                return
+              if res.statusCode isnt 200
+                response.send "Request didn't come back HTTP 200 :("
+                return
+              Logger.log body
         )
         res.status 200
         res.json {

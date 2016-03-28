@@ -50,7 +50,14 @@ class Organization
       .then(
         (opts) =>
           if opts
+            if @users
+              old = @users.slice(0)
             @users = opts.users
+            if old
+              for user in old
+                if newUser = @getUserBySlackName user.slack
+                  newUser.lastMessage = user.lastMessage
+                  newUser.shouldHound = user.shouldHound
             @projects = opts.projects
             @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays)
             @clockChannel = opts.clockChannel
