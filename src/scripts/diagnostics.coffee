@@ -111,9 +111,8 @@ module.exports = (robot) ->
       response_url = body.response_url
       if response_url
         comps = body.text || []
-        now = moment()
-        end = if comps[1] then moment(comps[1]) else now
-        start = if comps[0] then moment(comps[0]) else now.subtract(2, 'weeks')
+        start = if comps[0] then moment(comps[0]) else moment().subtract(2, 'weeks')
+        end = if comps[1] then moment(comps[1]) else moment()
         Organization.generateReport(start, end)
         .catch(
           (err) ->
