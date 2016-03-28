@@ -109,6 +109,15 @@ class Punch
                               'MM/DD/YYYY hh:mm:ss a',
                               constants.TIMEZONE)
         datetimes.push newDate.tz(tz)
+    if row[headers.totalTime]
+      comps = row[headers.totalTime].split ':'
+      rawElapsed = 0
+      for comp, i in comps
+        if isNaN comp
+          continue
+        else
+          comp = parseInt comp
+          rawElapsed += +(comp / Math.pow 60, i).toFixed(2)
     if row[headers.blockTime]
       comps = row[headers.blockTime].split ':'
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -120,6 +129,14 @@ class Punch
       if elapsed < 0
         Logger.error 'Invalid punch row: elapsed time is less than 0', new Error(datetimes)
         return
+      else if elapsed isnt rawElapsed
+        hours = Math.floor elapsed
+        minutes = Math.round((elapsed - hours) * 60)
+        minute_str = if minutes < 10 then "0#{minutes}" else minutes
+        row[headers.totalTime] = "#{hours}:#{minute_str}:00"
+        row.save (err) ->
+          if err
+            Logger.error err
     
     foundProjects = []
     for i in [1..6]
