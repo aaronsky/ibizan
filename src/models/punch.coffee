@@ -101,9 +101,12 @@ class Punch
                             'MM/DD/YYYY hh:mm:ss a',
                             constants.TIMEZONE)
         if not newDate or
-           not newDate.isValid() or
-           not newDate.isSame(date, 'day')
-          newDate = moment.tz("#{row[headers.today]} #{newDate.format('hh:mm:ss a')}",
+           not newDate.isValid()
+          timePiece = moment.tz(row[headers[MODES[i]]],
+                                'hh:mm:ss a',
+                                constants.TIMEZONE)
+
+          newDate = moment.tz("#{row[headers.today]} #{row[headers[MODES[i]]]}",
                               'MM/DD/YYYY hh:mm:ss a',
                               constants.TIMEZONE)
         datetimes.push newDate.tz(tz)
@@ -113,6 +116,8 @@ class Punch
       datetimes.block = block
     else if datetimes.length is 2
       elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+      if elapsed < 0
+        Logger.error 'Elapsed time is less than 0', new Error(datetimes)
     
     foundProjects = []
     for i in [1..6]
