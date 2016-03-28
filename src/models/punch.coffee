@@ -98,13 +98,12 @@ class Punch
     for i in [0..1]
       if row[headers[MODES[i]]]
         newDate = moment.tz(row[headers[MODES[i]]],
-                            'M/D/YYYY hh:mm:ss a',
+                            'MM/DD/YYYY hh:mm:ss a',
                             constants.TIMEZONE)
         if not newDate or
            not newDate.isValid() or
            not newDate.isSame(date, 'day')
-          newDate = moment.tz(row[headers.today] + ' ' +
-                              row[headers[MODES[i]]],
+          newDate = moment.tz("#{row[headers.today]} #{newDate.format('hh:mm:ss a')}",
                               'MM/DD/YYYY hh:mm:ss a',
                               constants.TIMEZONE)
         datetimes.push newDate.tz(tz)
@@ -190,7 +189,7 @@ class Punch
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     today = moment.tz(constants.TIMEZONE)
-    row = @row ? {}
+    row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
     row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
     row[headers.name] = row[headers.name] || name
