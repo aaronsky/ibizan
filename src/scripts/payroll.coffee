@@ -22,8 +22,8 @@ module.exports = (robot) ->
       Logger.log "Don\'t make scheduled payroll report,
                   Organization isn\'t ready yet"
       return
+    twoWeeksAgo = moment().subtract(2, 'weeks')
     today = moment()
-    twoWeeksAgo = today.subtract(2, 'weeks')
     Organization.generateReport(twoWeeksAgo, today)
       .catch((err) ->
         Logger.errorToSlack "Failed to produce a salary report", err
