@@ -105,7 +105,6 @@ class Punch
           timePiece = moment.tz(row[headers[MODES[i]]],
                                 'hh:mm:ss a',
                                 constants.TIMEZONE)
-
           newDate = moment.tz("#{row[headers.today]} #{row[headers[MODES[i]]]}",
                               'MM/DD/YYYY hh:mm:ss a',
                               constants.TIMEZONE)
@@ -115,9 +114,12 @@ class Punch
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
       datetimes.block = block
     else if datetimes.length is 2
+      if datetimes[1].isBefore datetimes[0]
+        datetimes[1].add(1, 'days')
       elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
       if elapsed < 0
-        Logger.error 'Elapsed time is less than 0', new Error(datetimes)
+        Logger.error 'Invalid punch row: elapsed time is less than 0', new Error(datetimes)
+        return
     
     foundProjects = []
     for i in [1..6]
