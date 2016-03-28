@@ -111,11 +111,13 @@ module.exports = (robot) ->
       response_url = body.response_url
       if response_url
         comps = body.text || []
-        start = if comps[0] then moment comps[0] else moment().subtract 2, 'weeks'
-        end = if comps[1] then moment comps[1] else moment()
+        now = moment()
+        start = if comps[0] then moment(comps[0]) else now.subtract(2, 'weeks')
+        end = if comps[1] then moment(comps[1]) else now
         Organization.generateReport(start, end)
         .catch(
           (err) ->
+            Logger.log "POSTing to #{response_url}"
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post({
@@ -130,6 +132,10 @@ module.exports = (robot) ->
                 "text": "Salary report generated for #{numberDone} employees"
             })
         )
+        res.status 200
+        res.json {
+          "text": "Generating payroll..."
+        }
       else
         res.status 500
         res.json {
@@ -149,6 +155,7 @@ module.exports = (robot) ->
         Organization.sync()
         .catch(
           (err) ->
+            Logger.errorToSlack "Failed to resync", err
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post({
@@ -157,12 +164,18 @@ module.exports = (robot) ->
         )
         .done(
           (status) ->
+            Logger.log "Options have been re-loaded"
+            Logger.log "POSTing to #{response_url}"
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post({
               "text": "Re-synced with spreadsheet"
             })
         )
+        res.status 200
+        res.json {
+          "text": "Beginning to resync..."
+        }
       else
         res.status 500
         res.json {
