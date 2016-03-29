@@ -18,10 +18,16 @@ class Punch
     # ...
 
   @parse: (user, command, mode='none', timezone) ->
-    if not user or not command
+    if not user
+      Logger.error 'No user passed', new Error(command)
+      return
+    else if not command
+      Logger.error 'No command passed', new Error(user)
       return
     if mode and mode isnt 'none'
       [mode, command] = _parseMode command
+
+    original = command.slice 0
 
     [start, end] = user.activeHours()
     [times, command] = _parseTime command, start, end
@@ -52,10 +58,13 @@ class Punch
 
     if times.block?
       datetimes.block = times.block
+      while datetimes.length isnt 0
+        datetimes.pop()
       if mode is 'in'
         mode = 'none'
     else if datetimes.length is 2
       if mode is 'out'
+        Logger.error 'Out punch cannot be range', new Error(original)
         return
       else
         if datetimes[1].isBefore datetimes[0]
@@ -68,7 +77,7 @@ class Punch
     notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
-    punch.date = datetimes[0]
+    punch.date = datetimes[0] || moment()
     punch.timezone = tz
     if elapsed
       punch.elapsed = elapsed
@@ -364,13 +373,14 @@ _parseTime = (command, activeStart, activeEnd) ->
     else if match[0] is 'midnight'
       time.push moment({hour: 0, minute: 0})
     else
-      block = parseFloat match[3]
+      block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
+      block = parseFloat block_str
       time.block = block
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.time
     timeMatch = match[0]
     if hourStr = timeMatch.match /\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i
-      hour = parseInt (hourStr[0].replace(':', ''))
+      hour = parseInt(hourStr[0].replace(':', ''))
       if hour <= 12
         period = moment().format('a')
         if not timeMatch.match /(a|p)m?/i
