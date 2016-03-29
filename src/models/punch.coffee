@@ -463,6 +463,9 @@ _calculateElapsed = (start, end, mode, user) ->
 _parseProjects = (command) ->
   projects = []
   command = command.trimLeft() || ''
+  if command.indexOf('in') is 0
+    command = command.replace 'in', ''
+    command = command.trimLeft()
   command_copy = command.split(' ').slice()
 
   for word in command_copy
