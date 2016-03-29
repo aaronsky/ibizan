@@ -133,7 +133,7 @@ class Punch
         hours = Math.floor elapsed
         minutes = Math.round((elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
-        row[headers.totalTime] = "#{hours}:#{minute_str}:00"
+        row[headers.totalTime] = "#{hours}:#{minute_str}:00.000"
         row.save (err) ->
           if err
             Logger.error err
@@ -187,8 +187,8 @@ class Punch
 
   appendNotes: (notes = '') ->
     if @notes and @notes.length > 0
-      punch.notes += '\n'
-    @notes += msg
+      @notes += '\n'
+    @notes += notes
 
   out: (punch) ->
     if @mode is 'out'
@@ -196,8 +196,8 @@ class Punch
     if not @times.block? and
        @mode is 'in' and
        @times.length is 1
-      if punch.block?
-        newTime = moment.tz(@times[0], @timezone).add(punch.block, 'hours')
+      if punch.times.block?
+        newTime = moment.tz(@times[0], @timezone).add(punch.times.block, 'hours')
       else
         newTime = moment.tz(punch.times[0], punch.timezone)
         if newTime.isBefore @times[0]
@@ -222,7 +222,7 @@ class Punch
       hours = Math.floor block
       minutes = Math.round((block - hours) * 60)
       minute_str = if minutes < 10 then "0#{minutes}" else minutes
-      row[headers.blockTime] = "#{hours}:#{minute_str}:00"
+      row[headers.blockTime] = "#{hours}:#{minute_str}:00.000"
     else
       for i in [0..1]
         if time = @times[i]
@@ -233,7 +233,7 @@ class Punch
         hours = Math.floor @elapsed
         minutes = Math.round((@elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
-        row[headers.totalTime] = "#{hours}:#{minute_str}:00"
+        row[headers.totalTime] = "#{hours}:#{minute_str}:00.000"
     row[headers.notes] = @notes
     if @mode is 'vacation' or
        @mode is 'sick' or

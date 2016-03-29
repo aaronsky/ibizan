@@ -71,7 +71,6 @@ class Spreadsheet
             deferred.reject 'You haven\'t punched out yet.'
           last.out punch
           row = last.toRawRow user.name
-          console.log row
           row.save (err) ->
             if err
               deferred.reject err
