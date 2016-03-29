@@ -29,11 +29,11 @@ module.exports = (robot) ->
     if not channel.private
       channel.private = !!channel.is_im or !!channel.is_group
     if not Organization.ready()
-      Logger.log 'Don\'t hound, Organization isn\'t ready yet'
+      Logger.warn 'Don\'t hound, Organization isn\'t ready yet'
       return
     else if channel.private or
             channel.name in Organization.exemptChannels
-      Logger.log "##{channel.name} is not an appropriate hounding channel"
+      Logger.warn "##{channel.name} is not an appropriate hounding channel"
       return
     else if robot.name is slackuser.name
       Logger.log 'Caught myself, don\'t hound the hound.'
@@ -91,7 +91,7 @@ module.exports = (robot) ->
   # Every morning, reset hound status for each users
   houndJob = schedule.scheduleJob '*/5 * * * *', ->
     if not Organization.ready()
-      Logger.log "Don\'t run scheduled reset, Organization isn\'t ready yet"
+      Logger.warn "Don\'t run scheduled reset, Organization isn\'t ready yet"
       return
     for user in Organization.users
       hound { name: user.slack}, { private: null , name: ''}, true
@@ -100,7 +100,7 @@ module.exports = (robot) ->
   # Every morning, reset hound status for each users
   resetHoundJob = schedule.scheduleJob '0 6 * * 1-5', ->
     if not Organization.ready()
-      Logger.log "Don\'t run scheduled reset, Organization isn\'t ready yet"
+      Logger.warn "Don\'t run scheduled reset, Organization isn\'t ready yet"
       return
     count = Organization.resetHounding()
     response = "Reset #{count}
@@ -110,7 +110,7 @@ module.exports = (robot) ->
 
   robot.respond /(stop|disable) ibizan/i, (res) ->
     if not Organization.ready()
-      Logger.log 'Don\'t disable hounding, Organization isn\'t ready yet'
+      Logger.warn 'Don\'t disable hounding, Organization isn\'t ready yet'
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user

@@ -103,6 +103,13 @@ module.exports = (robot) ->
   robot.respond REGEX.modes, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
+      Logger.logToChannel "The #{Organization.name} isn't ready for
+                           operations yet. It may be in the middle of
+                           syncing or something has gone horribly wrong.
+                           Please try again later, and if this persists
+                           longer than five minutes, DM a maintainer as
+                           soon as possible.",
+                          res.message.user.name
       return
     parse res, res.match.input, res.match[1]
 
@@ -110,6 +117,13 @@ module.exports = (robot) ->
   robot.respond REGEX.rel_time, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
+      Logger.logToChannel "The #{Organization.name} isn't ready for
+                           operations yet. It may be in the middle of
+                           syncing or something has gone horribly wrong.
+                           Please try again later, and if this persists
+                           longer than five minutes, DM a maintainer as
+                           soon as possible.",
+                          res.message.user.name
       return
     # moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, 'none'
@@ -117,6 +131,13 @@ module.exports = (robot) ->
   robot.respond REGEX.append, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
+      Logger.logToChannel "The #{Organization.name} isn't ready for
+                           operations yet. It may be in the middle of
+                           syncing or something has gone horribly wrong.
+                           Please try again later, and if this persists
+                           longer than five minutes, DM a maintainer as
+                           soon as possible.",
+                          res.message.user.name
       return
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
@@ -151,11 +172,22 @@ module.exports = (robot) ->
 
   robot.respond /undo/i, (res) ->
     if not Organization.ready()
-      Logger.log 'Don\'t undo, Organization isn\'t ready yet'
+      Logger.warn 'Don\'t undo, Organization isn\'t ready yet'
+      Logger.logToChannel "The #{Organization.name} isn't ready for
+                           operations yet. It may be in the middle of
+                           syncing or something has gone horribly wrong.
+                           Please try again later, and if this persists
+                           longer than five minutes, DM a maintainer as
+                           soon as possible.",
+                          res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
-      Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
+      Logger.logToChannel "#{res.message.user.name} isn't a recognized
+                           username. Either you aren't part of the
+                           Employee worksheet, something has gone
+                           horribly wrong, or you aren\'t an employee
+                           at #{Organization.name}.",
                           res.message.user.name
       return
     if user.punches and user.punches.length > 0
@@ -167,10 +199,10 @@ module.exports = (robot) ->
       )
       .catch(
         (err) ->
-          console.error err
           Logger.errorToSlack "\"#{err}\" was returned for
                                an undo operation by #{user.slack}"
-          user.directMessage "Something went wrong while undoing your punch.",
+          user.directMessage "Something went horribly wrong while
+                              undoing your punch.",
                              Logger
       )
       .done()

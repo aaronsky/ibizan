@@ -1,4 +1,6 @@
 
+chalk = require 'chalk'
+
 if debugEnvStr = process.env.DEBUG
   if typeof debugEnvStr is 'string'
     debugEnvStr = debugEnvStr.toLowerCase()
@@ -8,18 +10,30 @@ if debugEnvStr = process.env.DEBUG
 else
   DEBUG = true
 
+logHeader = chalk.bold.blue
+log = chalk.blue
+warnHeader = chalk.bold.yellow
+warn = chalk.yellow
+errHeader = chalk.bold.red
+err = chalk.red
+funHeader = chalk.bold.magenta
+fun = chalk.magenta
+
 module.exports = (robot) ->
   class Logger
     constructor: () ->
     @log: (msg) ->
       if DEBUG
-        console.log "[Ibizan] (#{new Date()}) LOG: #{msg}"
+        console.log(logHeader("[Ibizan] (#{new Date()}) LOG: ") + log("#{msg}"))
     @warn: (msg) ->
       if DEBUG
-        console.warn "[Ibizan] (#{new Date()}) WARN: #{msg}"
+        console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
     @error: (msg, error) ->
       if DEBUG
-        console.error "[Ibizan] (#{new Date()}) ERROR: #{msg}", error || ''
+        console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
+    @fun: (msg) ->
+      if DEBUG
+        console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
     @logToChannel: (msg, channel, ephemeral) ->
       if DEBUG
         if robot

@@ -208,6 +208,13 @@ module.exports = (robot) ->
   robot.respond /(today|(for today)|hours)$/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
+      Logger.logToChannel "The #{Organization.name} isn't ready for
+                           operations yet. It may be in the middle of
+                           syncing or something has gone horribly wrong.
+                           Please try again later, and if this persists
+                           longer than five minutes, DM a maintainer as
+                           soon as possible.",
+                          res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
