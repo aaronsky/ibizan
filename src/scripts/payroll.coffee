@@ -19,7 +19,7 @@ module.exports = (robot) ->
   # Ibizan will export a Payroll Report every other Sunday night.
   generateReportJob = schedule.scheduleJob '0 17 * * 0', () ->
     if not Organization.ready()
-      Logger.log "Don\'t make scheduled payroll report,
+      Logger.warn "Don\'t make scheduled payroll report,
                   Organization isn\'t ready yet"
       return
     twoWeeksAgo = moment().subtract(2, 'weeks')
@@ -40,7 +40,7 @@ module.exports = (robot) ->
   # time will not be paid.
   reminderJob = schedule.scheduleJob '0 13 * * 5', () ->
     if not Organization.ready()
-      Logger.log "Don\'t run scheduled payroll reminder,
+      Logger.warn "Don\'t run scheduled payroll reminder,
                   Organization isn\'t ready yet"
       return
     for user in Organization.users

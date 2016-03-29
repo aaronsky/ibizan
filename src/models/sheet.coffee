@@ -289,11 +289,12 @@ class Spreadsheet
               time_str = "#{punch.times[0].format('hh:mma')}"
               if punch.times.length is 2
                 time_str += " - #{punch.times[1].format('hh:mma')} (#{punch.elapsed} hours)"
+            notes = punch.notes.replace /\n/g, '\n\t\t\t\t\t\t\t\t'
             Logger.log "Loaded a punch for @#{user.slack}\n
                         \t\t\t\t\t\t\tMode: #{punch.mode}\n
                         \t\t\t\t\t\t\tTime: #{time_str}\n
                         \t\t\t\t\t\t\tProjects: #{punch.projects.length} projects\n
-                        \t\t\t\t\t\t\tNotes: #{punch.notes}\n"
+                        \t\t\t\t\t\t\tNotes:\t#{notes}\n"
         deferred.resolve opts
 
 

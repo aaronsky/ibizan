@@ -109,6 +109,15 @@ class Punch
                               'MM/DD/YYYY hh:mm:ss a',
                               constants.TIMEZONE)
         datetimes.push newDate.tz(tz)
+    if row[headers.totalTime]
+      comps = row[headers.totalTime].split ':'
+      rawElapsed = 0
+      for comp, i in comps
+        if isNaN comp
+          continue
+        else
+          comp = parseInt comp
+          rawElapsed += +(comp / Math.pow 60, i).toFixed(2)
     if row[headers.blockTime]
       comps = row[headers.blockTime].split ':'
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -120,6 +129,14 @@ class Punch
       if elapsed < 0
         Logger.error 'Invalid punch row: elapsed time is less than 0', new Error(datetimes)
         return
+      else if elapsed isnt rawElapsed
+        hours = Math.floor elapsed
+        minutes = Math.round((elapsed - hours) * 60)
+        minute_str = if minutes < 10 then "0#{minutes}" else minutes
+        row[headers.totalTime] = "#{hours}:#{minute_str}:00.000"
+        row.save (err) ->
+          if err
+            Logger.error err
     
     foundProjects = []
     for i in [1..6]
@@ -170,8 +187,8 @@ class Punch
 
   appendNotes: (notes = '') ->
     if @notes and @notes.length > 0
-      punch.notes += '\n'
-    @notes += msg
+      @notes += '\n'
+    @notes += notes
 
   out: (punch) ->
     if @mode is 'out'
@@ -179,13 +196,13 @@ class Punch
     if not @times.block? and
        @mode is 'in' and
        @times.length is 1
-      if punch.block?
-        newTime = moment.tz(@times[0], @timezone).add(punch.block, 'hours')
+      if punch.times.block?
+        newTime = moment.tz(@times[0], @timezone).add(punch.times.block, 'hours')
       else
         newTime = moment.tz(punch.times[0], punch.timezone)
         if newTime.isBefore @times[0]
           newTime.add(1, 'days')
-      @elapsed = newTime.diff(@times[0], 'hours', true)
+      @elapsed = _calculateElapsed @times[0], newTime, 'out'
       @times.push newTime
     if punch.projects
       @appendProjects punch.projects
@@ -205,7 +222,7 @@ class Punch
       hours = Math.floor block
       minutes = Math.round((block - hours) * 60)
       minute_str = if minutes < 10 then "0#{minutes}" else minutes
-      row[headers.blockTime] = "#{hours}:#{minute_str}:00"
+      row[headers.blockTime] = "#{hours}:#{minute_str}:00.000"
     else
       for i in [0..1]
         if time = @times[i]
@@ -216,7 +233,7 @@ class Punch
         hours = Math.floor @elapsed
         minutes = Math.round((@elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
-        row[headers.totalTime] = "#{hours}:#{minute_str}:00"
+        row[headers.totalTime] = "#{hours}:#{minute_str}:00.000"
     row[headers.notes] = @notes
     if @mode is 'vacation' or
        @mode is 'sick' or
@@ -326,6 +343,9 @@ _parseMode = (command) ->
 _parseTime = (command, activeStart, activeEnd) ->
   # parse time component
   command = command.trimLeft() || ''
+  if command.indexOf('at') is 0
+    command = command.replace 'at', ''
+    command = command.trimLeft()
   activeTime = (activeEnd.diff(activeStart, 'hours', true).toFixed(2))
   time = []
   if match = command.match REGEX.rel_time
@@ -363,6 +383,9 @@ _parseTime = (command, activeStart, activeEnd) ->
 
 _parseDate = (command) ->
   command = command.trimLeft() || ''
+  if command.indexOf('on') is 0
+    command = command.replace 'on', ''
+    command = command.trimLeft()
   date = []
   if match = command.match /today/i
     date.push moment()
