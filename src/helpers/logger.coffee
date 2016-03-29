@@ -61,7 +61,7 @@ module.exports = (robot) ->
           shortMsg = msg.substring(0, index)
         else
           shortMsg = msg
-        console.error(funHeader("[Ibizan] (Test): ") + fun(shortMsg), error || '')
+        console.log(funHeader("[Ibizan] (Test): ") + fun(shortMsg))
     @logToChannel: (msg, channel) ->
       if robot and robot.send?
         robot.send {room: channel}, msg
