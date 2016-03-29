@@ -343,7 +343,7 @@ _parseMode = (command) ->
 _parseTime = (command, activeStart, activeEnd) ->
   # parse time component
   command = command.trimLeft() || ''
-  if command.startsWith 'at'
+  if command.indexOf 'at' is 0
     command = command.replace 'at', ''
     command = command.trimLeft()
   activeTime = (activeEnd.diff(activeStart, 'hours', true).toFixed(2))
@@ -383,7 +383,7 @@ _parseTime = (command, activeStart, activeEnd) ->
 
 _parseDate = (command) ->
   command = command.trimLeft() || ''
-  if command.startsWith 'on'
+  if command.indexOf 'on' is 0
     command = command.replace 'on', ''
     command = command.trimLeft()
   date = []
