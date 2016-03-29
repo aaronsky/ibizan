@@ -25,38 +25,58 @@ module.exports = (robot) ->
     @log: (msg) ->
       if DEBUG
         console.log(logHeader("[Ibizan] (#{new Date()}) LOG: ") + log("#{msg}"))
+      else
+        index = msg.indexOf '\n'
+        if index isnt -1
+          shortMsg = msg.substring(0, index)
+        else
+          shortMsg = msg
+        console.log(logHeader("[Ibizan] (Test): ") + log(shortMsg))
     @warn: (msg) ->
       if DEBUG
         console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
+      else
+        index = msg.indexOf '\n'
+        if index isnt -1
+          shortMsg = msg.substring(0, index)
+        else
+          shortMsg = msg
+        console.warn(warnHeader("[Ibizan] (Test): ") + warn(shortMsg))
     @error: (msg, error) ->
       if DEBUG
         console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
+      else
+        index = msg.indexOf '\n'
+        if index isnt -1
+          shortMsg = msg.substring(0, index)
+        else
+          shortMsg = msg
+        console.error(errHeader("[Ibizan] (Test): ") + err(shortMsg), error || '')
     @fun: (msg) ->
       if DEBUG
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
-    @logToChannel: (msg, channel, ephemeral) ->
-      if DEBUG
-        if robot
-          robot.send {room: channel}, msg
-        else
-          Logger.log msg
+    @logToChannel: (msg, channel) ->
+      if robot and robot.send?
+        robot.send {room: channel}, msg
+      else
+        Logger.log msg
     @errorToSlack: (msg, error) ->
-      if DEBUG
-        if robot
-          robot.send {room: 'ibizan-diagnostics'},
-            "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
-        else
-          Logger.error msg, error
+      if robot and robot.send?
+        robot.send {room: 'ibizan-diagnostics'},
+          "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
+      else
+        Logger.error msg, error
     @reactToMessage: (reaction, user, channel, slack_ts) ->
-      if DEBUG
-        if robot and
-           robot.adapter and
-           client = robot.adapter.client
-          params =
-            name: reaction,
-            channel: channel,
-            timestamp: slack_ts
-          client._apiCall 'reactions.add', params, (response) ->
-            if not response.ok
-              Logger.logToChannel response.error, user
+      if robot and
+         robot.adapter and
+         robot.adapter.client._apiCall? and
+         client = robot.adapter.client
+        params =
+          name: reaction,
+          channel: channel,
+          timestamp: slack_ts
+        client._apiCall 'reactions.add', params, (response) ->
+          if not response.ok
+            Logger.errorToSlack response.error
+            Logger.logToChannel response.error, user
   Logger
