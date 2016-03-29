@@ -202,7 +202,7 @@ class Punch
         newTime = moment.tz(punch.times[0], punch.timezone)
         if newTime.isBefore @times[0]
           newTime.add(1, 'days')
-      @elapsed = newTime.diff(@times[0], 'hours', true)
+      @elapsed = _calculateElapsed @times[0], newTime, 'out'
       @times.push newTime
     if punch.projects
       @appendProjects punch.projects
@@ -343,6 +343,9 @@ _parseMode = (command) ->
 _parseTime = (command, activeStart, activeEnd) ->
   # parse time component
   command = command.trimLeft() || ''
+  if command.startsWith 'at'
+    command = command.replace 'at', ''
+    command = command.trimLeft()
   activeTime = (activeEnd.diff(activeStart, 'hours', true).toFixed(2))
   time = []
   if match = command.match REGEX.rel_time
@@ -380,6 +383,9 @@ _parseTime = (command, activeStart, activeEnd) ->
 
 _parseDate = (command) ->
   command = command.trimLeft() || ''
+  if command.startsWith 'on'
+    command = command.replace 'on', ''
+    command = command.trimLeft()
   date = []
   if match = command.match /today/i
     date.push moment()

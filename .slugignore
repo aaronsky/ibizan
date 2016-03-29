@@ -1,0 +1,5 @@
+tests/
+.editorconfig
+coffeelint_config.json
+LICENSE.md
+README.md
