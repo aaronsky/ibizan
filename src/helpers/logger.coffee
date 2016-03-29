@@ -55,6 +55,13 @@ module.exports = (robot) ->
     @fun: (msg) ->
       if DEBUG
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
+      else
+        index = msg.indexOf '\n'
+        if index isnt -1
+          shortMsg = msg.substring(0, index)
+        else
+          shortMsg = msg
+        console.error(funHeader("[Ibizan] (Test): ") + fun(shortMsg), error || '')
     @logToChannel: (msg, channel) ->
       if robot and robot.send?
         robot.send {room: channel}, msg
