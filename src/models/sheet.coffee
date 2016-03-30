@@ -194,6 +194,7 @@ class Spreadsheet
                 @employees)
           deferred.reject 'Worksheets failed to be associated properly'
         else
+          Logger.fun "----------------------------------------"
           deferred.resolve {}
     return deferred.promise
 
@@ -237,6 +238,8 @@ class Spreadsheet
                     opts[key] = val.trim().replace '#', ''
                 else
                   opts[key] = parseInt row[header]
+        Logger.fun "Loaded organization settings"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
     deferred.promise
 
@@ -249,8 +252,13 @@ class Spreadsheet
         projects = []
         for row in rows
           project = Project.parse row
-          projects.push project
+          if project
+            projects.push project
+            Logger.log "Loaded data for ##{project.name} (#{project.total} hours)"
         opts.projects = projects
+        Logger.fun "----------------------------------------"
+        Logger.fun "Loaded #{projects.length} projects"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
     deferred.promise
 
@@ -263,8 +271,13 @@ class Spreadsheet
         users = []
         for row in rows
           user = User.parse row
-          users.push user
+          if user
+            users.push user
+            Logger.log "Loaded #{user.name}'s information (@#{user.slack})"
         opts.users = users
+        Logger.fun "----------------------------------------"
+        Logger.fun "Loaded #{users.length} users"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
     deferred.promise
 
@@ -283,18 +296,19 @@ class Spreadsheet
           punch = Punch.parseRaw user, row, opts.projects
           if punch and user
             user.punches.push punch
+            article = if punch.mode in ['vacation', 'sick', 'none'] then 'a' else 'an'
+            mode = if punch.mode is 'none' then 'block' else punch.mode
             if punch.times.block?
-              time_str = "#{punch.times.block} hours"
-            else
-              time_str = "#{punch.times[0].format('hh:mma')}"
-              if punch.times.length is 2
-                time_str += " - #{punch.times[1].format('hh:mma')} (#{punch.elapsed} hours)"
-            notes = punch.notes.replace /\n/g, '\n\t\t\t\t\t\t\t\t'
-            Logger.log "Loaded a punch for @#{user.slack}\n
-                        \t\t\t\t\t\t\tMode: #{punch.mode}\n
-                        \t\t\t\t\t\t\tTime: #{time_str}\n
-                        \t\t\t\t\t\t\tProjects: #{punch.projects.length} projects\n
-                        \t\t\t\t\t\t\tNotes:\t#{notes}\n"
+              modifier = "(#{punch.times.block} hours) "
+            else if punch.elapsed?
+              modifier = "(#{punch.elapsed} hours) "
+            else if punch.times.length is 1
+              modifier = "at #{punch.times[0].format('h:mma')} "
+            Logger.log "Loaded #{article} #{mode}-punch for @#{user.slack}
+                        #{modifier}with #{punch.projects.length} projects"
+        Logger.fun "----------------------------------------"
+        Logger.fun "Loaded #{rows.length} punches for #{opts.users.length} users"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
 
 
