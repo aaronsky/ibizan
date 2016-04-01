@@ -90,7 +90,7 @@ class Spreadsheet
               Q.all(promises)
               .then(
                 () ->
-                  deferred.resolve()
+                  deferred.resolve last
               )
               .catch(
                 (err) ->
@@ -129,9 +129,9 @@ class Spreadsheet
             .done(
               () ->
                 user.punches.pop()
-                deferred.resolve()
+                deferred.resolve punch
             )
-        deferred.resolve()
+        # deferred.resolve()
       else
         row = punch.toRawRow user.name
         @rawData.addRow row, (err) =>
@@ -147,7 +147,7 @@ class Spreadsheet
                   (r for r in rows when r[headers.id] is row[headers.id])[0]
                 punch.assignRow row_match
                 user.punches.push punch
-                deferred.resolve()
+                deferred.resolve punch
     deferred.promise
 
   generateReport: (users, start, end) ->

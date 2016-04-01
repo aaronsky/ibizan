@@ -61,7 +61,9 @@ module.exports = (robot) ->
       msg = msg.replace REGEX.ibizan, ''
       tz = res.message.user.slack.tz
       punch = Punch.parse user, msg, mode, tz
-      if not punch.projects.length and isProjectChannel res.message.user.room
+      if not punch.projects.length and
+         res.message.user.room isnt Organization.clockChannel and
+         isProjectChannel res.message.user.room
         punch.projects.push Organization.getProjectByName(res.message.user.room)
       moment.tz.setDefault TIMEZONE
       sendPunch punch, user, res
@@ -81,11 +83,32 @@ module.exports = (robot) ->
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
-      () ->
+      (punch) ->
         Logger.reactToMessage 'dog2',
                               res.message.user.name,
                               res.message.rawMessage.channel,
                               res.message.id
+        mode = punch.mode
+        if mode is 'vacation' or mode is 'sick' or mode is 'unpaid' or mode is 'none'
+          blockTimeQualifier = if punch.times.block? then "#{punch.times.block} hour" else ' '
+          if mode is 'none'
+            mode = ' block'
+          else
+            mode += " #{mode}-block"
+          modeQualifier = "for a #{blockTimeQualifier}#{mode}"
+          timeQualifier = ""
+        else
+          modeQualifier = mode
+          time = punch.times.slice(-1)[0]
+          if time.isSame(moment(), 'day')
+            dateQualifier = "today"
+          else if time.isSame(moment().subtract(1, 'days'), 'day')
+            dateQualifier = "yesterday"
+          else
+            dateQualifier = "on #{time.format('MMM Do, YYYY')}"
+          timeQualifier = " at #{time?.format('h:mma')} #{dateQualifier}"
+        user.directMessage "Punched you #{modeQualifier}#{timeQualifier}.",
+                           Logger
     )
     .catch(
       (err) ->

@@ -302,7 +302,7 @@ class Punch
     else if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
-      if last = user.lastPunch 'in' and
+      if last = user.lastPunch('in') and
          not @times.block?
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at
@@ -311,6 +311,8 @@ class Punch
         # if mode is 'vacation' and user doesn't have enough vacation time
         if @mode is 'vacation' and
            user.timetable.vacationAvailable < elapsed
+          console.log user.timetable.vacationAvailable
+          console.log elapsed
           return 'This punch exceeds your remaining vacation time.'
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
