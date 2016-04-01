@@ -23,7 +23,12 @@ class Timetable
   constructor: (@start, @end, @timezone) ->
     if typeof @timezone is 'string'
       @timezone = moment.tz.zone(@timezone)
-
+  activeHours: ->
+    [@start, @end]
+  activeTime: ->
+    return +(@end.diff(@start, 'hours', true).toFixed(2))
+  toDays: (hours) ->
+    return hours / @activeTime()
   setVacation: (total, available) ->
     @vacationTotal = getPositiveNumber(total, @vacationTotal)
     @vacationAvailable = getPositiveNumber(available, @vacationAvailable)
@@ -67,29 +72,29 @@ class User
         if isNaN(row[header])
           temp[key] = row[header].trim()
         else
+          # console.log "[#{key}] #{header}: #{row[header]} #{parseInt row[header]}"
           temp[key] = parseInt row[header]
     timetable = new Timetable(temp.start, temp.end, temp.timezone)
-    timetable.setVacation(temp.vacationAvailable, temp.vacationLogged)
-    timetable.setSick(temp.sickAvailable, temp.sickLogged)
+    timetable.setVacation(temp.vacationLogged, temp.vacationAvailable)
+    timetable.setSick(temp.sickLogged, temp.sickAvailable)
     timetable.setUnpaid(temp.unpaidLogged)
     timetable.setLogged(temp.totalLogged)
     timetable.setAverageLogged(temp.averageLogged)
     user = new User(temp.name, temp.slackname, temp.salary, timetable, row)
     user
   
-  activeHours: () ->
-    [@timetable.start, @timetable.end]
+  activeHours: ->
+    return @timetable.activeHours()
   
-  activeTime: () ->
-    return +(@timetable.end.diff(@timetable.start, 'hours', true).toFixed(2))
+  activeTime: ->
+    return @timetable.activeTime()
+
+  toDays: (hours) ->
+    return @timetable.toDays hours
 
   isInactive: (current) ->
     current = current || moment()
-    day = current.day()
-    if day is 0 or day is 6
-      # weekend
-      return true
-    else if current.holiday()?
+    if current.holiday()?
       return true
     else if current.isBetween(@timetable.start, @timetable.end)
       return false

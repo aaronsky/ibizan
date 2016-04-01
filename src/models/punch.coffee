@@ -309,14 +309,15 @@ class Punch
                 #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
+        elapsedDays = user.toDays(elapsed)
         if @mode is 'vacation' and
-           user.timetable.vacationAvailable < elapsed
+           user.timetable.vacationAvailable < elapsedDays
           console.log user.timetable.vacationAvailable
           console.log elapsed
           return 'This punch exceeds your remaining vacation time.'
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
-                user.timetable.sickAvailable < elapsed
+                user.timetable.sickAvailable < elapsedDays
           return 'This punch exceeds your remaining sick time.'
         # if mode is 'vacation' and time isn't divisible by 4
         # if mode is 'sick' and time isn't divisible by 4

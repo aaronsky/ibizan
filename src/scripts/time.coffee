@@ -43,7 +43,9 @@ module.exports = (robot) ->
     channel is Organization.clockChannel
 
   isProjectChannel = (channel) ->
-    Organization.getProjectByName(channel)?
+    return not isClockChannel channel.room and
+           not isDM channel.name, channel.room and
+           Organization.getProjectByName(channel.room)?
 
   canPunchHere = (name, channel) ->
     isDM(name, channel) or
@@ -62,8 +64,7 @@ module.exports = (robot) ->
       tz = res.message.user.slack.tz
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
-         res.message.user.room isnt Organization.clockChannel and
-         isProjectChannel res.message.user.room
+         isProjectChannel res.message.user
         punch.projects.push Organization.getProjectByName(res.message.user.room)
       moment.tz.setDefault TIMEZONE
       sendPunch punch, user, res
@@ -94,7 +95,7 @@ module.exports = (robot) ->
           if mode is 'none'
             mode = ' block'
           else
-            mode += " #{mode}-block"
+            mode = " #{mode}-block"
           modeQualifier = "for a #{blockTimeQualifier}#{mode}"
           timeQualifier = ""
         else

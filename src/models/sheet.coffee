@@ -77,26 +77,26 @@ class Spreadsheet
             else
               # add hours to project in projects
               if last.times.block
-                workTime = last.times.block
+                elapsed = last.times.block
               else
-                workTime = last.elapsed
-              user.timetable.setLogged(workTime)
+                elapsed = last.elapsed
+              logged = user.timetable.loggedTotal
+              user.timetable.setLogged(logged + elapsed)
               # calculate project times
               promises = []
               for project in last.projects
-                project.total += workTime
+                project.total += elapsed
                 promises.push (project.updateRow())
               promises.push(user.updateRow())
               Q.all(promises)
-              .then(
-                () ->
-                  deferred.resolve last
-              )
               .catch(
                 (err) ->
                   deferred.reject err
               )
-              .done()
+              .done(
+                () ->
+                  deferred.resolve last
+              )
       else if punch.mode is 'vacation' or
               punch.mode is 'sick' or
               punch.mode is 'unpaid'
@@ -110,17 +110,18 @@ class Spreadsheet
               elapsed = punch.times.block
             else
               elapsed = punch.elapsed
+            elapsedDays = user.toDays elapsed
             if punch.mode is 'vacation'
               total = user.timetable.vacationTotal
               available = user.timetable.vacationAvailable
-              user.timetable.setVacation(total + elapsed, available - elapsed)
+              user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
             else if punch.mode is 'sick'
               total = user.timetable.sickTotal
               available = user.timetable.sickAvailable
-              user.timetable.setSick(total + elapsed, available - elapsed)
+              user.timetable.setSick(total + elapsedDays, available - elapsedDays)
             else if punch.mode is 'unpaid'
               total = user.timetable.unpaidTotal
-              user.timetable.setUnpaid(total + elapsed)
+              user.timetable.setUnpaid(total + elapsedDays)
             user.updateRow()
             .catch(
               (err) ->
