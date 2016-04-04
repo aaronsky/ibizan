@@ -125,6 +125,46 @@ describe 'Punch', ->
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
       expect(punch.notes).to.be.empty
+    it 'append time block to punch', ->
+      punch = Punch.parse @user, '1.5 hours'
+      expect(punch).to.have.property 'mode', 'none'
+      expect(punch).to.have.deep.property 'times.block', 1.5
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
+    it 'append time block to punch', ->
+      punch = Punch.parse @user, '.5 hours'
+      expect(punch).to.have.property 'mode', 'none'
+      expect(punch).to.have.deep.property 'times.block', 0.5
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
+    it 'append time block to punch', ->
+      punch = Punch.parse @user, '0.5 hours'
+      expect(punch).to.have.property 'mode', 'none'
+      expect(punch).to.have.deep.property 'times.block', 0.5
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
+    it 'append time block to punch', ->
+      punch = Punch.parse @user, '0.5 hour'
+      expect(punch).to.have.property 'mode', 'none'
+      expect(punch).to.have.deep.property 'times.block', 0.5
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
+    it 'append time block to punch', ->
+      punch = Punch.parse @user, '1 hour'
+      expect(punch).to.have.property 'mode', 'none'
+      expect(punch).to.have.deep.property 'times.block', 1
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
     it 'append time block to yesterday\'s punch', ->
       punch = Punch.parse @user, '2 hours yesterday'
       expect(punch).to.have.property 'mode', 'none'

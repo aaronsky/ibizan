@@ -8,7 +8,7 @@ constants = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 HEADERS = constants.HEADERS
 Project = require './project'
-{ User, Timetable } = require './user'
+{ User, Settings, Timetable } = require './user'
 
 options = {}
 
@@ -208,6 +208,7 @@ class Spreadsheet
         opts =
           vacation: 0
           sick: 0
+          houndFrequency: 0
           holidays: []
           clockChannel: ''
           exemptChannels: []
@@ -273,6 +274,13 @@ class Spreadsheet
         for row in rows
           user = User.parse row
           if user
+            user.settings = Settings.fromSettings {
+                    shouldHound: true,
+                    shouldResetHound: true,
+                    houndFrequency: opts.houndFrequency || -1,
+                    lastMessage: null,
+                    lastPing: null
+                  }
             users.push user
             Logger.log "Loaded #{user.name}'s information (@#{user.slack})"
         opts.users = users
