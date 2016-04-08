@@ -23,7 +23,12 @@ class Timetable
   constructor: (@start, @end, @timezone) ->
     if typeof @timezone is 'string'
       @timezone = moment.tz.zone(@timezone)
-
+  activeHours: ->
+    [@start, @end]
+  activeTime: ->
+    return +(@end.diff(@start, 'hours', true).toFixed(2))
+  toDays: (hours) ->
+    return hours / @activeTime()
   setVacation: (total, available) ->
     @vacationTotal = getPositiveNumber(total, @vacationTotal)
     @vacationAvailable = getPositiveNumber(available, @vacationAvailable)
@@ -37,11 +42,27 @@ class Timetable
   setAverageLogged: (average) ->
     @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
 
+class Settings
+  constructor: () ->
+    @shouldHound = true
+    @shouldResetHound = true
+    @houndFrequency = -1
+    @lastMessage = null
+    @lastPing = null
+  @fromSettings: (settings) ->
+    newSetting = new Settings()
+    newSetting.fromSettings settings
+    newSetting
+  fromSettings: (opts) ->
+    if not opts or
+       typeof opts isnt 'object'
+      return
+    for setting, value of opts
+      @[setting] = value
+
 class User
   constructor: (@name, @slack, @salary, @timetable, @row = null) ->
     @punches = []
-    @shouldHound = true
-    @lastMessage = null
 
   @parse: (row) ->
     headers = HEADERS.users
@@ -67,29 +88,29 @@ class User
         if isNaN(row[header])
           temp[key] = row[header].trim()
         else
+          # console.log "[#{key}] #{header}: #{row[header]} #{parseInt row[header]}"
           temp[key] = parseInt row[header]
     timetable = new Timetable(temp.start, temp.end, temp.timezone)
-    timetable.setVacation(temp.vacationAvailable, temp.vacationLogged)
-    timetable.setSick(temp.sickAvailable, temp.sickLogged)
+    timetable.setVacation(temp.vacationLogged, temp.vacationAvailable)
+    timetable.setSick(temp.sickLogged, temp.sickAvailable)
     timetable.setUnpaid(temp.unpaidLogged)
     timetable.setLogged(temp.totalLogged)
     timetable.setAverageLogged(temp.averageLogged)
     user = new User(temp.name, temp.slackname, temp.salary, timetable, row)
     user
   
-  activeHours: () ->
-    [@timetable.start, @timetable.end]
+  activeHours: ->
+    return @timetable.activeHours()
   
-  activeTime: () ->
-    return +(@timetable.end.diff(@timetable.start, 'hours', true).toFixed(2))
+  activeTime: ->
+    return @timetable.activeTime()
+
+  toDays: (hours) ->
+    return @timetable.toDays hours
 
   isInactive: (current) ->
     current = current || moment()
-    day = current.day()
-    if day is 0 or day is 6
-      # weekend
-      return true
-    else if current.holiday()?
+    if current.holiday()?
       return true
     else if current.isBetween(@timetable.start, @timetable.end)
       return false
@@ -251,7 +272,8 @@ class User
             Last punch was #{punchTime}\n
             Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
             They are in #{@timetable.timezone.name}\n
-            The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
+            The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
 
 module.exports.User = User
+module.exports.Settings = Settings
 module.exports.Timetable = Timetable

@@ -45,43 +45,71 @@ module.exports = (robot) ->
       return
     
     now = moment.tz TIMEZONE
-    last = user.lastMessage || { time: now, channel: channel.name }
-    user.lastMessage = {
-      time: now,
-      channel: channel.name,
-      lastPing: last.lastPing
+    last = user.settings?.lastMessage || { time: now, channel: channel.name }
+    user.settings?.fromSettings {
+      lastMessage: {
+        time: now,
+        channel: channel.name,
+        lastPing: last.lastPing
+      }
     }
 
-    timeSinceLastMessage = user.lastMessage.time.diff last.time, 'hours', true
-    timeSinceLastPing = user
-                        .lastMessage
-                        .lastPing?.diff(last.lastPing, 'hours', true) || 0
-    lastPunch = user.lastPunch 'in', 'out'
+    [start, end] = user.activeHours()
+    lastPunch = user.lastPunch ['in', 'out', 'vacation', 'sick', 'unpaid']
+    timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2) || 0
+    timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2) || 0
     timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
+    timeSinceLastMessage = user
+                            .settings?.lastMessage
+                            .time.diff(last.time, 'hours', true) || 0
+    timeSinceLastPing = user
+                        .settings?.lastMessage
+                        .lastPing?.diff(last.lastPing, 'hours', true) || 0
 
-    if not user.shouldHound
-      qualifier = ''
-      if timeSinceLastPing > 1
-        user.shouldHound = true
-        qualifier = "for another #{timeSinceLastPing} hours"
-      Logger.log "#{user.slack} is safe from hounding#{qualifier}"
-      return
-
-    if (timeSinceLastMessage >= 3 or forceHound) and timeSinceLastPunch >= 3
-      if lastPunch?.mode is 'in'
-        user.directMessage "Don't forget to check out~", Logger
-        user.shouldHound = false
-        user.lastMessage.lastPing = now
-      else if not user.isInactive()
-        user.directMessage "Check in if you're on the clock~", Logger
-        user.shouldHound = false
-        user.lastMessage.lastPing = now
-    else
-      status = "#{user.slack} was active "
-      if last.channel
-        status += "in ##{last.channel} "
-      status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
-      Logger.log status
+    if user.settings.shouldHound
+      if timeSinceLastPing < 1
+        Logger.log "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours"
+      else if timeSinceLastMessage >= user.settings.houndFrequency and
+              timeSinceLastPunch >= user.settings.houndFrequency
+        if not lastPunch
+          if timeSinceStart <= 0.5
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+          else if timeSinceEnd <= 0.5
+            user.directMessage "Don't forget to check out~", Logger
+            user.settings?.lastMessage.lastPing = now
+        if lastPunch.mode is 'in'
+          if timeSinceEnd <= 0.5
+            user.directMessage "Don't forget to check out~", Logger
+            user.settings?.lastMessage.lastPing = now
+        else if lastPunch.mode is 'out'
+          if not user.isInactive() and timeSinceStart <= 0.5
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+        else if lastPunch.mode is 'vacation' or
+                lastPunch.mode is 'sick' or
+                lastPunch.mode is 'unpaid'
+          if lastPunch.times.length > 0 and not now.isBetween(lastPunch.times[0], lastPunch.times[1])
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+          else if lastPunch.times.block?
+            endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours')
+            if not now.isBetween(lastPunch.date, endOfBlock)
+              user.directMessage "Check in if you're on the clock~", Logger
+              user.settings?.lastMessage.lastPing = now
+        else
+          if timeSinceStart <= 0.5
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+          else if timeSinceEnd <= 0.5
+            user.directMessage "Don't forget to check out~", Logger
+            user.settings?.lastMessage.lastPing = now
+      else
+        status = "#{user.slack} was active "
+        if last.channel
+          status += "in ##{last.channel} "
+        status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
+        Logger.log status
 
   robot.adapter.client.on 'userTyping', (user, channel) ->
     hound user, channel
@@ -108,12 +136,129 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
-  robot.respond /(stop|disable) ibizan/i, (res) ->
-    if not Organization.ready()
-      Logger.warn 'Don\'t disable hounding, Organization isn\'t ready yet'
-      return
-    user = Organization.getUserBySlackName res.message.user.name
-    if not user
-      return
-    user.shouldHound = false
-    res.send 'Ok, I\'ll stop hounding you until tomorrow morning.'
+  robot.router.post '/ibizan/diagnostics/hound', (req, res) ->
+    body = req.body
+    if body.token is process.env.SLASH_HOUND_TOKEN
+      comps = body?.text?.split(' ') || []
+      console.log comps
+      scope = comps[0] || 'self'
+      if scope is Organization.name
+        scope = 'org'
+      else if scope is body.user_name
+        scope = 'self'
+      else if scope isnt 'self' and scope isnt 'org'
+        if not isNaN(comps[0]) and
+           (comps[1] is 'hour' or comps[1] is 'hours')
+          comps = ['self', comps.join(' ')]
+        else if comps.length > 2
+          comps = ['self', comps.slice(1).join(' ')]
+        else
+          comps = ['self', comps[0]]
+        scope = comps[0]
+      action = comps[1] || 'info'
+      console.log scope
+      console.log action
+
+      if scope is 'self'
+        user = Organization.getUserBySlackName body.user_name
+        if not user
+          # TODO: Improve output
+          err = "User not found"
+          res.status 500
+        else if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
+          block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
+          block = parseFloat block_str
+          user.settings.fromSettings {
+            houndFrequency: block
+          }
+          res.status 200
+          response = "Hounding frequency set to be every #{block} hours during your active time."
+        else if action is 'start'
+          user.settings.fromSettings {
+            shouldHound: true,
+            shouldResetHound: true
+          }
+          res.status 200
+          response = "Hounding is on."
+        else if action is 'stop'
+          user.settings.fromSettings {
+            shouldHound: false
+          }
+          res.status 200
+          response = "Hounding is off for the rest of today."
+        else if action is 'enable'
+          user.settings.fromSettings {
+            shouldHound: true,
+            shouldResetHound: true
+          }
+          res.status 200
+          response = "Enabled hounding."
+        else if action is 'disable'
+          user.settings.fromSettings {
+            shouldHound: false,
+            shouldResetHound: false
+          }
+          res.status 200
+          response = "Disabled hounding. You will not be hounded until you turn this setting back on."
+        else if action is 'reset'
+          user.settings.fromSettings {
+            houndFrequency: Organization.houndFrequency
+          }
+          res.status 200
+          response = "Reset your hounding status to organization defaults (#{Organization.houndFrequency} hours)."
+        else
+          status = if user.settings.shouldHound then 'on' else 'off'
+          status = if user.settings.shouldResetHound then status else 'disabled'
+          if status is 'on'
+            status += ", and is set to ping every #{user.settings.houndFrequency} hours while active"
+          res.status 200
+          response = "Hounding is #{status}."
+      else if scope is 'org'
+        if not Organization.ready()
+          res.status 500
+          response = "Organization is not ready for operation"
+        if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
+          block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
+          block = parseFloat block_str
+          Organization.setHoundFrequency(+block.toFixed(2))
+          res.status 200
+          response = "Hounding frequency set to every #{block} hours for #{Organization.name}, time until next hound reset."
+        else if action is 'start'
+          Organization.shouldHound = true
+          Organization.shouldResetHound = true
+          res.status 200
+          response = "Hounding is on for the organization."
+        else if action is 'stop'
+          Organization.shouldHound = false
+          res.status 200
+          response = "Hounding is off for the organization."
+        else if action is 'enable'
+          Organization.shouldHound = true
+          Organization.shouldResetHound = true
+          res.status 200
+          response = "Enabled hounding for #{Organization.name}."
+        else if action is 'disable'
+          Organization.shouldHound = false
+          Organization.shouldResetHound = false
+          res.status 200
+          response = "Disabled hounding for #{Organization.name}."
+        else if action is 'reset'
+          Organization.resetHounding()
+          res.status 200
+          response = "Reset hounding status for all #{Organization.name} employees."
+        else
+          status = if Organization.shouldHound then 'on' else 'off'
+          status = if Organization.shouldResetHound then status else 'disabled'
+          if status is 'on'
+            status += ", and is set to ping every #{Organization.houndFrequency} hours while active"
+          res.status 200
+          response = "Hounding is #{status}."
+      else
+        res.status 500
+        response = "Bad command: #{body.text}"
+    else
+      res.status 401
+      response = "Bad token in Ibizan configuration"
+    res.json {
+      "text": response
+    }

@@ -1,6 +1,7 @@
 [{
     "vacationhoursforsalariedemployees": "104",
     "sickhoursforsalariedemployees": "40",
+    "defaulthoundingfrequencyinhours": "3",
     "timeloggingchannel": "#timeclock",
     "houndingchannelexemptions": "#freaky-magic",
     "workholidays": "New Year's Day",
@@ -8,6 +9,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "#pk-love",
     "workholidays": "Martin Luther King Jr. Day",
@@ -15,6 +17,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "#social-media",
     "workholidays": "Washington's Birthday",
@@ -22,6 +25,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "#gif_test_fire_range",
     "workholidays": "RAAHB",
@@ -29,6 +33,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "",
     "workholidays": "Memorial Day",
@@ -36,6 +41,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "",
     "workholidays": "Independence Day",
@@ -43,6 +49,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "",
     "workholidays": "Labor Day",
@@ -50,6 +57,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "",
     "workholidays": "Veteran's Day",
@@ -57,6 +65,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "",
     "workholidays": "Thanksgiving Day",
@@ -64,6 +73,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "",
     "workholidays": "Christmas Eve",
@@ -71,6 +81,7 @@
 }, {
     "vacationhoursforsalariedemployees": "",
     "sickhoursforsalariedemployees": "",
+    "defaulthoundingfrequencyinhours": "",
     "timeloggingchannel": "",
     "houndingchannelexemptions": "",
     "workholidays": "Christmas Day",

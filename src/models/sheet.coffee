@@ -8,7 +8,7 @@ constants = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 HEADERS = constants.HEADERS
 Project = require './project'
-{ User, Timetable } = require './user'
+{ User, Settings, Timetable } = require './user'
 
 options = {}
 
@@ -77,26 +77,26 @@ class Spreadsheet
             else
               # add hours to project in projects
               if last.times.block
-                workTime = last.times.block
+                elapsed = last.times.block
               else
-                workTime = last.elapsed
-              user.timetable.setLogged(workTime)
+                elapsed = last.elapsed
+              logged = user.timetable.loggedTotal
+              user.timetable.setLogged(logged + elapsed)
               # calculate project times
               promises = []
               for project in last.projects
-                project.total += workTime
+                project.total += elapsed
                 promises.push (project.updateRow())
               promises.push(user.updateRow())
               Q.all(promises)
-              .then(
-                () ->
-                  deferred.resolve()
-              )
               .catch(
                 (err) ->
                   deferred.reject err
               )
-              .done()
+              .done(
+                () ->
+                  deferred.resolve last
+              )
       else if punch.mode is 'vacation' or
               punch.mode is 'sick' or
               punch.mode is 'unpaid'
@@ -110,17 +110,18 @@ class Spreadsheet
               elapsed = punch.times.block
             else
               elapsed = punch.elapsed
+            elapsedDays = user.toDays elapsed
             if punch.mode is 'vacation'
               total = user.timetable.vacationTotal
               available = user.timetable.vacationAvailable
-              user.timetable.setVacation(total + elapsed, available - elapsed)
+              user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
             else if punch.mode is 'sick'
               total = user.timetable.sickTotal
               available = user.timetable.sickAvailable
-              user.timetable.setSick(total + elapsed, available - elapsed)
+              user.timetable.setSick(total + elapsedDays, available - elapsedDays)
             else if punch.mode is 'unpaid'
               total = user.timetable.unpaidTotal
-              user.timetable.setUnpaid(total + elapsed)
+              user.timetable.setUnpaid(total + elapsedDays)
             user.updateRow()
             .catch(
               (err) ->
@@ -129,9 +130,9 @@ class Spreadsheet
             .done(
               () ->
                 user.punches.pop()
-                deferred.resolve()
+                deferred.resolve punch
             )
-        deferred.resolve()
+        # deferred.resolve()
       else
         row = punch.toRawRow user.name
         @rawData.addRow row, (err) =>
@@ -147,7 +148,7 @@ class Spreadsheet
                   (r for r in rows when r[headers.id] is row[headers.id])[0]
                 punch.assignRow row_match
                 user.punches.push punch
-                deferred.resolve()
+                deferred.resolve punch
     deferred.promise
 
   generateReport: (users, start, end) ->
@@ -194,6 +195,7 @@ class Spreadsheet
                 @employees)
           deferred.reject 'Worksheets failed to be associated properly'
         else
+          Logger.fun "----------------------------------------"
           deferred.resolve {}
     return deferred.promise
 
@@ -206,6 +208,7 @@ class Spreadsheet
         opts =
           vacation: 0
           sick: 0
+          houndFrequency: 0
           holidays: []
           clockChannel: ''
           exemptChannels: []
@@ -237,6 +240,8 @@ class Spreadsheet
                     opts[key] = val.trim().replace '#', ''
                 else
                   opts[key] = parseInt row[header]
+        Logger.fun "Loaded organization settings"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
     deferred.promise
 
@@ -249,8 +254,13 @@ class Spreadsheet
         projects = []
         for row in rows
           project = Project.parse row
-          projects.push project
+          if project
+            projects.push project
+            Logger.log "Loaded data for ##{project.name} (#{project.total} hours)"
         opts.projects = projects
+        Logger.fun "----------------------------------------"
+        Logger.fun "Loaded #{projects.length} projects"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
     deferred.promise
 
@@ -263,8 +273,21 @@ class Spreadsheet
         users = []
         for row in rows
           user = User.parse row
-          users.push user
+          if user
+            freq = opts.houndFrequency || -1
+            user.settings = Settings.fromSettings {
+              shouldHound: true,
+              shouldResetHound: true,
+              houndFrequency: freq,
+              lastMessage: null,
+              lastPing: null
+            }
+            users.push user
+            Logger.log "Loaded #{user.name}'s information (@#{user.slack})"
         opts.users = users
+        Logger.fun "----------------------------------------"
+        Logger.fun "Loaded #{users.length} users"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
     deferred.promise
 
@@ -283,18 +306,19 @@ class Spreadsheet
           punch = Punch.parseRaw user, row, opts.projects
           if punch and user
             user.punches.push punch
+            article = if punch.mode in ['vacation', 'sick', 'none'] then 'a' else 'an'
+            mode = if punch.mode is 'none' then 'block' else punch.mode
             if punch.times.block?
-              time_str = "#{punch.times.block} hours"
-            else
-              time_str = "#{punch.times[0].format('hh:mma')}"
-              if punch.times.length is 2
-                time_str += " - #{punch.times[1].format('hh:mma')} (#{punch.elapsed} hours)"
-            notes = punch.notes.replace /\n/g, '\n\t\t\t\t\t\t\t\t'
-            Logger.log "Loaded a punch for @#{user.slack}\n
-                        \t\t\t\t\t\t\tMode: #{punch.mode}\n
-                        \t\t\t\t\t\t\tTime: #{time_str}\n
-                        \t\t\t\t\t\t\tProjects: #{punch.projects.length} projects\n
-                        \t\t\t\t\t\t\tNotes:\t#{notes}\n"
+              modifier = "(#{punch.times.block} hours) "
+            else if punch.elapsed?
+              modifier = "(#{punch.elapsed} hours) "
+            else if punch.times.length is 1
+              modifier = "at #{punch.times[0].format('h:mma')} "
+            Logger.log "Loaded #{article} #{mode}-punch for @#{user.slack}
+                        #{modifier}with #{punch.projects.length} projects"
+        Logger.fun "----------------------------------------"
+        Logger.fun "Loaded #{rows.length} punches for #{opts.users.length} users"
+        Logger.fun "----------------------------------------"
         deferred.resolve opts
 
 

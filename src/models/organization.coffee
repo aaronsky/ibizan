@@ -4,6 +4,7 @@ Q = require 'q'
 
 Logger = require('../helpers/logger')()
 Spreadsheet = require './sheet'
+{ Settings } = require './user'
 
 CONFIG =
   sheet_id: process.env.SHEET_ID
@@ -50,14 +51,14 @@ class Organization
       .then(
         (opts) =>
           if opts
+            @houndFrequency = opts.houndFrequency
             if @users
               old = @users.slice(0)
             @users = opts.users
             if old
               for user in old
                 if newUser = @getUserBySlackName user.slack
-                  newUser.lastMessage = user.lastMessage
-                  newUser.shouldHound = user.shouldHound
+                  newUser.settings = Settings.fromSettings user.settings
             @projects = opts.projects
             @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays)
             @clockChannel = opts.clockChannel
@@ -107,7 +108,18 @@ class Organization
     resetHounding: () ->
       i = 0
       for user in @users
-        user.shouldHound = true
+        if user.settings?.shouldResetHound
+          user.settings.fromSettings {
+            shouldHound: true
+          }
+        i += 1
+      i
+    setHoundFrequency: (frequency) ->
+      i = 0
+      for user in @users
+        user.settings.fromSettings {
+          houndFrequency: frequency
+        }
         i += 1
       i
   @get: (id) ->
