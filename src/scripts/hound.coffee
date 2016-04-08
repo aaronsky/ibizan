@@ -56,12 +56,12 @@ module.exports = (robot) ->
 
     [start, end] = user.activeHours()
     lastPunch = user.lastPunch ['in', 'out', 'vacation', 'sick', 'unpaid']
-    timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2)
-    timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2)
+    timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2) || 0
+    timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2) || 0
     timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
     timeSinceLastMessage = user
                             .settings?.lastMessage
-                            .time.diff last.time, 'hours', true
+                            .time.diff(last.time, 'hours', true) || 0
     timeSinceLastPing = user
                         .settings?.lastMessage
                         .lastPing?.diff(last.lastPing, 'hours', true) || 0
@@ -146,87 +146,111 @@ module.exports = (robot) ->
         scope = 'org'
       else if scope is body.user_name
         scope = 'self'
+      else
+        if not isNaN(comps[0]) and
+           (comps[1] is 'hour' or comps[1] is 'hours')
+          comps = [comps.join(' ')]
+        comps.push(comps[0])
+        comps[0] = 'self'
       action = comps[1]?.splice() || 'info'
+      console.log scope
+      console.log action
 
       if scope is 'self'
         user = Organization.getUserBySlackName body.user_name
         if not user
           # TODO: Improve output
           err = "User not found"
+          res.status 500
         else if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
           block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
           block = parseFloat block_str
           user.settings.fromSettings {
             houndFrequency: block
           }
+          res.status 200
           response = "Hounding frequency set to be every #{block} hours during your active time."
         else if action is 'start'
           user.settings.fromSettings {
             shouldHound: true,
             shouldResetHound: true
           }
+          res.status 200
           response = "Hounding is on."
         else if action is 'stop'
           user.settings.fromSettings {
             shouldHound: false
           }
+          res.status 200
           response = "Hounding is off for the rest of today."
         else if action is 'enable'
           user.settings.fromSettings {
             shouldHound: true,
             shouldResetHound: true
           }
+          res.status 200
           response = "Enabled hounding."
         else if action is 'disable'
           user.settings.fromSettings {
             shouldHound: false,
             shouldResetHound: false
           }
+          res.status 200
           response = "Disabled hounding. You will not be hounded until you turn this setting back on."
         else if action is 'reset'
           user.resetHounding Organization.houndFrequency
+          res.status 200
           response = "Reset your hounding status to organization defaults (#{Organization.houndFrequency} hours)."
         else
           status = if user.settings.shouldHound then 'on' else 'off'
           status = if user.settings.shouldResetHound then status else 'disabled'
           if status is 'on'
             status += ", and is set to ping every #{user.settings.houndFrequency} hours while active"
+          res.status 200
           response = "Hounding is #{status}."
       else if scope is 'org'
+        if not Organization.ready()
+          res.status 500
+          response = "Organization is not ready for operation"
         if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours))/i
           block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
           block = parseFloat block_str
           Organization.setHoundFrequency(+block.toFixed(2))
+          res.status 200
           response = "Hounding frequency set to every #{block} hours for #{Organization.name}, time until next hound reset."
         else if action is 'start'
           Organization.shouldHound = true
           Organization.shouldResetHound = true
+          res.status 200
           response = "Hounding is on for the organization."
         else if action is 'stop'
           Organization.shouldHound = false
+          res.status 200
           response = "Hounding is off for the organization."
         else if action is 'enable'
           Organization.shouldHound = true
           Organization.shouldResetHound = true
+          res.status 200
           response = "Enabled hounding for #{Organization.name}."
         else if action is 'disable'
           Organization.shouldHound = false
           Organization.shouldResetHound = false
+          res.status 200
           response = "Disabled hounding for #{Organization.name}."
         else if action is 'reset'
           Organization.resetHounding()
+          res.status 200
           response = "Reset hounding status for all #{Organization.name} employees."
         else
           status = if Organization.shouldHound then 'on' else 'off'
           status = if Organization.shouldResetHound then status else 'disabled'
           if status is 'on'
             status += ", and is set to ping every #{Organization.houndFrequency} hours while active"
+          res.status 200
           response = "Hounding is #{status}."
-      res.status 200
-      count = Organization.resetHounding()
-      response = "Reset #{count}
-                  #{if count is 1 then "person's" else "peoples'"}
-                  hound status"
+      else
+        res.status 500
+        response = "Bad command: #{body.text}"
     else
       res.status 401
       response = "Bad token in Ibizan configuration"
