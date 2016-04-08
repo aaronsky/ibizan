@@ -139,7 +139,7 @@ module.exports = (robot) ->
   robot.router.post '/ibizan/diagnostics/hound', (req, res) ->
     body = req.body
     if body.token is process.env.SLASH_HOUND_TOKEN
-      comps = body.text || []
+      comps = body?.text?.split(' ') || []
       console.log comps
       scope = comps[0] || 'self'
       if scope is Organization.name
