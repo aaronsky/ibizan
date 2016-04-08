@@ -140,6 +140,7 @@ module.exports = (robot) ->
     body = req.body
     if body.token is process.env.SLASH_HOUND_TOKEN
       comps = body.text || []
+      console.log comps
       scope = comps[0] || 'self'
       if scope is Organization.name
         scope = 'org'
