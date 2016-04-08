@@ -149,11 +149,12 @@ module.exports = (robot) ->
       else if scope isnt 'self' and scope isnt 'org'
         if not isNaN(comps[0]) and
            (comps[1] is 'hour' or comps[1] is 'hours')
-          comps = [comps.join(' ')]
+          comps = ['self', comps.join(' ')]
         else if comps.length > 2
           comps = ['self', comps.slice(1).join(' ')]
         else
           comps = ['self', comps[0]]
+        scope = comps[0]
       action = comps[1] || 'info'
       console.log scope
       console.log action
