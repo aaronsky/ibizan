@@ -8,7 +8,7 @@ if debugEnvStr = process.env.DEBUG
   else
     DEBUG = true
 else
-  DEBUG = false
+  DEBUG = true
 
 logHeader = chalk.bold.blue
 log = chalk.blue

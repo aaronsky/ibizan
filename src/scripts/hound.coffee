@@ -136,7 +136,7 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
-  robot.router.post '/ibizan/hound', (req, res) ->
+  robot.router.post '/ibizan/diagnostics/hound', (req, res) ->
     body = req.body
     if body.token is process.env.SLASH_HOUND_TOKEN
       comps = body.text || []
