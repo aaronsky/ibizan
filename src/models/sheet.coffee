@@ -274,13 +274,14 @@ class Spreadsheet
         for row in rows
           user = User.parse row
           if user
+            freq = opts.houndFrequency || -1
             user.settings = Settings.fromSettings {
-                    shouldHound: true,
-                    shouldResetHound: true,
-                    houndFrequency: opts.houndFrequency || -1,
-                    lastMessage: null,
-                    lastPing: null
-                  }
+              shouldHound: true,
+              shouldResetHound: true,
+              houndFrequency: freq,
+              lastMessage: null,
+              lastPing: null
+            }
             users.push user
             Logger.log "Loaded #{user.name}'s information (@#{user.slack})"
         opts.users = users

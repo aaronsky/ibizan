@@ -146,12 +146,14 @@ module.exports = (robot) ->
         scope = 'org'
       else if scope is body.user_name
         scope = 'self'
-      else
+      else if scope isnt 'self' and scope isnt 'org'
         if not isNaN(comps[0]) and
            (comps[1] is 'hour' or comps[1] is 'hours')
           comps = [comps.join(' ')]
-        comps.push(comps[0])
-        comps[0] = 'self'
+        else if comps.length > 2
+          comps = ['self', comps.slice(1).join(' ')]
+        else
+          comps = ['self', comps[0]]
       action = comps[1] || 'info'
       console.log scope
       console.log action
@@ -198,7 +200,9 @@ module.exports = (robot) ->
           res.status 200
           response = "Disabled hounding. You will not be hounded until you turn this setting back on."
         else if action is 'reset'
-          user.resetHounding Organization.houndFrequency
+          user.settings.fromSettings {
+            houndFrequency: Organization.houndFrequency
+          }
           res.status 200
           response = "Reset your hounding status to organization defaults (#{Organization.houndFrequency} hours)."
         else

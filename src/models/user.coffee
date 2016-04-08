@@ -50,14 +50,14 @@ class Settings
     @lastMessage = null
     @lastPing = null
   @fromSettings: (settings) ->
-    settings = new Settings()
-    settings.fromSettings settings
-    return settings
-  fromSettings: (settings) ->
-    if not settings or
-       typeof settings isnt 'object'
+    newSetting = new Settings()
+    newSetting.fromSettings settings
+    console.log newSetting.houndFrequency
+  fromSettings: (opts) ->
+    if not opts or
+       typeof opts isnt 'object'
       return
-    for setting, value of settings
+    for setting, value of opts
       @[setting] = value
 
 class User
