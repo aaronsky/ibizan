@@ -145,7 +145,7 @@ module.exports = (robot) ->
         scope = 'org'
       else if scope is body.user_name
         scope = 'self'
-      action = comps[1].splice() || 'info'
+      action = comps[1]?.splice() || 'info'
 
       if scope is 'self'
         user = Organization.getUserBySlackName body.user_name
