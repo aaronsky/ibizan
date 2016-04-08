@@ -87,22 +87,6 @@ module.exports = (robot) ->
     res.json {
       "text": response
     }
-    
-  robot.router.post '/ibizan/diagnostics/resethounding', (req, res) ->
-    body = req.body
-    if body.token is process.env.SLASH_RESETHOUNDING_TOKEN and
-       isAdminUser body.user_name
-      res.status 200
-      count = Organization.resetHounding()
-      response = "Reset #{count}
-                  #{if count is 1 then "person's" else "peoples'"}
-                  hound status"
-    else
-      res.status 401
-      response = "Bad token in Ibizan configuration"
-    res.json {
-      "text": response
-    }
 
   robot.router.post '/ibizan/diagnostics/payroll', (req, res) ->
     body = req.body

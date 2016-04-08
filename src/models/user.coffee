@@ -42,11 +42,27 @@ class Timetable
   setAverageLogged: (average) ->
     @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
 
+class Settings
+  constructor: () ->
+    @shouldHound = true
+    @shouldResetHound = true
+    @houndFrequency = -1
+    @lastMessage = null
+    @lastPing = null
+  @fromSettings: (settings) ->
+    newSetting = new Settings()
+    newSetting.fromSettings settings
+    newSetting
+  fromSettings: (opts) ->
+    if not opts or
+       typeof opts isnt 'object'
+      return
+    for setting, value of opts
+      @[setting] = value
+
 class User
   constructor: (@name, @slack, @salary, @timetable, @row = null) ->
     @punches = []
-    @shouldHound = true
-    @lastMessage = null
 
   @parse: (row) ->
     headers = HEADERS.users
@@ -256,7 +272,8 @@ class User
             Last punch was #{punchTime}\n
             Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
             They are in #{@timetable.timezone.name}\n
-            The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
+            The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
 
 module.exports.User = User
+module.exports.Settings = Settings
 module.exports.Timetable = Timetable

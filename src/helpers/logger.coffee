@@ -27,45 +27,45 @@ module.exports = (robot) ->
         if DEBUG
           console.log(logHeader("[Ibizan] (#{new Date()}) LOG: ") + log("#{msg}"))
         else
-          index = msg.indexOf '\n'
-          if index isnt -1
-            shortMsg = msg.substring(0, index)
-          else
-            shortMsg = msg
-          console.log(logHeader("[Ibizan] (Test): ") + log(shortMsg))
+          # index = msg.indexOf '\n'
+          # if index isnt -1
+          #   shortMsg = msg.substring(0, index)
+          # else
+          #   shortMsg = msg
+          # console.log(logHeader("[Ibizan] (Test): ") + log(shortMsg))
     @warn: (msg) ->
       if msg
         if DEBUG
           console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
         else
-          index = msg.indexOf '\n'
-          if index isnt -1
-            shortMsg = msg.substring(0, index)
-          else
-            shortMsg = msg
-          console.warn(warnHeader("[Ibizan] (Test): ") + warn(shortMsg))
+          # index = msg.indexOf '\n'
+          # if index isnt -1
+          #   shortMsg = msg.substring(0, index)
+          # else
+          #   shortMsg = msg
+          # console.warn(warnHeader("[Ibizan] (Test): ") + warn(shortMsg))
     @error: (msg, error) ->
       if msg
         if DEBUG
           console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
         else
-          index = msg.indexOf '\n'
-          if index isnt -1
-            shortMsg = msg.substring(0, index)
-          else
-            shortMsg = msg
-          console.error(errHeader("[Ibizan] (Test): ") + err(shortMsg), error || '')
+          # index = msg.indexOf '\n'
+          # if index isnt -1
+          #   shortMsg = msg.substring(0, index)
+          # else
+          #   shortMsg = msg
+          # console.error(errHeader("[Ibizan] (Test): ") + err(shortMsg), error || '')
     @fun: (msg) ->
       if msg
         if DEBUG
           console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
         else
-          index = msg.indexOf '\n'
-          if index isnt -1
-            shortMsg = msg.substring(0, index)
-          else
-            shortMsg = msg
-          console.log(funHeader("[Ibizan] (Test): ") + fun(shortMsg))
+          # index = msg.indexOf '\n'
+          # if index isnt -1
+          #   shortMsg = msg.substring(0, index)
+          # else
+          #   shortMsg = msg
+          # console.log(funHeader("[Ibizan] (Test): ") + fun(shortMsg))
     @logToChannel: (msg, channel) ->
       if msg
         if robot and robot.send?
