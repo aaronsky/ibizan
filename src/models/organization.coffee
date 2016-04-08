@@ -108,7 +108,7 @@ class Organization
     resetHounding: () ->
       i = 0
       for user in @users
-        if user.settings.shouldResetHound
+        if user.settings?.shouldResetHound
           user.settings.fromSettings {
             shouldHound: true
           }

@@ -52,7 +52,7 @@ class Settings
   @fromSettings: (settings) ->
     newSetting = new Settings()
     newSetting.fromSettings settings
-    console.log newSetting.houndFrequency
+    newSetting
   fromSettings: (opts) ->
     if not opts or
        typeof opts isnt 'object'
