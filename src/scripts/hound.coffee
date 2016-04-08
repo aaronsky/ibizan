@@ -152,7 +152,7 @@ module.exports = (robot) ->
           comps = [comps.join(' ')]
         comps.push(comps[0])
         comps[0] = 'self'
-      action = comps[1]?.splice() || 'info'
+      action = comps[1] || 'info'
       console.log scope
       console.log action
 
