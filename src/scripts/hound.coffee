@@ -54,38 +54,62 @@ module.exports = (robot) ->
       }
     }
 
+    [start, end] = user.activeHours()
+    lastPunch = user.lastPunch ['in', 'out', 'vacation', 'sick', 'unpaid']
+    timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2)
+    timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2)
+    timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
     timeSinceLastMessage = user
                             .settings?.lastMessage
                             .time.diff last.time, 'hours', true
     timeSinceLastPing = user
                         .settings?.lastMessage
                         .lastPing?.diff(last.lastPing, 'hours', true) || 0
-    lastPunch = user.lastPunch 'in', 'out'
-    timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
 
-    if not user.shouldHound
-      qualifier = ''
-      if timeSinceLastPing > 1
-        user.shouldHound = true
-        qualifier = "for another #{timeSinceLastPing} hours"
-      Logger.log "#{user.slack} is safe from hounding#{qualifier}"
-      return
-
-    if (timeSinceLastMessage >= 3 or forceHound) and timeSinceLastPunch >= 3
-      if lastPunch?.mode is 'in'
-        user.directMessage "Don't forget to check out~", Logger
-        user.shouldHound = false
-        user.settings?.lastMessage.lastPing = now
-      else if not user.isInactive()
-        user.directMessage "Check in if you're on the clock~", Logger
-        user.shouldHound = false
-        user.settings?.lastMessage.lastPing = now
-    else
-      status = "#{user.slack} was active "
-      if last.channel
-        status += "in ##{last.channel} "
-      status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
-      Logger.log status
+    if user.settings.shouldHound
+      if timeSinceLastPing < 1
+        Logger.log "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours"
+      else if timeSinceLastMessage >= user.settings.houndFrequency and
+              timeSinceLastPunch >= user.settings.houndFrequency
+        if not lastPunch
+          if timeSinceStart <= 0.5
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+          else if timeSinceEnd <= 0.5
+            user.directMessage "Don't forget to check out~", Logger
+            user.settings?.lastMessage.lastPing = now
+        if lastPunch.mode is 'in'
+          if timeSinceEnd <= 0.5
+            user.directMessage "Don't forget to check out~", Logger
+            user.settings?.lastMessage.lastPing = now
+        else if lastPunch.mode is 'out'
+          if not user.isInactive() and timeSinceStart <= 0.5
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+        else if lastPunch.mode is 'vacation' or
+                lastPunch.mode is 'sick' or
+                lastPunch.mode is 'unpaid'
+          if lastPunch.times.length > 0 and not now.isBetween(lastPunch.times[0], lastPunch.times[1])
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+          else if lastPunch.times.block?
+            endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours')
+            if not now.isBetween(lastPunch.date, endOfBlock)
+              user.directMessage "Check in if you're on the clock~", Logger
+              user.settings?.lastMessage.lastPing = now
+        else
+          if timeSinceStart <= 0.5
+            user.directMessage "Check in if you're on the clock~", Logger
+            user.settings?.lastMessage.lastPing = now
+          else if timeSinceEnd <= 0.5
+            user.directMessage "Don't forget to check out~", Logger
+            user.settings?.lastMessage.lastPing = now
+      else
+        status = "#{user.slack} was active "
+        if last.channel
+          status += "in ##{last.channel} "
+        status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
+        Logger.log status
 
   robot.adapter.client.on 'userTyping', (user, channel) ->
     hound user, channel
