@@ -152,7 +152,7 @@ module.exports = (robot) ->
         if not user
           # TODO: Improve output
           err = "User not found"
-        else if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours))/i
+        else if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
           block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
           block = parseFloat block_str
           user.settings.fromSettings {
