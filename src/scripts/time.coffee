@@ -110,7 +110,11 @@ module.exports = (robot) ->
           else
             dateQualifier = "on #{time.format('MMM Do, YYYY')}"
           timeQualifier = " at #{time?.format('h:mma')} #{dateQualifier}"
-        user.directMessage "Punched you #{modeQualifier}#{timeQualifier}.",
+        if punch.elapsed? and not punch.times.block?
+          elapsedQualifier = " (#{+punch.elapsed.toFixed(2)} hours)"
+        else
+          elapsedQualifier = ''
+        user.directMessage "Punched you #{modeQualifier}#{timeQualifier}#{elapsedQualifier}.",
                            Logger
     )
     .catch(
