@@ -193,6 +193,7 @@ class Punch
         continue
       else if project not in @projects
         @projects.push project
+    return projects.join(' ')
 
   appendNotes: (notes = '') ->
     if @notes and @notes.length > 0

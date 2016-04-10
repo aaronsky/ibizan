@@ -185,7 +185,10 @@ module.exports = (robot) ->
           if projects.length is 0 and
              isProjectChannel res.message.user.room
             projects.push Organization.getProjectByName(res.message.user.room)
-          punch.appendProjects projects
+          msg = punch.appendProjects projects
+          msg = msg.trim()
+          if msg.length > 0
+            punch.appendNotes msg
         else if op is 'note' or
                 op is 'notes'
           punch.appendNotes msg
