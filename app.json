@@ -1,0 +1,19 @@
+{
+  "name": "Ibizan",
+  "description": "Dog-themed Time Tracking Friend for your Slack Team",
+  "repository": "https://github.com/ibizan/ibizan",
+  "website": "http://ibizan.github.io",
+  "logo": "http://ibizan.github.io/assets/brand/ibizan.svg",
+  "keywords": ["ibizan",
+               "timesheet",
+               "dog",
+               "wow",
+               "heartwarming",
+               "efficient",
+               "payroll",
+               "clock",
+               "punch",
+               "hound",
+               "slack",
+               "friend"]
+}
