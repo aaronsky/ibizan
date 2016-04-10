@@ -71,26 +71,37 @@ module.exports = (robot) ->
       moment.tz.setDefault TIMEZONE
       sendPunch punch, user, res
     else
-      user.directMessage "You cannot punch in ##{res.message.user.room}.
-                           Try punching in ##{Organization.clockChannel},
-                           a designated project channel, or here.",
-                         Logger
+      if res.router_res
+        res.router_res.status 500
+        res.router_res.json {
+          "text": "You cannot punch in ##{res.message.user.room}.
+                    Try punching in ##{Organization.clockChannel},
+                    a designated project channel, or here."
+        }
+      else
+        user.directMessage "You cannot punch in ##{res.message.user.room}.
+                             Try punching in ##{Organization.clockChannel},
+                             a designated project channel, or here.",
+                           Logger
 
   sendPunch = (punch, user, res) ->
     if not punch
-      Logger.errorToSlack "Somehow, a punch was not generated
-                           for \"#{user.slack}\". Punch:\n", res.match.input
-      user.directMessage "An unexpected error occured while
-                           generating your punch.",
-                         Logger
+      if res.router_res
+        res.router_res.status 500
+        res.router_res.json {
+          "text": "An unexpected error occured while
+                    generating your punch."
+        }
+      else
+        Logger.errorToSlack "Somehow, a punch was not generated
+                             for \"#{user.slack}\". Punch:\n", res.match.input
+        user.directMessage "An unexpected error occured while
+                             generating your punch.",
+                           Logger
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
       (punch) ->
-        Logger.reactToMessage 'dog2',
-                              res.message.user.name,
-                              res.message.rawMessage.channel,
-                              res.message.id
         mode = punch.mode
         if mode is 'vacation' or mode is 'sick' or mode is 'unpaid' or mode is 'none'
           blockTimeQualifier = if punch.times.block? then "#{punch.times.block} hour" else ' '
@@ -114,17 +125,35 @@ module.exports = (robot) ->
           elapsedQualifier = " (#{+punch.elapsed.toFixed(2)} hours)"
         else
           elapsedQualifier = ''
-        user.directMessage "Punched you #{modeQualifier}#{timeQualifier}#{elapsedQualifier}.",
-                           Logger
+        punchEnglish = "Punched you #{modeQualifier}#{timeQualifier}#{elapsedQualifier}."
+        if res.router_res
+          res.router_res.status 200
+          res.router_res.json {
+            "text": punchEnglish
+          }
+        else
+          Logger.reactToMessage 'dog2',
+                                res.message.user.name,
+                                res.message.rawMessage.channel,
+                                res.message.id
+          user.directMessage punchEnglish,
+                             Logger
     )
     .catch(
       (err) ->
-        Logger.error err
-        Logger.errorToSlack "\"#{err}\" was returned for
-                             #{user.slack}. Punch:\n", res.match.input
-        user.directMessage "#{err} You can see more details on the spreadsheet
-                             at #{Organization.spreadsheet.url}",
-                           Logger
+        if res.router_res
+          res.router_res.status 500
+          res.router_res.json {
+            "text": "#{err} You can see more details on the spreadsheet
+                      at #{Organization.spreadsheet.url}"
+          }
+        else
+          Logger.error err
+          Logger.errorToSlack "\"#{err}\" was returned for
+                               #{user.slack}. Punch:\n", res.match.input
+          user.directMessage "#{err} You can see more details on the spreadsheet
+                               at #{Organization.spreadsheet.url}",
+                             Logger
     )
     .done()
       
@@ -155,8 +184,56 @@ module.exports = (robot) ->
                            soon as possible.",
                           res.message.user.name
       return
-    # moment.tz.setDefault res.message.user.slack.tz
     parse res, res.match.input, 'none'
+
+  robot.router.post '/ibizan/punch', (req, res) ->
+    if not Organization.ready()
+      Logger.log 'Don\'t punch via slash command, Organization isn\'t ready yet'
+      res.json {
+        "text": "The #{Organization.name} isn't ready for
+                 operations yet. It may be in the middle of
+                 syncing or something has gone horribly wrong.
+                 Please try again later, and if this persists
+                 longer than five minutes, DM a maintainer as
+                 soon as possible."
+      }
+      return
+    body = req.body
+    if body.token is process.env.SLASH_PUNCH_TOKEN
+      msg = body.text
+      response = {
+        match: {
+          input: msg
+        },
+        message: {
+          user: {
+            name: body.user_name,
+            room: body.channel_name,
+            slack: {
+              tz: TIMEZONE
+            }
+          }
+        },
+        id: 'ephemeral',
+        router_res: res
+      }
+      if match = msg.match REGEX.rel_time
+        mode = 'none'
+      else if match = msg.match REGEX.modes
+        mode = msg.split(' ')[0]
+      else
+        res.status 500
+        response = 'No mode could be extrapolated from your punch.'
+        res.json {
+          "text": response
+        }
+        return
+      parse response, msg, mode
+    else
+      res.status 401
+      res.json  {
+        "text": "Bad token in Ibizan configuration"
+      }
 
   robot.respond REGEX.append, (res) ->
     if not Organization.ready()
