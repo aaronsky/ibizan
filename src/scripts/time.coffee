@@ -120,7 +120,7 @@ module.exports = (robot) ->
             dateQualifier = "yesterday"
           else
             dateQualifier = "on #{time.format('MMM Do, YYYY')}"
-          timeQualifier = " at #{time?.format('h:mma')} #{dateQualifier}"
+          timeQualifier = " at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} #{dateQualifier}"
         if punch.elapsed? and not punch.times.block?
           elapsedQualifier = " (#{+punch.elapsed.toFixed(2)} hours)"
         else
