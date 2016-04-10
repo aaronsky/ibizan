@@ -212,7 +212,7 @@ module.exports = (robot) ->
         message: {
           user: {
             name: body.user_name,
-            room: body.channel_name,
+            room: channel_name,
             slack: {
               tz: TIMEZONE
             }
