@@ -201,6 +201,10 @@ module.exports = (robot) ->
     body = req.body
     if body.token is process.env.SLASH_PUNCH_TOKEN
       msg = body.text
+      console.log body
+      channel_name = body.channel_name?.replace('#', '')
+      if channel_name and channel_name is 'directmessage'
+        channel_name = body.user_name
       response = {
         match: {
           input: msg
@@ -214,7 +218,6 @@ module.exports = (robot) ->
             }
           }
         },
-        id: 'ephemeral',
         router_res: res
       }
       if match = msg.match REGEX.rel_time
