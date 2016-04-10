@@ -43,8 +43,8 @@ module.exports = (robot) ->
     channel is Organization.clockChannel
 
   isProjectChannel = (channel) ->
-    return not isClockChannel channel.room and
-           not isDM channel.name, channel.room and
+    return not isClockChannel(channel.room) and
+           not isDM(channel.name, channel.room) and
            Organization.getProjectByName(channel.room)?
 
   canPunchHere = (name, channel) ->
@@ -65,7 +65,9 @@ module.exports = (robot) ->
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
          isProjectChannel res.message.user
-        punch.projects.push Organization.getProjectByName(res.message.user.room)
+        project = Organization.getProjectByName res.message.user.room
+        if project?
+          punch.projects.push project
       moment.tz.setDefault TIMEZONE
       sendPunch punch, user, res
     else
