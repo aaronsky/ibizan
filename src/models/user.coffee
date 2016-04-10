@@ -169,6 +169,7 @@ class User
     row[headers.date] = moment.tz(constants.TIMEZONE).format('M/DD/YYYY')
     row[headers.name] = @name
     loggedTime = unpaidTime = vacationTime = sickTime = 0
+    projectsForPeriod = []
     for punch in @punches
       if punch.date.isBefore(start) or punch.date.isAfter(end)
         continue
@@ -196,6 +197,10 @@ class User
           loggedTime += punch.times.block
         else
           loggedTime += punch.elapsed
+      if punch.projects? and punch.projects.length > 0
+        for project in punch.projects
+          if not project in projectsForPeriod
+            projectsForPeriod.push project
 
     loggedTime = +loggedTime.toFixed(2)
     vacationTime = +vacationTime.toFixed(2)
@@ -215,6 +220,10 @@ class User
     row[headers.sick] = sickTime
     row[headers.overtime] = Math.max(0, loggedTime - 80)
     row[headers.holiday] = @timetable.holiday
+    row.extra = {
+      slack: @slack,
+      projects: projectsForPeriod
+    }
     row
   updateRow: () ->
     deferred = Q.defer()

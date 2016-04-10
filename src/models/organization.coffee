@@ -2,6 +2,7 @@
 moment = require 'moment'
 Q = require 'q'
 
+{ HEADERS } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 Spreadsheet = require './sheet'
 { Settings } = require './user'
@@ -92,7 +93,7 @@ class Organization
           if name is project.name
             return project
       Logger.warn "Project #{name} could not be found"
-    generateReport: (start, end) ->
+    generateReport: (start, end, send=false) ->
       deferred = Q.defer()
       if not @spreadsheet
         deferred.reject 'No spreadsheet is loaded, report cannot be generated'
@@ -100,10 +101,33 @@ class Organization
       else if not start or not end
         deferred.reject 'No start or end date were passed as arguments'
         return
+
       Logger.log "Generating payroll from #{start.format('MMM Do, YYYY')}
                   to #{end.format('MMM Do, YYYY')}"
-      @spreadsheet.generateReport(@users, start, end)
-      .done((numberDone) -> deferred.resolve(numberDone))
+      headers = HEADERS.payrollreports
+      reports = []
+      for user in @users
+        row = user.toRawPayroll(start, end)
+        if row
+          reports.push row
+      reports.sort((left, right) ->
+        if left[headers.logged] < right[headers.logged] or
+           left[headers.vacation] < left[headers.vacation] or
+           left[headers.sick] < left[headers.sick] or
+           left[headers.unpaid] < left[headers.unpaid]
+          return -1
+        else if left[headers.logged] > right[headers.logged] or
+                left[headers.vacation] > left[headers.vacation] or
+                left[headers.sick] > left[headers.sick] or
+                left[headers.unpaid] > left[headers.unpaid]
+          return 1
+        return 0
+      )
+      if send
+        @spreadsheet.generateReport(reports)
+        .done((numberDone) -> deferred.resolve(reports))
+      else
+        deferred.resolve reports
       deferred.promise
     resetHounding: () ->
       i = 0
