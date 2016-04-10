@@ -51,7 +51,8 @@ describe 'Organization', ->
       end = moment()
       start = end.subtract(2, 'weeks')
       return @organization.generateReport(start, end)
-              .then((numberDone) ->
+              .then((reports) ->
+                numberDone = reports.length
                 expect(numberDone).to.be.equal userCount
               )
               .catch((err) ->

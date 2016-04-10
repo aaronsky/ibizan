@@ -151,18 +151,17 @@ class Spreadsheet
                 deferred.resolve punch
     deferred.promise
 
-  generateReport: (users, start, end) ->
+  generateReport: (reports) ->
     deferred = Q.defer()
     numberDone = 0
 
-    for user in users
-      row = user.toRawPayroll(start, end)
+    for row in reports
       @payroll.addRow row, (err) ->
         if err
           deferred.reject err, numberDone
         else
           numberDone += 1
-          if numberDone >= users.length
+          if numberDone >= reports.length
             deferred.resolve numberDone
     deferred.promise
 

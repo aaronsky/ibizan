@@ -109,7 +109,8 @@ module.exports = (robot) ->
             .post(JSON.stringify(payload))
         )
         .done(
-          (numberDone) ->
+          (reports) ->
+            numberDone = reports.length
             Logger.log "Payroll has been generated"
             Logger.log "POSTing to #{response_url}"
             payload =
