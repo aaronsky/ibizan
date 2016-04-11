@@ -20,4 +20,4 @@ Ibizan is a growing project with a lot of potential, but it can be realized fast
 If you're contributing code, I ask that you please exercise good judgement and good style with regards to commit messages. If you want to learn more about good commit message style, check out this [blog post](http://chris.beams.io/posts/git-commit/) and [this page](https://git-scm.com/book/ch5-2.html).
 
 ## License
-Ibizan is [licensed under Apache 2.0](https://github.com/gratipay/gratipay.com/tree/master/COPYING).
+Ibizan is [licensed under Apache 2.0](https://github.com/ibizan/ibizan/blob/master/LICENSE.md).
