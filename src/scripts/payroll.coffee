@@ -17,6 +17,46 @@ module.exports = (robot) ->
   Organization = require('../models/organization').get()
   # Weeks ‘start’ on Sunday morning.
   
+  dailyReport = (reports) ->
+    PAYROLL = HEADERS.payrollreports
+    response = "DAILY WORK LOG: #{yesterday.format('dddd MMMM D YYYY').toUpperCase()}\n"
+    logBuffer = ''
+    offBuffer = ''
+
+    for report in reports
+      recorded = false
+      if report[PAYROLL.logged] > 0
+        status = "#{report.extra.slack}:\t#{report[PAYROLL.logged]} hours"
+        notes = report.extra.notes?.replace('\n', '; ')
+        if notes
+          status += " \"#{notes}\""
+        projectStr = ''
+        if report.extra.projects? and report.extra.projects?.length > 0
+          for project in report.extra.projects
+            projectStr += "##{project.name} "
+        if projectStr
+          projectStr = projectStr.trim()
+          status += " #{projectStr}"
+        status += "\n"
+        logBuffer += "#{status}"
+        recorded = true
+      if report[PAYROLL.vacation] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours unpaid"
+        recorded = true
+      if report[PAYROLL.sick] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours unpaid"
+        recorded = true
+      if report[PAYROLL.unpaid] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]} hours unpaid"
+        recorded = true
+      if not recorded
+        offBuffer += "#{report.extra.slack}:\t0 hours\n"
+    response += logBuffer
+    if offBuffer.length > 0
+      response += "DAILY OFF-TIME LOG: #{yesterday.format('dddd MMMM D YYYY').toUpperCase()}\n"
+      response += offBuffer
+    return response
+
   generateDailyReportJob = schedule.scheduleJob '0 6 * * *', ->
     if not Organization.ready()
       Logger.warn "Don\'t make scheduled daily report,
@@ -31,46 +71,9 @@ module.exports = (robot) ->
       .done(
         (reports) ->
           numberDone = reports.length
-          PAYROLL = HEADERS.payrollreports
-          response = "DAILY WORK LOG: #{yesterday.format('dddd MMMM D YYYY').toUpperCase()}\n"
-          logBuffer = ''
-          offBuffer = ''
-
-          for report in reports
-            recorded = false
-            if report[PAYROLL.logged] > 0
-              status = "#{report.extra.slack}:\t#{report[PAYROLL.logged]} hours"
-              notes = report.extra.notes?.replace('\n', '; ')
-              if notes
-                status += " \"#{notes}\""
-              projectStr = ''
-              if report.extra.projects? and report.extra.projects?.length > 0
-                for project in report.extra.projects
-                  projectStr += "##{project.name} "
-              if projectStr
-                projectStr = projectStr.trim()
-                status += " #{projectStr}"
-              status += "\n"
-              logBuffer += "#{status}"
-              recorded = true
-            if report[PAYROLL.vacation] > 0
-              offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours unpaid"
-              recorded = true
-            if report[PAYROLL.sick] > 0
-              offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours unpaid"
-              recorded = true
-            if report[PAYROLL.unpaid] > 0
-              offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]} hours unpaid"
-              recorded = true
-            if not recorded
-              offBuffer += "#{report.extra.slack}:\t0 hours\n"
-
-          response += logBuffer
-          if offBuffer.length > 0
-            response += "DAILY OFF-TIME LOG: #{yesterday.format('dddd MMMM D YYYY').toUpperCase()}\n"
-            response += offBuffer
-          Logger.logToChannel response,
-                              'general'
+          report = dailyReport reports
+          Logger.logToChannel report,
+                              'bizness-time'
           Logger.logToChannel "Daily report generated for
                                #{numberDone} employees",
                               'ibizan-diagnostics'
