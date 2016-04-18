@@ -10,11 +10,16 @@
 
 moment = require 'moment'
 schedule = require 'node-schedule'
+ADMINS = ['aaronsky', 'reid', 'ryan']
 
 module.exports = (robot) ->
   HEADERS = require('../helpers/constants').HEADERS
   Logger = require('../helpers/logger')(robot)
   Organization = require('../models/organization').get()
+
+  isAdminUser = (user) ->
+    return user? and user in ADMINS
+  
   # Weeks ‘start’ on Sunday morning.
   
   dailyReport = (reports) ->
