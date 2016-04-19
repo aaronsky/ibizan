@@ -88,7 +88,6 @@ class User
         if isNaN(row[header])
           temp[key] = row[header].trim()
         else
-          # console.log "[#{key}] #{header}: #{row[header]} #{parseInt row[header]}"
           temp[key] = parseInt row[header]
     timetable = new Timetable(temp.start, temp.end, temp.timezone)
     timetable.setVacation(temp.vacationLogged, temp.vacationAvailable)

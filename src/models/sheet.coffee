@@ -208,6 +208,7 @@ class Spreadsheet
           vacation: 0
           sick: 0
           houndFrequency: 0
+          payWeek: null
           holidays: []
           clockChannel: ''
           exemptChannels: []
@@ -227,6 +228,9 @@ class Spreadsheet
                 opts[key].push
                   name: name
                   date: date
+              else if header is VARIABLE_HEADERS.payweek
+                opts[key] = moment row[VARIABLE_HEADERS.payweek],
+                                   'MM/DD/YYYY'
               else if header is VARIABLE_HEADERS.exemptChannels
                 channel = row[header]
                 if channel

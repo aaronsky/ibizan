@@ -16,8 +16,9 @@ CONFIG =
 NAME = process.env.ORG_NAME
 
 class Calendar
-  constructor: (@vacation, @sick, @holidays) ->
-
+  constructor: (@vacation, @sick, @holidays, @referencePayWeek) ->
+  isPayWeek: () ->
+    return (moment().diff(@referencePayWeek, 'weeks') % 2) is 0
   description: () ->
     str = "Organization calendar:\n"
     for holiday in @holidays
@@ -61,7 +62,7 @@ class Organization
                 if newUser = @getUserBySlackName user.slack
                   newUser.settings = Settings.fromSettings user.settings
             @projects = opts.projects
-            @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays)
+            @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek)
             @clockChannel = opts.clockChannel
             @exemptChannels = opts.exemptChannels
         )
