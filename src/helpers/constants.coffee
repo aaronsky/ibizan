@@ -17,6 +17,7 @@ cellHeaders =
     vacation:            'vacationhoursforsalariedemployees'
     sick:                'sickhoursforsalariedemployees'
     houndFrequency:      'defaulthoundingfrequencyinhours'
+    payweek:             'paydayforareferencepoint'
     clockChannel:        'timeloggingchannel'
     exemptChannels:      'houndingchannelexemptions'
     holidays:            'workholidays'

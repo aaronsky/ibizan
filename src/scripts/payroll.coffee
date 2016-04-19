@@ -91,6 +91,10 @@ module.exports = (robot) ->
       Logger.warn "Don\'t make scheduled payroll report,
                   Organization isn\'t ready yet"
       return
+    else if not Organization.calendar.isPayWeek()
+      Logger.warn "Don\'t run scheduled payroll reminder,
+                   it isn't a pay-week."
+      return
     twoWeeksAgo = moment().subtract(2, 'weeks')
     today = moment()
     Organization.generateReport(twoWeeksAgo, today, true)
@@ -165,6 +169,10 @@ module.exports = (robot) ->
     if not Organization.ready()
       Logger.warn "Don\'t run scheduled payroll reminder,
                   Organization isn\'t ready yet"
+      return
+    else if not Organization.calendar.isPayWeek()
+      Logger.warn "Don\'t run scheduled payroll reminder,
+                   it isn't a pay-week."
       return
     for user in Organization.users
       user.directMessage "As a reminder, payroll will run on Monday.
