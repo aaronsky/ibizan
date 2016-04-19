@@ -102,30 +102,7 @@ module.exports = (robot) ->
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
       (punch) ->
-        mode = punch.mode
-        if mode is 'vacation' or mode is 'sick' or mode is 'unpaid' or mode is 'none'
-          blockTimeQualifier = if punch.times.block? then "#{punch.times.block} hour" else ' '
-          if mode is 'none'
-            mode = ' block'
-          else
-            mode = " #{mode}-block"
-          modeQualifier = "for a #{blockTimeQualifier}#{mode}"
-          timeQualifier = ""
-        else
-          modeQualifier = mode
-          time = punch.times.slice(-1)[0]
-          if time.isSame(moment(), 'day')
-            dateQualifier = "today"
-          else if time.isSame(moment().subtract(1, 'days'), 'day')
-            dateQualifier = "yesterday"
-          else
-            dateQualifier = "on #{time.format('MMM Do, YYYY')}"
-          timeQualifier = " at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} #{dateQualifier}"
-        if punch.elapsed? and not punch.times.block?
-          elapsedQualifier = " (#{+punch.elapsed.toFixed(2)} hours)"
-        else
-          elapsedQualifier = ''
-        punchEnglish = "Punched you #{modeQualifier}#{timeQualifier}#{elapsedQualifier}."
+        punchEnglish = "Punched you #{punch.description(user)}"
         if res.router_res
           res.router_res.status 200
           res.router_res.json {

@@ -46,13 +46,13 @@ module.exports = (robot) ->
         logBuffer += "#{status}"
         recorded = true
       if report[PAYROLL.vacation] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours unpaid"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours unpaid\n"
         recorded = true
       if report[PAYROLL.sick] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours unpaid"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours unpaid\n"
         recorded = true
       if report[PAYROLL.unpaid] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]} hours unpaid"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]} hours unpaid\n"
         recorded = true
       if not recorded
         offBuffer += "#{report.extra.slack}:\t0 hours\n"
