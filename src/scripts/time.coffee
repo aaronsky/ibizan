@@ -341,7 +341,7 @@ module.exports = (robot) ->
                           res.message.user.name
       return
     earlyToday = moment({hour: 0, minute: 0, second: 0})
-    now = moment()
+    now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
     report = user.toRawPayroll(earlyToday, now)
     headers = HEADERS.payrollreports
 
