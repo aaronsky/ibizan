@@ -261,7 +261,6 @@ class Spreadsheet
             projects.push project
             # Logger.log "Loaded data for ##{project.name} (#{project.total} hours)"
         opts.projects = projects
-        Logger.fun "----------------------------------------"
         Logger.fun "Loaded #{projects.length} projects"
         Logger.fun "----------------------------------------"
         deferred.resolve opts
@@ -288,7 +287,6 @@ class Spreadsheet
             users.push user
             # Logger.log "Loaded #{user.name}'s information (@#{user.slack})"
         opts.users = users
-        Logger.fun "----------------------------------------"
         Logger.fun "Loaded #{users.length} users"
         Logger.fun "----------------------------------------"
         deferred.resolve opts
@@ -319,7 +317,6 @@ class Spreadsheet
             #   modifier = "at #{punch.times[0].format('h:mma')} "
             # Logger.log "Loaded #{article} #{mode}-punch for @#{user.slack}
             #             #{modifier}with #{punch.projects.length} projects"
-        Logger.fun "----------------------------------------"
         Logger.fun "Loaded #{rows.length} punches for #{opts.users.length} users"
         Logger.fun "----------------------------------------"
         deferred.resolve opts

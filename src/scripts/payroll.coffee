@@ -46,10 +46,10 @@ module.exports = (robot) ->
         logBuffer += "#{status}"
         recorded = true
       if report[PAYROLL.vacation] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours unpaid\n"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours vacation\n"
         recorded = true
       if report[PAYROLL.sick] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours unpaid\n"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours sick\n"
         recorded = true
       if report[PAYROLL.unpaid] > 0
         offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]} hours unpaid\n"
@@ -62,13 +62,14 @@ module.exports = (robot) ->
       response += offBuffer
     return response
 
+  # */1 * * * *
   generateDailyReportJob = schedule.scheduleJob '0 9 * * *', ->
     if not Organization.ready()
       Logger.warn "Don\'t make scheduled daily report,
                   Organization isn\'t ready yet"
       return
     yesterday = moment({hour: 0, minute: 0, second: 0}).subtract(1, 'days')
-    today = moment({hour: 0, minute: 0, second: 0})
+    today = moment({hour: 0, minute: 0, second: 0})#.add(1, 'days')
     Organization.generateReport(yesterday, today)
       .catch((err) ->
         Logger.errorToSlack "Failed to produce a daily report", err
@@ -79,6 +80,7 @@ module.exports = (robot) ->
           report = dailyReport reports, today, yesterday
           Logger.logToChannel report,
                               'bizness-time'
+                              #'general'
           Logger.logToChannel "Daily report generated for
                                #{numberDone} employees",
                               'ibizan-diagnostics'
