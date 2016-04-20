@@ -336,7 +336,12 @@ class Punch
   description: (user) ->
     if @times.block?
       blockTimeQualifier = "#{@times.block} hour"
-      article = if @times.block in [8, 18] then 'an' else 'a'
+      if blockTimeQualifier.charAt(0) is '8' or
+         @times.block is 11 or
+         @times.block is 18
+        article = 'an'
+      else
+        article = 'a'
       elapsedQualifier = ''
     else
       time = @times.slice(-1)[0]
