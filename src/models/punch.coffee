@@ -333,6 +333,60 @@ class Punch
       return 'You cannot punch for a date older than 7 days.'
     return true
 
+  description: (user) ->
+    if @times.block?
+      blockTimeQualifier = "#{@times.block} hour"
+      if blockTimeQualifier.charAt(0) is '8' or
+         @times.block is 11 or
+         @times.block is 18
+        article = 'an'
+      else
+        article = 'a'
+      elapsedQualifier = ''
+    else
+      time = @times.slice(-1)[0]
+      if time.isSame(moment(), 'day')
+        dateQualifier = "today"
+      else if time.isSame(moment().subtract(1, 'days'), 'day')
+        dateQualifier = "yesterday"
+      else
+        dateQualifier = "on #{time.format('MMM Do, YYYY')}"
+      timeQualifier = " at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} #{dateQualifier}"
+      if @elapsed?
+        elapsedQualifier = " (#{+@elapsed.toFixed(2)} hours)"
+      else
+        elapsedQualifier = ''
+    if @mode is 'vacation' or
+       @mode is 'sick' or
+       @mode is 'unpaid'
+      if blockTimeQualifier?
+        modeQualifier = "for #{article} #{blockTimeQualifier} #{@mode}-block"
+    else if @mode is 'none' and blockTimeQualifier?
+      modeQualifier = "for #{article} #{blockTimeQualifier} block"
+      timeQualifier = elapsedQualifier = ''
+    else
+      modeQualifier = @mode
+    if @projects and @projects.length > 0
+      projectsQualifier = " ("
+      for project, i in @projects
+        projectsQualifier += "##{project.name}"
+        if i < @projects.length - 1
+          projectsQualifier += ', '
+    else
+      projectsQualifier = ''
+    if @notes
+      if projectsQualifier
+        notesQualifier = ", '#{@notes}')"
+      else
+        notesQualifier = " ('#{@notes}')"
+    else
+      if projectsQualifier
+        notesQualifier = ')'
+      else
+        notesQualifier = ''
+    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}"
+    return description
+
 _mergeDateTime = (date, time, tz=constants.TIMEZONE) ->
   return moment.tz({
     year: date.get('year'),

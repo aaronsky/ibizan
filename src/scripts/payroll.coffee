@@ -22,7 +22,7 @@ module.exports = (robot) ->
   
   # Weeks ‘start’ on Sunday morning.
   
-  dailyReport = (reports) ->
+  dailyReport = (reports, today, yesterday) ->
     PAYROLL = HEADERS.payrollreports
     response = "DAILY WORK LOG: #{yesterday.format('dddd MMMM D YYYY').toUpperCase()}\n"
     logBuffer = ''
@@ -46,13 +46,13 @@ module.exports = (robot) ->
         logBuffer += "#{status}"
         recorded = true
       if report[PAYROLL.vacation] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours unpaid"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]} hours unpaid\n"
         recorded = true
       if report[PAYROLL.sick] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours unpaid"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]} hours unpaid\n"
         recorded = true
       if report[PAYROLL.unpaid] > 0
-        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]} hours unpaid"
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]} hours unpaid\n"
         recorded = true
       if not recorded
         offBuffer += "#{report.extra.slack}:\t0 hours\n"
@@ -62,7 +62,7 @@ module.exports = (robot) ->
       response += offBuffer
     return response
 
-  generateDailyReportJob = schedule.scheduleJob '0 6 * * *', ->
+  generateDailyReportJob = schedule.scheduleJob '0 9 * * *', ->
     if not Organization.ready()
       Logger.warn "Don\'t make scheduled daily report,
                   Organization isn\'t ready yet"
@@ -76,7 +76,7 @@ module.exports = (robot) ->
       .done(
         (reports) ->
           numberDone = reports.length
-          report = dailyReport reports
+          report = dailyReport reports, today, yesterday
           Logger.logToChannel report,
                               'bizness-time'
           Logger.logToChannel "Daily report generated for
@@ -86,7 +86,7 @@ module.exports = (robot) ->
 
 
   # Ibizan will export a Payroll Report every other Sunday night.
-  generatePayrollReportJob = schedule.scheduleJob '0 17 * * 0', ->
+  generatePayrollReportJob = schedule.scheduleJob '0 20 * * 0', ->
     if not Organization.ready()
       Logger.warn "Don\'t make scheduled payroll report,
                   Organization isn\'t ready yet"

@@ -126,7 +126,7 @@ module.exports = (robot) ->
 
 
   # Every morning, reset hound status for each users
-  resetHoundJob = schedule.scheduleJob '0 6 * * 1-5', ->
+  resetHoundJob = schedule.scheduleJob '0 9 * * 1-5', ->
     if not Organization.ready()
       Logger.warn "Don\'t run scheduled reset, Organization isn\'t ready yet"
       return
