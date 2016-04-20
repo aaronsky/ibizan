@@ -67,8 +67,8 @@ module.exports = (robot) ->
       Logger.warn "Don\'t make scheduled daily report,
                   Organization isn\'t ready yet"
       return
+    yesterday = moment({hour: 0, minute: 0, second: 0}).subtract(1, 'days')
     today = moment({hour: 0, minute: 0, second: 0})
-    yesterday = moment(today).subtract(1, 'days')
     Organization.generateReport(yesterday, today)
       .catch((err) ->
         Logger.errorToSlack "Failed to produce a daily report", err
