@@ -26,9 +26,7 @@
 
 moment = require 'moment-timezone'
 
-constants = require '../helpers/constants'
-REGEX = constants.REGEX
-TIMEZONE = constants.TIMEZONE
+{ REGEX, HEADERS, TIMEZONE } = require '../helpers/constants'
 Organization = require('../models/organization').get()
 Punch = require '../models/punch'
 User = require '../models/user'
@@ -55,7 +53,11 @@ module.exports = (robot) ->
   parse = (res, msg, mode) ->
     user = Organization.getUserBySlackName res.message.user.name
     if not user
-      Logger.logToChannel "You aren\'t an employee at #{Organization.name}",
+      Logger.logToChannel "#{res.message.user.name} isn't a recognized
+                           username. Either you aren't part of the
+                           Employee worksheet, something has gone
+                           horribly wrong, or you aren\'t an employee
+                           at #{Organization.name}.",
                           res.message.user.name
       return
     if canPunchHere res.message.user.name, res.message.user.room
@@ -214,7 +216,7 @@ module.exports = (robot) ->
         "text": "Bad token in Ibizan configuration"
       }
 
-  robot.respond REGEX.append, (res) ->
+  robot.respond /(append|add)/i, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
       Logger.logToChannel "The #{Organization.name} isn't ready for
@@ -225,39 +227,57 @@ module.exports = (robot) ->
                            soon as possible.",
                           res.message.user.name
       return
+    user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      Logger.logToChannel "#{res.message.user.name} isn't a recognized
+                           username. Either you aren't part of the
+                           Employee worksheet, something has gone
+                           horribly wrong, or you aren\'t an employee
+                           at #{Organization.name}.",
+                          res.message.user.name
+      return
+    punch = user.lastPunch 'in'
+    if not punch
+      Logger.logToChannel "Based on my records, I don't think you're
+                           punched in right now. If this is in error, run
+                           `/sync` and try your punch again, or DM a
+                           maintainer ass soon as possible.",
+                          res.message.user.name
+      return
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
-    msg = msg.replace REGEX.append, ''
+    msg = msg.replace /(append|add)/i, ''
     msg = msg.trim()
-    if user = Organization.getUserBySlackName res.message.user.name
-      if punch = user.lastPunch 'in'
-        words = msg.split ' '
-        op = words[0]
-        words.shift()
-        msg = words.join(' ').trim()
-        if op is 'project' or
-           op is 'projects'
-          projects = msg.split ' '
-          if projects.length is 0 and
-             isProjectChannel res.message.user.room
-            projects.push Organization.getProjectByName(res.message.user.room)
-          msg = punch.appendProjects projects
-          msg = msg.trim()
-          if msg.length > 0
-            punch.appendNotes msg
-        else if op is 'note' or
-                op is 'notes'
-          punch.appendNotes msg
-        row = punch.toRawRow user.name
-        row.save (err) ->
-          if err
-            user.directMessage err,
-                               Logger
-          else
-            Logger.reactToMessage 'dog2',
-                                  res.message.user.name,
-                                  res.message.rawMessage.channel,
-                                  res.message.id
+
+    words = msg.split ' '
+    op = words[0]
+    words.shift()
+    msg = words.join(' ').trim()
+
+    if op is 'project' or
+       op is 'projects'
+      projects = msg.split ' '
+      if projects.length is 0 and
+         isProjectChannel res.message.user.room
+        projects.push Organization.getProjectByName(res.message.user.room)
+      punch.appendProjects projects
+    else if op is 'note' or
+            op is 'notes'
+      punch.appendNotes msg
+    row = punch.toRawRow user.name
+    row.save (err) ->
+      if err
+        user.directMessage err,
+                           Logger
+      else
+        projectsQualifier = projects?.join(', ') ? ''
+        notesQualifier = "'#{msg}'"
+        user.directmessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
+                           Logger
+        Logger.reactToMessage 'dog2',
+                              res.message.user.name,
+                              res.message.rawMessage.channel,
+                              res.message.id
 
   robot.respond /undo/i, (res) ->
     if not Organization.ready()
@@ -299,4 +319,53 @@ module.exports = (robot) ->
       user.directMessage 'There\'s nothing for me to undo.',
                          Logger
 
+  # User feedback
+  robot.respond /(today|(for today)|hours)$/i, (res) ->
+    if not Organization.ready()
+      Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
+      Logger.logToChannel "The #{Organization.name} isn't ready for
+                           operations yet. It may be in the middle of
+                           syncing or something has gone horribly wrong.
+                           Please try again later, and if this persists
+                           longer than five minutes, DM a maintainer as
+                           soon as possible.",
+                          res.message.user.name
+      return
+    user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      Logger.logToChannel "#{res.message.user.name} isn't a recognized
+                           username. Either you aren't part of the
+                           Employee worksheet, something has gone
+                           horribly wrong, or you aren\'t an employee
+                           at #{Organization.name}.",
+                          res.message.user.name
+      return
+    earlyToday = moment({hour: 0, minute: 0, second: 0})
+    now = moment()
+    report = user.toRawPayroll(earlyToday, now)
+    headers = HEADERS.payrollreports
 
+    loggedAny = false
+    if not report[headers.logged] and
+       not report[headers.vacation] and
+       not report[headers.sick] and
+       not report[headers.unpaid]
+      msg = 'You haven\'t recorded any hours today.'
+    else
+      if not report[headers.logged]
+        msg = 'You haven\'t recorded any paid work time'
+      else
+        msg = "You have #{report[headers.logged]} hours of paid work time"
+        loggedAny = true
+      for kind in ['vacation', 'sick', 'unpaid']
+        header = headers[kind]
+        if kind is 'unpaid'
+          kind = 'unpaid work'
+        if report[header]
+          if not loggedAny
+            msg += ", but you have #{report[header]} hours of #{kind} time"
+            loggedAny = true
+          else
+            msg += " and #{report[header]} hours of #{kind} time"
+      msg += ' recorded for today.'
+    user.directMessage msg, Logger
