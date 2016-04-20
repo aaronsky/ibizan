@@ -272,7 +272,7 @@ module.exports = (robot) ->
       else
         projectsQualifier = projects?.join(', ') ? ''
         notesQualifier = "'#{msg}'"
-        user.directmessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
+        user.directMessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
                            Logger
         Logger.reactToMessage 'dog2',
                               res.message.user.name,
