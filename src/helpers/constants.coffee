@@ -2,7 +2,6 @@
 regex =
   ibizan:          /(?:@)?ibizan(?::)? ?/i
   modes:           /(in|out|vacation|sick|unpaid)/
-  append:          /(append|add)/i
   days:            /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i
   rel_time:        /(half-day|(half day)|noon|midnight|((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours))/i
   time:            /(\b(0?[1-9])|(1[0-2]))(?:(:[0-5][0-9] ?(am?|pm?)?)| ?(am?|pm?)\b)|((\b([0-1][0-9])|(2[0-3])):([0-5][0-9])\b)/i
