@@ -379,12 +379,25 @@ class Punch
         notesQualifier = ", '#{@notes}')"
       else
         notesQualifier = " ('#{@notes}')"
+      words = @notes.split ' '
+      warnings =
+        projects: []
+        other: null
+      for word in words
+        if word.charAt(0) is '#'
+          warnings.projects.push word
     else
       if projectsQualifier
         notesQualifier = ')'
       else
         notesQualifier = ''
-    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}"
+    warningQualifier = ''
+    for warning in warnings.projects
+      warningQualifier += "Warning: #{warning} isn't a registered project. This will be added to your notes rather than as a project.\n"
+    for warning in warnings.other
+      warningQualifier += "Warning: #{warning} isn't a recognized input. This will be added to your notes.\n"
+    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}\n#{warningQualifier}"
+
     return description
 
 _mergeDateTime = (date, time, tz=constants.TIMEZONE) ->

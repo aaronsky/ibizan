@@ -96,6 +96,16 @@ describe 'Punch', ->
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
       expect(punch.notes).to.be.empty
+    it 'in at a full date', ->
+      punch = Punch.parse @user, 'in 4pm 4/22/2016', 'in'
+      expect(punch).to.have.property 'mode', 'in'
+      expect(punch).to.have.deep.property 'times[0]'
+      expect(punch.times[0].format('MM/DD/YYYY')).to.equal "04/22/2016"
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
+      expect(punch.date.format('MM/DD/YYYY')).to.equal "04/22/2016"
     it 'out at a time without minutes yesterday', ->
       punch = Punch.parse @user, 'out 7pm yesterday', 'out'
       expect(punch).to.have.property 'mode', 'out'
