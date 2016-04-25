@@ -58,6 +58,8 @@ class Punch
 
     if times.block?
       datetimes.block = times.block
+      if datetimes[0]
+        date = moment(datetimes[0])
       while datetimes.length isnt 0
         datetimes.pop()
       if mode is 'in'
@@ -77,7 +79,7 @@ class Punch
     notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
-    punch.date = datetimes[0] || moment()
+    punch.date = datetimes[0] || date || moment()
     punch.timezone = tz
     if elapsed
       punch.elapsed = elapsed
