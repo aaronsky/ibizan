@@ -368,10 +368,9 @@ class Punch
       modeQualifier = @mode
     if @projects and @projects.length > 0
       projectsQualifier = " ("
-      for project, i in @projects
-        projectsQualifier += "##{project.name}"
-        if i < @projects.length - 1
-          projectsQualifier += ', '
+      projectsQualifier += @projects.map((el) ->
+        return "##{el.name}"
+      ).join(', ')
     else
       projectsQualifier = ''
     if @notes
@@ -382,7 +381,7 @@ class Punch
       words = @notes.split ' '
       warnings =
         projects: []
-        other: null
+        other: []
       for word in words
         if word.charAt(0) is '#'
           warnings.projects.push word
@@ -392,10 +391,11 @@ class Punch
       else
         notesQualifier = ''
     warningQualifier = ''
-    for warning in warnings.projects
-      warningQualifier += "Warning: #{warning} isn't a registered project. This will be added to your notes rather than as a project.\n"
-    for warning in warnings.other
-      warningQualifier += "Warning: #{warning} isn't a recognized input. This will be added to your notes.\n"
+    if warnings
+      for warning in warnings.projects
+        warningQualifier += "Warning: #{warning} isn't a registered project. This will be added to your notes rather than as a project.\n"
+      for warning in warnings.other
+        warningQualifier += "Warning: #{warning} isn't a recognized input. This will be added to your notes.\n"
     description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}\n#{warningQualifier}"
 
     return description
@@ -553,7 +553,7 @@ _parseProjects = (command) ->
     if word.charAt(0) is '#'
       if project = Organization.getProjectByName word
         projects.push project
-      command = command.replace ///#{word} ?///i, ''
+        command = command.replace ///#{word} ?///i, ''
     else
       break
   [projects, command]
