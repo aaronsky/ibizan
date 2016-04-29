@@ -48,6 +48,8 @@ module.exports = (robot) ->
       if msg
         if DEBUG
           console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
+          if error and error.stack
+            console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{error.stack}"))
         else
           # index = msg.indexOf '\n'
           # if index isnt -1
@@ -94,5 +96,5 @@ module.exports = (robot) ->
           client._apiCall 'reactions.add', params, (response) ->
             if not response.ok
               Logger.errorToSlack response.error
-              Logger.logToChannel response.error, user
+              Logger.logToChannel "I couldn't react to a message, but I tried!", user
   Logger
