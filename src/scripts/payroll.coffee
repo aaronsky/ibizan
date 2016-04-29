@@ -13,7 +13,7 @@ schedule = require 'node-schedule'
 ADMINS = ['aaronsky', 'reid', 'ryan']
 
 module.exports = (robot) ->
-  HEADERS = require('../helpers/constants').HEADERS
+  { HEADERS, TIMEZONE } = require('../helpers/constants')
   Logger = require('../helpers/logger')(robot)
   Organization = require('../models/organization').get()
 
@@ -68,8 +68,8 @@ module.exports = (robot) ->
       Logger.warn "Don\'t make scheduled daily report,
                   Organization isn\'t ready yet"
       return
-    yesterday = moment({hour: 0, minute: 0, second: 0}).subtract(1, 'days')
-    today = moment({hour: 0, minute: 0, second: 0})#.add(1, 'days')
+    yesterday = moment.tz({hour: 0, minute: 0, second: 0}, TIMEZONE).subtract(1, 'days')
+    today = moment.tz({hour: 0, minute: 0, second: 0}, TIMEZONE)#.add(1, 'days')
     Organization.generateReport(yesterday, today)
       .catch((err) ->
         Logger.errorToSlack "Failed to produce a daily report", err
@@ -80,7 +80,6 @@ module.exports = (robot) ->
           report = dailyReport reports, today, yesterday
           Logger.logToChannel report,
                               'bizness-time'
-                              #'general'
           Logger.logToChannel "Daily report generated for
                                #{numberDone} employees",
                               'ibizan-diagnostics'
