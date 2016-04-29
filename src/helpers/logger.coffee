@@ -48,6 +48,8 @@ module.exports = (robot) ->
       if msg
         if DEBUG
           console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
+          if error and error.stack
+            console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{error.stack}"))
         else
           # index = msg.indexOf '\n'
           # if index isnt -1
