@@ -96,5 +96,5 @@ module.exports = (robot) ->
           client._apiCall 'reactions.add', params, (response) ->
             if not response.ok
               Logger.errorToSlack response.error
-              Logger.logToChannel response.error, user
+              Logger.logToChannel "I couldn't react to a message, but I tried!", user
   Logger
