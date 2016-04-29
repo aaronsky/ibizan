@@ -3,9 +3,7 @@ moment = require 'moment-timezone'
 weekend = require 'moment-weekend'
 uuid = require 'node-uuid'
 
-constants = require '../helpers/constants'
-HEADERS = constants.HEADERS
-REGEX = constants.REGEX
+{ HEADERS, REGEX, TIMEZONE } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('./organization').get()
@@ -59,7 +57,7 @@ class Punch
     if times.block?
       datetimes.block = times.block
       if datetimes[0]
-        date = moment(datetimes[0])
+        date = moment.tz(datetimes[0], tz)
       while datetimes.length isnt 0
         datetimes.pop()
       if mode is 'in'
@@ -79,7 +77,7 @@ class Punch
     notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
-    punch.date = datetimes[0] || date || moment()
+    punch.date = datetimes[0] || date || moment.tz(tz)
     punch.timezone = tz
     if elapsed
       punch.elapsed = elapsed
@@ -93,7 +91,7 @@ class Punch
     else if not row.save or not row.del
       return
     headers = HEADERS.rawdata
-    date = moment(row[headers.today], 'MM/DD/YYYY')
+    date = moment.tz(row[headers.today], 'MM/DD/YYYY', TIMEZONE)
     if row[headers.project1] is 'vacation' or
        row[headers.project1] is 'sick' or
        row[headers.project1] is 'unpaid'
@@ -110,15 +108,15 @@ class Punch
       if row[headers[MODES[i]]]
         newDate = moment.tz(row[headers[MODES[i]]],
                             'MM/DD/YYYY hh:mm:ss a',
-                            constants.TIMEZONE)
+                            TIMEZONE)
         if not newDate or
            not newDate.isValid()
           timePiece = moment.tz(row[headers[MODES[i]]],
                                 'hh:mm:ss a',
-                                constants.TIMEZONE)
+                                TIMEZONE)
           newDate = moment.tz("#{row[headers.today]} #{row[headers[MODES[i]]]}",
                               'MM/DD/YYYY hh:mm:ss a',
-                              constants.TIMEZONE)
+                              TIMEZONE)
         datetimes.push newDate.tz(tz)
     if row[headers.totalTime]
       comps = row[headers.totalTime].split ':'
@@ -224,7 +222,7 @@ class Punch
 
   toRawRow: (name) ->
     headers = HEADERS.rawdata
-    today = moment.tz(constants.TIMEZONE)
+    today = moment.tz(TIMEZONE)
     row = @row || {}
     row[headers.id] = row[headers.id] || uuid.v1()
     row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
@@ -238,7 +236,7 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          row[headers[MODES[i]]] = time.tz(constants.TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
+          row[headers[MODES[i]]] = time.tz(TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -402,7 +400,7 @@ class Punch
 
     return description
 
-_mergeDateTime = (date, time, tz=constants.TIMEZONE) ->
+_mergeDateTime = (date, time, tz=TIMEZONE) ->
   return moment.tz({
     year: date.get('year'),
     month: date.get('month'),
