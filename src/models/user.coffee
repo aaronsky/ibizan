@@ -196,9 +196,12 @@ class User
           loggedTime += punch.times.block
         else
           loggedTime += punch.elapsed
-      if punch.projects? and punch.projects.length > 0
+      if punch.projects? and punch.projects?.length > 0
         for project in punch.projects
-          if not project in projectsForPeriod
+          match = projectsForPeriod.filter((item, index, arr) ->
+            return project.name is item.name
+          )[0]
+          if not match
             projectsForPeriod.push project
 
     loggedTime = +loggedTime.toFixed(2)
@@ -218,7 +221,7 @@ class User
     row[headers.vacation] = vacationTime
     row[headers.sick] = sickTime
     row[headers.overtime] = Math.max(0, loggedTime - 80)
-    row[headers.holiday] = @timetable.holiday
+    row[headers.holiday] = @timetable.holiday || 0
     row.extra = {
       slack: @slack,
       projects: projectsForPeriod

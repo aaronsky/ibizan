@@ -140,7 +140,6 @@ module.exports = (robot) ->
     body = req.body
     if body.token is process.env.SLASH_HOUND_TOKEN
       comps = body?.text?.split(' ') || []
-      console.log comps
       scope = comps[0] || 'self'
       if scope is Organization.name
         scope = 'org'
@@ -156,8 +155,6 @@ module.exports = (robot) ->
           comps = ['self', comps[0]]
         scope = comps[0]
       action = comps[1] || 'info'
-      console.log scope
-      console.log action
 
       if scope is 'self'
         user = Organization.getUserBySlackName body.user_name
