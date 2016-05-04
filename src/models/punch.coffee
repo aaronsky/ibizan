@@ -432,7 +432,7 @@ _mergeDateTime = (date, time, tz=TIMEZONE) ->
 _parseMode = (command) ->
   comps = command.split ' '
   [mode, command] = [comps.shift(), comps.join ' ']
-  mode = (mode || '').trim()
+  mode = (mode || '').toLowerCase().trim()
   command = (command || '').trim()
   if mode in MODES
     [mode, command]

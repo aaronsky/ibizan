@@ -46,6 +46,21 @@ describe 'Punch', ->
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
       expect(punch.notes).to.be.empty
+    it 'in without arguments (title-case)', ->
+      punch = Punch.parse @user, 'In', 'in'
+      expect(punch).to.have.property 'mode', 'in'
+      expect(punch).to.have.deep.property 'times[0]'
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+    it 'out without arguments (title-case)', ->
+      punch = Punch.parse @user, 'Out', 'out'
+      expect(punch).to.have.property 'mode', 'out'
+      expect(punch).to.have.deep.property 'times[0]'
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
     it 'in with an existing project', ->
       punch = Punch.parse @user, "in ##{@projectName}", 'in'
       expect(punch).to.have.property 'mode', 'in'

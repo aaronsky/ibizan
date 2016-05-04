@@ -68,6 +68,7 @@ module.exports = (robot) ->
     return "#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr}"
 
   parse = (res, msg, mode) ->
+    mode = mode.toLowerCase()
     user = Organization.getUserBySlackName res.message.user.name
     if not user
       Logger.logToChannel "#{res.message.user.name} isn't a recognized
