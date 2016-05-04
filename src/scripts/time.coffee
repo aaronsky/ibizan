@@ -361,7 +361,6 @@ module.exports = (robot) ->
     earlyToday = moment({hour: 0, minute: 0, second: 0})
     now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
     report = user.toRawPayroll(earlyToday, now)
-    console.log report
     headers = HEADERS.payrollreports
 
     loggedAny = false
