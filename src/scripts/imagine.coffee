@@ -48,13 +48,16 @@ module.exports = (robot) ->
             user = Organization.getUserBySlackName raw_user.slackusername
             if user
               user.directMessage "Welcome to Slack! I'm #{Organization.name}'s
-                                  resident dog-themed timesheet-tracker, Ibizan!\n\n
+                                  resident dog-themed timesheet-tracker,
+                                  Ibizan!\n\n
 
-                                  To clock in, try doing `@ibizan in`. This will
-                                  clock you in for the current time. If you want
-                                  to clock in at a particular time, you can do
-                                  `@ibizan in 12pm`. If you want to clock in 
-                                  a block of time, try `@ibizan 3 hours`.\n\n
+                                  To clock in, try doing `@ibizan in` in
+                                  #timeclock, or here without the `@ibizan`.
+                                  This will clock you in for the current
+                                  time. If you want to clock in at a
+                                  particular time, you can do `@ibizan in 12pm`.
+                                  If you want to clock in a block of time,
+                                  try `@ibizan 3 hours`.\n\n
 
                                   To clock out, just do `@ibizan out`.",
                                  Logger
