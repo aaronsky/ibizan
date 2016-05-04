@@ -50,6 +50,23 @@ module.exports = (robot) ->
     isClockChannel(channel) or
     isProjectChannel(channel)
 
+  toTimeStr = (duration) ->
+    hours = Math.floor duration
+    if hours is 0
+      hoursStr = ''
+    else if hours is 1
+      hoursStr = "#{hours} hour"
+    else
+      hoursStr = "#{hours} hours"
+    minutes = Math.round((duration - hours) * 60)
+    if minutes is 0
+      minutesStr = ''
+    else if minutes is 1
+      minutesStr = "#{minutes} minute"
+    else
+      minutesStr = "#{minutes} minutes"
+    return "#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr}"
+
   parse = (res, msg, mode) ->
     user = Organization.getUserBySlackName res.message.user.name
     if not user
@@ -320,7 +337,7 @@ module.exports = (robot) ->
                          Logger
 
   # User feedback
-  robot.respond /(today|(for today)|hours)$/i, (res) ->
+  robot.respond /(?:.*?)(for )?(today|hours)[\?\!\.]?/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
       Logger.logToChannel "The #{Organization.name} isn't ready for
@@ -340,23 +357,6 @@ module.exports = (robot) ->
                            at #{Organization.name}.",
                           res.message.user.name
       return
-
-    toTimeStr = (duration) ->
-      hours = Math.floor duration
-      if hours is 0
-        hoursStr = ''
-      else if hours is 1
-        hoursStr = "#{hours} hour"
-      else
-        hoursStr = "#{hours} hours"
-      minutes = Math.round((duration - hours) * 60)
-      if minutes is 0
-        minutesStr = ''
-      else if minutes is 1
-        minutesStr = "#{minutes} minute"
-      else
-        minutesStr = "#{minutes} minutes"
-      return "#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr}"
 
     earlyToday = moment({hour: 0, minute: 0, second: 0})
     now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
