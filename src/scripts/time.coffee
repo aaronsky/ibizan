@@ -50,6 +50,23 @@ module.exports = (robot) ->
     isClockChannel(channel) or
     isProjectChannel(channel)
 
+  toTimeStr = (duration) ->
+    hours = Math.floor duration
+    if hours is 0
+      hoursStr = ''
+    else if hours is 1
+      hoursStr = "#{hours} hour"
+    else
+      hoursStr = "#{hours} hours"
+    minutes = Math.round((duration - hours) * 60)
+    if minutes is 0
+      minutesStr = ''
+    else if minutes is 1
+      minutesStr = "#{minutes} minute"
+    else
+      minutesStr = "#{minutes} minutes"
+    return "#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr}"
+
   parse = (res, msg, mode) ->
     user = Organization.getUserBySlackName res.message.user.name
     if not user
@@ -241,7 +258,7 @@ module.exports = (robot) ->
       Logger.logToChannel "Based on my records, I don't think you're
                            punched in right now. If this is in error, run
                            `/sync` and try your punch again, or DM a
-                           maintainer ass soon as possible.",
+                           maintainer as soon as possible.",
                           res.message.user.name
       return
     msg = res.match.input
@@ -320,7 +337,7 @@ module.exports = (robot) ->
                          Logger
 
   # User feedback
-  robot.respond /(today|(for today)|hours)$/i, (res) ->
+  robot.respond /(?:.*?)(for )?(today|hours)[\?\!\.]?/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
       Logger.logToChannel "The #{Organization.name} isn't ready for
@@ -340,6 +357,7 @@ module.exports = (robot) ->
                            at #{Organization.name}.",
                           res.message.user.name
       return
+    
     earlyToday = moment({hour: 0, minute: 0, second: 0})
     now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
     report = user.toRawPayroll(earlyToday, now)
@@ -355,7 +373,7 @@ module.exports = (robot) ->
       if not report[headers.logged]
         msg = 'You haven\'t recorded any paid work time'
       else
-        msg = "You have #{report[headers.logged]} hours of paid work time"
+        msg = "You have #{toTimeStr(report[headers.logged])} of paid work time"
         loggedAny = true
       for kind in ['vacation', 'sick', 'unpaid']
         header = headers[kind]
@@ -363,9 +381,14 @@ module.exports = (robot) ->
           kind = 'unpaid work'
         if report[header]
           if not loggedAny
-            msg += ", but you have #{report[header]} hours of #{kind} time"
+            msg += ", but you have #{toTimeStr(report[header])} of #{kind} time"
             loggedAny = true
           else
-            msg += " and #{report[header]} hours of #{kind} time"
+            msg += " and #{toTimeStr(report[header])} of #{kind} time"
       msg += ' recorded for today.'
+    if report.extra?.projects and report.extra?.projects?.length > 0
+      msg += ' ('
+      for project in report.extra.projects
+        msg += "##{project.name}"
+      msg += ')' 
     user.directMessage msg, Logger
