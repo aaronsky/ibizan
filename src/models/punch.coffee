@@ -344,7 +344,7 @@ class Punch
       time = @date
       timeStr = ''
     else
-      timeStr = "#at {time?.tz(user.timetable?.timezone?.name).format('h:mma')} "
+      timeStr = "at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} "
     if time.isSame(moment(), 'day')
       dateQualifier = "today"
     else if time.isSame(moment().subtract(1, 'days'), 'day')
@@ -475,13 +475,16 @@ _parseTime = (command, activeStart, activeEnd) ->
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.time
     timeMatch = match[0]
+    now = moment()
     if hourStr = timeMatch.match /\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i
       hour = parseInt(hourStr[0].replace(':', ''))
       if hour <= 12
-        period = moment().format('a')
         if not timeMatch.match /(a|p)m?/i
+          period = now.format('a')
           timeMatch = "#{timeMatch} #{period}"
     today = moment(timeMatch, 'h:mm a')
+    if today.isAfter(now) and period is 'pm'
+      today.subtract(12, 'hours')
     time.push today
     command = command.replace ///#{match[0]} ?///i, ''
   # else if match = command.match regex for time ranges (???)
