@@ -46,6 +46,21 @@ describe 'Punch', ->
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
       expect(punch.notes).to.be.empty
+    it 'in without arguments (title-case)', ->
+      punch = Punch.parse @user, 'In', 'in'
+      expect(punch).to.have.property 'mode', 'in'
+      expect(punch).to.have.deep.property 'times[0]'
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+    it 'out without arguments (title-case)', ->
+      punch = Punch.parse @user, 'Out', 'out'
+      expect(punch).to.have.property 'mode', 'out'
+      expect(punch).to.have.deep.property 'times[0]'
+      expect(punch).to.have.property 'projects'
+      expect(punch.projects).to.be.empty
+      expect(punch).to.have.property 'notes'
+      expect(punch.notes).to.be.empty
     it 'in with an existing project', ->
       punch = Punch.parse @user, "in ##{@projectName}", 'in'
       expect(punch).to.have.property 'mode', 'in'
@@ -72,8 +87,12 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'in 9:15', 'in'
       expect(punch).to.have.property 'mode', 'in'
       expect(punch).to.have.deep.property 'times[0]'
-      amPm = moment().format('A')
-      expect(punch.times[0].format('hh:mm:ss A')).to.equal "09:15:00 #{amPm}"
+      now = moment()
+      amPm = now.format('A')
+      expectedTime = moment("9:15 #{amPm}", 'h:mm A')
+      if expectedTime.isAfter(now) and amPm is 'PM'
+        expectedTime.subtract(12, 'hours')
+      expect(punch.times[0].format('hh:mm:ss A')).to.equal expectedTime.format('hh:mm:ss A')
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'
