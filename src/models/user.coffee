@@ -141,7 +141,11 @@ class User
        lastPunch.mode is 'none'
       that = @
       deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
-      deferred.resolve(deletePromise().then(() -> that.punches.pop()))
+      deletePromise()
+      .then(() ->
+        punch = that.punches.pop()
+        deferred.resolve(punch)
+      )
     else if lastPunch.mode is 'out'
       # projects will not be touched
       lastPunch.times.pop()
@@ -155,11 +159,18 @@ class User
         lastPunch.row[headers.blockTime] = ''
       lastPunch.row[headers.notes] = lastPunch.notes
       savePromise = Q.nfbind(lastPunch.row.save.bind(lastPunch))
-      deferred.resolve(savePromise())
+      savePromise()
+      .then(() ->
+        deferred.resolve(lastPunch)
+      )
     else if lastPunch.mode is 'in'
       that = @
       deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
-      deferred.resolve(deletePromise().then(() -> that.punches.pop()))
+      deletePromise()
+      .then(() ->
+        punch = that.punches.pop()
+        deferred.resolve(punch)
+      )
     deferred.promise
 
   toRawPayroll: (start, end) ->

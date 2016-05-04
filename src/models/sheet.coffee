@@ -108,8 +108,13 @@ class Spreadsheet
               if err or not rows
                 deferred.reject err
               else
-                row_match =
-                  (r for r in rows when r[headers.id] is row[headers.id])[0]
+                row_matches =
+                  (r for r in rows when r[headers.id] is row[headers.id])
+                if row_matches?.length > 1
+                  for row, i in row_matches
+                    if i isnt 0
+                      row.del()
+                row_match = row_matches[0]
                 punch.assignRow row_match
                 user.punches.push punch
                 if punch.mode is 'vacation' or
@@ -253,7 +258,6 @@ class Spreadsheet
           project = Project.parse row
           if project
             projects.push project
-            # Logger.log "Loaded data for ##{project.name} (#{project.total} hours)"
         opts.projects = projects
         Logger.fun "Loaded #{projects.length} projects"
         Logger.fun "----------------------------------------"
@@ -279,7 +283,6 @@ class Spreadsheet
               lastPing: null
             }
             users.push user
-            # Logger.log "Loaded #{user.name}'s information (@#{user.slack})"
         opts.users = users
         Logger.fun "Loaded #{users.length} users"
         Logger.fun "----------------------------------------"
@@ -300,17 +303,7 @@ class Spreadsheet
           )[0]
           punch = Punch.parseRaw user, row, opts.projects
           if punch and user
-            user.punches.push punch            
-            # article = if punch.mode in ['vacation', 'sick', 'none'] then 'a' else 'an'
-            # mode = if punch.mode is 'none' then 'block' else punch.mode
-            # if punch.times.block?
-            #   modifier = "(#{punch.times.block} hours) "
-            # else if punch.elapsed?
-            #   modifier = "(#{punch.elapsed} hours) "
-            # else if punch.times.length is 1
-            #   modifier = "at #{punch.times[0].format('h:mma')} "
-            # Logger.log "Loaded #{article} #{mode}-punch for @#{user.slack}
-            #             #{modifier}with #{punch.projects.length} projects"
+            user.punches.push punch
         Logger.fun "Loaded #{rows.length} punches for #{opts.users.length} users"
         Logger.fun "----------------------------------------"
         deferred.resolve opts

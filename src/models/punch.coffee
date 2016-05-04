@@ -338,6 +338,21 @@ class Punch
      projectsQualifier =
      notesQualifier =
      warningQualifier = ''
+
+    time = @times.slice(-1)[0]
+    if not time
+      time = @date
+      timeStr = ''
+    else
+      timeStr = "at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} "
+    if time.isSame(moment(), 'day')
+      dateQualifier = "today"
+    else if time.isSame(moment().subtract(1, 'days'), 'day')
+      dateQualifier = "yesterday"
+    else
+      dateQualifier = "on #{time.format('MMM Do, YYYY')}"
+    timeQualifier = " #{timeStr}#{dateQualifier}"
+
     if @times.block?
       hours = Math.floor @times.block
       if hours is 0
@@ -349,38 +364,29 @@ class Punch
         minutesStr = ''
       else
         minutesStr = "#{minutes} minute"
-      blockTimeQualifier = "#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr}"
+      blockTimeQualifier = "#{hoursStr}#{if hours > 0 and minutes > 0 then ', ' else ''}#{minutesStr}"
       if blockTimeQualifier.charAt(0) is '8' or
          @times.block is 11 or
          @times.block is 18
         article = 'an'
       else
         article = 'a'
-    else
-      time = @times.slice(-1)[0]
-      if time.isSame(moment(), 'day')
-        dateQualifier = "today"
-      else if time.isSame(moment().subtract(1, 'days'), 'day')
-        dateQualifier = "yesterday"
+    else if @elapsed?
+      hours = Math.floor @elapsed
+      if hours is 0
+        hoursStr = ''
+      else if hours is 1
+        hoursStr = "#{hours} hour"
       else
-        dateQualifier = "on #{time.format('MMM Do, YYYY')}"
-      timeQualifier = " at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} #{dateQualifier}"
-      if @elapsed?
-        hours = Math.floor @elapsed
-        if hours is 0
-          hoursStr = ''
-        else if hours is 1
-          hoursStr = "#{hours} hour"
-        else
-          hoursStr = "#{hours} hours"
-        minutes = Math.round((@elapsed - hours) * 60)
-        if minutes is 0
-          minutesStr = ''
-        else if minutes is 1
-          minutesStr = "#{minutes} minute"
-        else
-          minutesStr = "#{minutes} minutes"
-        elapsedQualifier = " (#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr})"
+        hoursStr = "#{hours} hours"
+      minutes = Math.round((@elapsed - hours) * 60)
+      if minutes is 0
+        minutesStr = ''
+      else if minutes is 1
+        minutesStr = "#{minutes} minute"
+      else
+        minutesStr = "#{minutes} minutes"
+      elapsedQualifier = " (#{hoursStr}#{if hours > 0 and minutes > 0 then ', ' else ''}#{minutesStr})"      
     if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
@@ -412,10 +418,10 @@ class Punch
         notesQualifier = ')'
     if warnings
       for warning in warnings.projects
-        warningQualifier += "Warning: #{warning} isn't a registered project. This will be added to your notes rather than as a project.\n"
+        warningQualifier += "Warning: #{warning} isn't a registered project. It is stored in this punch's notes rather than as a project.\n"
       for warning in warnings.other
-        warningQualifier += "Warning: #{warning} isn't a recognized input. This will be added to your notes.\n"
-    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}\n#{warningQualifier}"
+        warningQualifier += "Warning: #{warning} isn't a recognized input. This is stored this punch's notes.\n"
+    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}.\n#{warningQualifier}"
 
     return description
 
@@ -432,7 +438,7 @@ _mergeDateTime = (date, time, tz=TIMEZONE) ->
 _parseMode = (command) ->
   comps = command.split ' '
   [mode, command] = [comps.shift(), comps.join ' ']
-  mode = (mode || '').trim()
+  mode = (mode || '').toLowerCase().trim()
   command = (command || '').trim()
   if mode in MODES
     [mode, command]
@@ -469,13 +475,16 @@ _parseTime = (command, activeStart, activeEnd) ->
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.time
     timeMatch = match[0]
+    now = moment()
     if hourStr = timeMatch.match /\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i
       hour = parseInt(hourStr[0].replace(':', ''))
       if hour <= 12
-        period = moment().format('a')
         if not timeMatch.match /(a|p)m?/i
+          period = now.format('a')
           timeMatch = "#{timeMatch} #{period}"
     today = moment(timeMatch, 'h:mm a')
+    if today.isAfter(now) and period is 'pm'
+      today.subtract(12, 'hours')
     time.push today
     command = command.replace ///#{match[0]} ?///i, ''
   # else if match = command.match regex for time ranges (???)
