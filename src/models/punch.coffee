@@ -161,7 +161,7 @@ class Punch
           project = Organization.getProjectByName projectStr
         else if projects.length > 0
           project = projects.filter((item, index, arr) ->
-            return item.name is projectStr
+            return "##{item.name}" is projectStr or item.name is projectStr
           )[0]
         if project
           foundProjects.push project
@@ -313,8 +313,6 @@ class Punch
         elapsedDays = user.toDays(elapsed)
         if @mode is 'vacation' and
            user.timetable.vacationAvailable < elapsedDays
-          console.log user.timetable.vacationAvailable
-          console.log elapsed
           return 'This punch exceeds your remaining vacation time.'
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
@@ -334,15 +332,30 @@ class Punch
     return true
 
   description: (user) ->
+    modeQualifier =
+     timeQualifier =
+     elapsedQualifier =
+     projectsQualifier =
+     notesQualifier =
+     warningQualifier = ''
     if @times.block?
-      blockTimeQualifier = "#{@times.block} hour"
+      hours = Math.floor @times.block
+      if hours is 0
+        hoursStr = ''
+      else
+        hoursStr = "#{hours} hour"
+      minutes = Math.round((@times.block - hours) * 60)
+      if minutes is 0
+        minutesStr = ''
+      else
+        minutesStr = "#{minutes} minute"
+      blockTimeQualifier = "#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr}"
       if blockTimeQualifier.charAt(0) is '8' or
          @times.block is 11 or
          @times.block is 18
         article = 'an'
       else
         article = 'a'
-      elapsedQualifier = ''
     else
       time = @times.slice(-1)[0]
       if time.isSame(moment(), 'day')
@@ -353,9 +366,21 @@ class Punch
         dateQualifier = "on #{time.format('MMM Do, YYYY')}"
       timeQualifier = " at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} #{dateQualifier}"
       if @elapsed?
-        elapsedQualifier = " (#{+@elapsed.toFixed(2)} hours)"
-      else
-        elapsedQualifier = ''
+        hours = Math.floor @elapsed
+        if hours is 0
+          hoursStr = ''
+        else if hours is 1
+          hoursStr = "#{hours} hour"
+        else
+          hoursStr = "#{hours} hours"
+        minutes = Math.round((@elapsed - hours) * 60)
+        if minutes is 0
+          minutesStr = ''
+        else if minutes is 1
+          minutesStr = "#{minutes} minute"
+        else
+          minutesStr = "#{minutes} minutes"
+        elapsedQualifier = " (#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr})"
     if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
@@ -363,7 +388,6 @@ class Punch
         modeQualifier = "for #{article} #{blockTimeQualifier} #{@mode}-block"
     else if @mode is 'none' and blockTimeQualifier?
       modeQualifier = "for #{article} #{blockTimeQualifier} block"
-      timeQualifier = elapsedQualifier = ''
     else
       modeQualifier = @mode
     if @projects and @projects.length > 0
@@ -371,8 +395,6 @@ class Punch
       projectsQualifier += @projects.map((el) ->
         return "##{el.name}"
       ).join(', ')
-    else
-      projectsQualifier = ''
     if @notes
       if projectsQualifier
         notesQualifier = ", '#{@notes}')"
@@ -388,9 +410,6 @@ class Punch
     else
       if projectsQualifier
         notesQualifier = ')'
-      else
-        notesQualifier = ''
-    warningQualifier = ''
     if warnings
       for warning in warnings.projects
         warningQualifier += "Warning: #{warning} isn't a registered project. This will be added to your notes rather than as a project.\n"

@@ -97,42 +97,6 @@ class Spreadsheet
                 () ->
                   deferred.resolve last
               )
-      else if punch.mode is 'vacation' or
-              punch.mode is 'sick' or
-              punch.mode is 'unpaid'
-        row = punch.toRawRow user.name
-        row[headers.blockTime]
-        @rawData.addRow row, (err) ->
-          if err
-            deferred.reject err
-          else
-            if punch.times.block
-              elapsed = punch.times.block
-            else
-              elapsed = punch.elapsed
-            elapsedDays = user.toDays elapsed
-            if punch.mode is 'vacation'
-              total = user.timetable.vacationTotal
-              available = user.timetable.vacationAvailable
-              user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
-            else if punch.mode is 'sick'
-              total = user.timetable.sickTotal
-              available = user.timetable.sickAvailable
-              user.timetable.setSick(total + elapsedDays, available - elapsedDays)
-            else if punch.mode is 'unpaid'
-              total = user.timetable.unpaidTotal
-              user.timetable.setUnpaid(total + elapsedDays)
-            user.updateRow()
-            .catch(
-              (err) ->
-                deferred.reject err
-            )
-            .done(
-              () ->
-                user.punches.pop()
-                deferred.resolve punch
-            )
-        # deferred.resolve()
       else
         row = punch.toRawRow user.name
         @rawData.addRow row, (err) =>
@@ -148,7 +112,37 @@ class Spreadsheet
                   (r for r in rows when r[headers.id] is row[headers.id])[0]
                 punch.assignRow row_match
                 user.punches.push punch
-                deferred.resolve punch
+                if punch.mode is 'vacation' or
+                   punch.mode is 'sick' or
+                   punch.mode is 'unpaid'
+                  if punch.times.block
+                    elapsed = punch.times.block
+                  else
+                    elapsed = punch.elapsed
+                  elapsedDays = user.toDays elapsed
+                  if punch.mode is 'vacation'
+                    total = user.timetable.vacationTotal
+                    available = user.timetable.vacationAvailable
+                    user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
+                  else if punch.mode is 'sick'
+                    total = user.timetable.sickTotal
+                    available = user.timetable.sickAvailable
+                    user.timetable.setSick(total + elapsedDays, available - elapsedDays)
+                  else if punch.mode is 'unpaid'
+                    total = user.timetable.unpaidTotal
+                    user.timetable.setUnpaid(total + elapsedDays)
+                  user.updateRow()
+                  .catch(
+                    (err) ->
+                      deferred.reject err
+                  )
+                  .done(
+                    () ->
+                      deferred.resolve punch
+                  )
+                else
+                  deferred.resolve punch
+
     deferred.promise
 
   generateReport: (reports) ->
