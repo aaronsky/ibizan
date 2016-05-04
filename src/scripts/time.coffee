@@ -65,7 +65,7 @@ module.exports = (robot) ->
       minutesStr = "#{minutes} minute"
     else
       minutesStr = "#{minutes} minutes"
-    return "#{hoursStr}#{if minutes > 0 then ', ' else ''}#{minutesStr}"
+    return "#{hoursStr}#{if hours > 0 and minutes > 0 then ', ' else ''}#{minutesStr}"
 
   parse = (res, msg, mode) ->
     mode = mode.toLowerCase()
@@ -320,8 +320,12 @@ module.exports = (robot) ->
     if user.punches and user.punches.length > 0
       user.undoPunch()
       .then(
-        () ->
-          user.directMessage 'Undid your last punch action',
+        (lastPunch) ->
+          Logger.reactToMessage 'dog2',
+                                res.message.user.name,
+                                res.message.rawMessage.channel,
+                                res.message.id
+          user.directMessage "Undid your last punch action, which was #{lastPunch.description(user)}",
                              Logger
       )
       .catch(
@@ -338,7 +342,7 @@ module.exports = (robot) ->
                          Logger
 
   # User feedback
-  robot.respond /(?:.*?)(for )?(today|hours)[\?\!\.]?/i, (res) ->
+  robot.respond /(hours|today)+[\?\!\.¿¡]/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
       Logger.logToChannel "The #{Organization.name} isn't ready for
@@ -392,4 +396,8 @@ module.exports = (robot) ->
       for project in report.extra.projects
         msg += "##{project.name}"
       msg += ')' 
+    Logger.reactToMessage 'dog2',
+                          res.message.user.name,
+                          res.message.rawMessage.channel,
+                          res.message.id
     user.directMessage msg, Logger
