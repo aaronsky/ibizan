@@ -291,7 +291,7 @@ class Punch
           if time.isSame(yesterday, 'd')
             return 'You can\'t punch in for yesterday\'s date. This is
                     by design and is meant to keep people on top of their
-                    timesheet. If you need to punch in for yesterday, use
+                    timesheet. If you need to file yesterday\'s hours, use
                     a block-time punch.'
     else if @mode is 'out'
       if lastIn = user.lastPunch 'in'

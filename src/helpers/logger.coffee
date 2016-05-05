@@ -39,6 +39,8 @@ module.exports = (robot) ->
                      operation couldn't be completed. Please try again
                      in a minute. If this persists for longer than 5 minutes,
                      DM a maintainer ASAP."
+      else
+        response = message
       response
     @log: (msg) ->
       if msg
@@ -85,7 +87,7 @@ module.exports = (robot) ->
             timestamp: slack_ts
           client._apiCall 'reactions.add', params, (response) ->
             if not response.ok
-              Logger.errorToSlack response.error
+              Logger.errorToSlack user, response.error
               Logger.logToChannel "I just tried to react to a message, but
                                    something went wrong. This is usually
                                    the last step in an operation, so your
