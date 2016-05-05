@@ -276,7 +276,8 @@ class Punch
     else if @times[0]
       date = @times[0]
     if @mode is 'none' and not elapsed
-      return 'Malformed punch. Something has gone wrong.'
+      return 'This punch is malformed and could not be properly interpreted.
+              If you believe this is a legitimate error, please DM a maintainer.'
     else if @mode is 'in'
       # if mode is 'in' and user has not punched out
       if last = user.lastPunch 'in'
@@ -288,7 +289,10 @@ class Punch
         for time in @times
           # if mode is 'in' and date is yesterday
           if time.isSame(yesterday, 'd')
-            return 'You can\'t punch in for yesterday\'s date.'
+            return 'You can\'t punch in for yesterday\'s date. This is
+                    by design and is meant to keep people on top of their
+                    timesheet. If you need to file yesterday\'s hours, use
+                    a block-time punch.'
     else if @mode is 'out'
       if lastIn = user.lastPunch 'in'
         return true
@@ -299,7 +303,8 @@ class Punch
               #{time.format('dddd, MMMM Do')}."
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
-      return 'You aren\'t eligible to punch for unpaid time.'
+      return 'You aren\'t eligible to punch for unpaid time because you\'re
+              designated as non-salary.'
     else if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
@@ -313,11 +318,17 @@ class Punch
         elapsedDays = user.toDays(elapsed)
         if @mode is 'vacation' and
            user.timetable.vacationAvailable < elapsedDays
-          return 'This punch exceeds your remaining vacation time.'
+          return "This punch exceeds your remaining vacation time. You\'re
+                  trying to add #{elapsedDays} days worth of vacation time
+                  but you only have #{user.timetable.vacationAvailable} days
+                  left."
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
                 user.timetable.sickAvailable < elapsedDays
-          return 'This punch exceeds your remaining sick time.'
+          return "This punch exceeds your remaining sick time. You\'re
+                  trying to add #{elapsedDays} days worth of sick time
+                  but you only have #{user.timetable.sickAvailable} days
+                  left."
         # if mode is 'vacation' and time isn't divisible by 4
         # if mode is 'sick' and time isn't divisible by 4
         # if mode is 'unpaid' and time isn't divisible by 4
@@ -328,7 +339,9 @@ class Punch
         return "A #{@mode} punch needs to either be a range or a block of time."
     # if date is more than 7 days from today
     else if date and moment().diff(date, 'days') >= 7
-      return 'You cannot punch for a date older than 7 days.'
+      return 'You cannot punch for a date older than 7 days. If you want to
+              enter a punch this old, you\'re going to have to enter it manually
+              on the Ibizan spreadsheet and run `/sync`.' 
     return true
 
   description: (user) ->
@@ -480,14 +493,15 @@ _parseTime = (command, activeStart, activeEnd) ->
       hour = parseInt(hourStr[0].replace(':', ''))
       if hour <= 12
         if not timeMatch.match /(a|p)m?/i
+          # Inferred period
           period = now.format('a')
           timeMatch = "#{timeMatch} #{period}"
     today = moment(timeMatch, 'h:mm a')
-    if today.isAfter(now) and period is 'pm'
-      today.subtract(12, 'hours')
+    if period? and today.isAfter now
+      if today.diff(now, 'hours', true) > 6
+        today.subtract(12, 'hours')
     time.push today
     command = command.replace ///#{match[0]} ?///i, ''
-  # else if match = command.match regex for time ranges (???)
   [time, command]
 
 _parseDate = (command) ->
@@ -567,7 +581,7 @@ _calculateElapsed = (start, end, mode, user) ->
     if elapsed > activeTime and
        numDays?
       elapsed -= (inactiveTime * numDays) + (activeTime * numWeekends)
-  elapsed
+  return +elapsed.toFixed(2)
 
 _parseProjects = (command) ->
   projects = []
