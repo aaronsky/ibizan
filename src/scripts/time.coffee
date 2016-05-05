@@ -70,6 +70,7 @@ module.exports = (robot) ->
   parse = (res, msg, mode) ->
     mode = mode.toLowerCase()
     user = Organization.getUserBySlackName res.message.user.name
+    Logger.log "Parsing '#{msg}' for @#{user.slack}."
     if not user
       Logger.logToChannel "#{res.message.user.name} isn't a recognized
                            username. Either you aren't part of the
@@ -89,6 +90,19 @@ module.exports = (robot) ->
         if project?
           punch.projects.push project
       moment.tz.setDefault TIMEZONE
+
+      if punch.mode is 'none'
+        modeQualifier = 'block'
+      else
+        modeQualifier = punch.mode
+      if punch.mode is 'none' or
+         punch.mode is 'vacation' or
+         punch.mode is 'sick'
+        article = 'a'
+      else
+        article = 'an'
+      Logger.log "Successfully generated #{article} #{modeQualifier}-punch for @#{user.slack}."
+      
       sendPunch punch, user, res
     else
       if res.router_res
@@ -122,6 +136,8 @@ module.exports = (robot) ->
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
       (punch) ->
+        Logger.log "@#{user.slack}'s punch was successfully entered
+                    into the spreadsheet."
         punchEnglish = "Punched you #{punch.description(user)}"
         if res.router_res
           res.router_res.status 200
@@ -145,10 +161,11 @@ module.exports = (robot) ->
                       at #{Organization.spreadsheet.url}"
           }
         else
-          Logger.error err
-          Logger.errorToSlack "\"#{err}\" was returned for
+          errorMsg = Logger.clean err
+          Logger.error errorMsg
+          Logger.errorToSlack "\"#{errorMsg}\" was returned for
                                #{user.slack}. Punch:\n", res.match.input
-          user.directMessage "#{err} You can see more details on the spreadsheet
+          user.directMessage "#{errorMsg} You can see more details on the spreadsheet
                                at #{Organization.spreadsheet.url}",
                              Logger
     )

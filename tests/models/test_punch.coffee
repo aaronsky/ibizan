@@ -90,8 +90,9 @@ describe 'Punch', ->
       now = moment()
       amPm = now.format('A')
       expectedTime = moment("9:15 #{amPm}", 'h:mm A')
-      if expectedTime.isAfter(now) and amPm is 'PM'
-        expectedTime.subtract(12, 'hours')
+      if expectedTime.isAfter now
+        if expectedTime.diff(now, 'hours', true) > 6
+          expectedTime.subtract(12, 'hours')
       expect(punch.times[0].format('hh:mm:ss A')).to.equal expectedTime.format('hh:mm:ss A')
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
