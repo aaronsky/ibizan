@@ -90,7 +90,19 @@ module.exports = (robot) ->
         if project?
           punch.projects.push project
       moment.tz.setDefault TIMEZONE
-      Logger.log "Successfully generated a punch for @#{user.slack}."
+
+      if punch.mode is 'none'
+        modeQualifier = 'block'
+      else
+        modeQualifier = punch.mode
+      if punch.mode is 'none' or
+         punch.mode is 'vacation' or
+         punch.mode is 'sick'
+        article = 'a'
+      else
+        article = 'an'
+      Logger.log "Successfully generated #{article} #{modeQualifier}-punch for @#{user.slack}."
+
       sendPunch punch, user, res
     else
       if res.router_res
