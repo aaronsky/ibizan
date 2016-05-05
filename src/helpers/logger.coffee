@@ -22,52 +22,42 @@ fun = chalk.magenta
 module.exports = (robot) ->
   class Logger
     constructor: () ->
+    @clean: (msg) ->
+      response = ''
+      if typeof msg is 'string'
+        message = msg
+      else if typeof msg is 'object' and msg.message
+        message = msg.message
+      else
+        message = ''
+      if match = message.match(/Error: HTTP error (.*) \((?:.*)\) -/)
+        errorCode = match[1]
+        if errorCode is '500' or
+           errorCode is '502' or
+           errorCode is '404'
+          response = "Something went wrong on Google's end and the
+                     operation couldn't be completed. Please try again
+                     in a minute. If this persists for longer than 5 minutes,
+                     DM a maintainer ASAP."
+      response
     @log: (msg) ->
       if msg
         if DEBUG
           console.log(logHeader("[Ibizan] (#{new Date()}) LOG: ") + log("#{msg}"))
-        else
-          # index = msg.indexOf '\n'
-          # if index isnt -1
-          #   shortMsg = msg.substring(0, index)
-          # else
-          #   shortMsg = msg
-          # console.log(logHeader("[Ibizan] (Test): ") + log(shortMsg))
     @warn: (msg) ->
       if msg
         if DEBUG
           console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
-        else
-          # index = msg.indexOf '\n'
-          # if index isnt -1
-          #   shortMsg = msg.substring(0, index)
-          # else
-          #   shortMsg = msg
-          # console.warn(warnHeader("[Ibizan] (Test): ") + warn(shortMsg))
     @error: (msg, error) ->
       if msg
         if DEBUG
           console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
           if error and error.stack
             console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{error.stack}"))
-        else
-          # index = msg.indexOf '\n'
-          # if index isnt -1
-          #   shortMsg = msg.substring(0, index)
-          # else
-          #   shortMsg = msg
-          # console.error(errHeader("[Ibizan] (Test): ") + err(shortMsg), error || '')
     @fun: (msg) ->
       if msg
         if DEBUG
           console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
-        else
-          # index = msg.indexOf '\n'
-          # if index isnt -1
-          #   shortMsg = msg.substring(0, index)
-          # else
-          #   shortMsg = msg
-          # console.log(funHeader("[Ibizan] (Test): ") + fun(shortMsg))
     @logToChannel: (msg, channel) ->
       if msg
         if robot and robot.send?
@@ -96,5 +86,9 @@ module.exports = (robot) ->
           client._apiCall 'reactions.add', params, (response) ->
             if not response.ok
               Logger.errorToSlack response.error
-              Logger.logToChannel "I couldn't react to a message, but I tried!", user
+              Logger.logToChannel "I just tried to react to a message, but
+                                   something went wrong. This is usually
+                                   the last step in an operation, so your
+                                   command probably worked.",
+                                  user
   Logger
