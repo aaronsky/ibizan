@@ -480,14 +480,15 @@ _parseTime = (command, activeStart, activeEnd) ->
       hour = parseInt(hourStr[0].replace(':', ''))
       if hour <= 12
         if not timeMatch.match /(a|p)m?/i
+          # Inferred period
           period = now.format('a')
           timeMatch = "#{timeMatch} #{period}"
     today = moment(timeMatch, 'h:mm a')
-    if today.isAfter(now) and period is 'pm'
-      today.subtract(12, 'hours')
+    if period? and today.isAfter now
+      if today.diff(now, 'hours', true) > 6
+        today.subtract(12, 'hours')
     time.push today
     command = command.replace ///#{match[0]} ?///i, ''
-  # else if match = command.match regex for time ranges (???)
   [time, command]
 
 _parseDate = (command) ->
