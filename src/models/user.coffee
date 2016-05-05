@@ -152,7 +152,7 @@ class User
       lastPunch.elapsed = null
       if lastPunch.notes.lastIndexOf("\n") > 0
         lastPunch.notes = lastPunch.notes
-                            .substring(0, @notes.lastIndexOf("\n"))
+                            .substring(0, lastPunch.notes.lastIndexOf("\n"))
       lastPunch.mode = 'in'
       lastPunch.row[headers.out] =
         lastPunch.row[headers.totalTime] =
