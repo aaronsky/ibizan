@@ -1,9 +1,3 @@
 [
-  "hubot-help",
-  "hubot-history",
-  "ibizan-bark",
-  "ibizan-payroll",
-  "ibizan-diagnostics",
-  "ibizan-time",
-  "ibizan-hound"
+  "hubot-history"
 ]
