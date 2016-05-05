@@ -167,19 +167,25 @@ module.exports = (robot) ->
                   \n
                   Punches can be `in`, `out`, `vacation`, `sick` or `unpaid`
                   punches. You can also clock in independent blocks of time.
-                  Projects must be preceeded with a pound-sign (i.e. #fight-club).\n
+                  Projects must be registered in the worksheet labeled
+                  'Projects' in the Ibizan spreadsheet, and won't be recognized
+                  as projects in a command without a pound-sign
+                  (i.e. #fight-club).\n
                   \n
-                  If something is wrong with your punch, you can undo it by doing
-                  `@ibizan undo`. You can also modify it manually using the
-                  Ibizan spreadsheet, in the worksheet labeled 'Raw Data'. If
-                  you want to see how much time you've worked today, do
+                  If something is wrong with your punch, you can undo it by
+                  doing `@ibizan undo`. You can also modify it manually using
+                  the Ibizan spreadsheet, in the worksheet labeled 'Raw Data'.
+                  If you want to see how much time you've worked today, do
                   `@ibizan today?`.\n
                   \n
                   If you make any manual changes to the spreadsheet, you should
                   run `/sync`. Running this resyncs Ibizan with the spreadsheet.
                   Do to some existing limitations in Google Sheets, changes
-                  made directly to the spreadsheet are not immediately reflected by Ibizan
-                  and must be followed up with a resync."
+                  made directly to the spreadsheet are not immediately
+                  reflected by Ibizan and must be followed up with a resync.\n
+                  \n
+                  For more documentation, please check out
+                  https://github.com/ibizan/ibizan.github.io/wiki"
     else
       res.status 401
       response = "Bad token in Ibizan configuration"
