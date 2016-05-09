@@ -23,10 +23,13 @@ class Timetable
   constructor: (@start, @end, @timezone) ->
     if typeof @timezone is 'string'
       @timezone = moment.tz.zone(@timezone)
+    @start = @start.tz(@timezone.name)
+    @end = @end.tz(@timezone.name)
   activeHours: ->
     [@start, @end]
   activeTime: ->
-    return +(@end.diff(@start, 'hours', true).toFixed(2))
+    rawTime = +(@end.diff(@start, 'hours', true).toFixed(2))
+    return Math.min(8, rawTime)
   toDays: (hours) ->
     return hours / @activeTime()
   setVacation: (total, available) ->
@@ -63,7 +66,6 @@ class Settings
 class User
   constructor: (@name, @slack, @salary, @timetable, @row = null) ->
     @punches = []
-
   @parse: (row) ->
     headers = HEADERS.users
     temp = {}
@@ -74,7 +76,7 @@ class User
           row[header] = '12:00 am'
         else if row[header] is 'noon'
           row[header] = '12:00 pm'
-        temp[key] = moment(row[header], 'hh:mm a').tz(constants.TIMEZONE)
+        temp[key] = moment.tz(row[header], 'hh:mm a', constants.TIMEZONE)
       else if header is headers.salary
         temp[key] = row[header] is 'Y'
       else if header is headers.timezone
@@ -96,17 +98,13 @@ class User
     timetable.setLogged(temp.totalLogged)
     timetable.setAverageLogged(temp.averageLogged)
     user = new User(temp.name, temp.slackname, temp.salary, timetable, row)
-    user
-  
+    return user
   activeHours: ->
     return @timetable.activeHours()
-  
   activeTime: ->
     return @timetable.activeTime()
-
   toDays: (hours) ->
     return @timetable.toDays hours
-
   isInactive: (current) ->
     current = current || moment()
     if current.holiday()?
@@ -115,7 +113,6 @@ class User
       return false
     else
       return true
-
   lastPunch: (modes) ->
     if typeof modes is 'string'
       modes = [modes]
@@ -130,20 +127,39 @@ class User
         else if last.mode in modes
           return last
     return
-
   undoPunch: () ->
     deferred = Q.defer()
     lastPunch = @lastPunch()
+    if lastPunch.times.block
+      elapsed = lastPunch.times.block
+    else
+      elapsed = lastPunch.elapsed || 0
     headers = HEADERS.rawdata
+    that = @
     if lastPunch.mode is 'vacation' or
        lastPunch.mode is 'sick' or
        lastPunch.mode is 'unpaid' or
        lastPunch.mode is 'none'
-      that = @
       deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
       deletePromise()
       .then(() ->
         punch = that.punches.pop()
+        elapsedDays = that.toDays elapsed
+        if punch.mode is 'vacation'
+          total = that.timetable.vacationTotal
+          available = that.timetable.vacationAvailable
+          that.timetable.setVacation(total - elapsedDays,
+                                     available + elapsedDays)
+        else if punch.mode is 'sick'
+          total = that.timetable.sickTotal
+          available = that.timetable.sickAvailable
+          that.timetable.setSick(total - elapsedDays, available + elapsedDays)
+        else if punch.mode is 'unpaid'
+          total = that.timetable.unpaidTotal
+          that.timetable.setUnpaid(total - elapsedDays)
+        else
+          logged = that.timetable.loggedTotal
+          that.timetable.setLogged(logged - elapsed)
         deferred.resolve(punch)
       )
     else if lastPunch.mode is 'out'
@@ -161,10 +177,11 @@ class User
       savePromise = Q.nfbind(lastPunch.row.save.bind(lastPunch))
       savePromise()
       .then(() ->
+        logged = that.timetable.loggedTotal
+        that.timetable.setLogged(logged - elapsed)
         deferred.resolve(lastPunch)
       )
     else if lastPunch.mode is 'in'
-      that = @
       deletePromise = Q.nfbind(lastPunch.row.del.bind(lastPunch))
       deletePromise()
       .then(() ->
@@ -172,7 +189,6 @@ class User
         deferred.resolve(punch)
       )
     deferred.promise
-
   toRawPayroll: (start, end) ->
     headers = HEADERS.payrollreports
     row = {}
@@ -241,14 +257,7 @@ class User
   updateRow: () ->
     deferred = Q.defer()
     if @row?
-      moment.tz.setDefault @timetable.timezone.name
       headers = HEADERS.users
-      # @row[headers.slackname] = @slack
-      # @row[headers.name] = @name
-      # @row[headers.salary] = if @salary then 'Y' else 'N'
-      # @row[headers.start] = @timetable.start.tz(@timetable.timezone.name).format('h:mm a')
-      # @row[headers.end] = @timetable.end.tz(@timetable.timezone.name).format('h:mm a')
-      @row[headers.timezone] = @timetable.timezone.name || @timetable.timezone
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal
       @row[headers.sickAvailable] = @timetable.sickAvailable
@@ -265,10 +274,8 @@ class User
     else
       deferred.reject 'Row is null'
     deferred.promise
-  
   directMessage: (msg, logger=Logger) ->
     logger.logToChannel msg, @slack
-
   description: () ->
     if @punches.length > 0
       punch = @lastPunch()
