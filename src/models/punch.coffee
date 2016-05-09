@@ -64,14 +64,13 @@ class Punch
         mode = 'none'
     else if datetimes.length is 2
       if mode is 'out'
-        Logger.error 'Out punch cannot be range', new Error(original)
+        Logger.error 'An out-punch cannot be a range', new Error(original)
         return
-      else
-        if datetimes[1].isBefore datetimes[0]
-          datetimes[1] = datetimes[1].add(1, 'days')
-        elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
-        if mode is 'in'
-          mode = 'none'
+      if datetimes[1].isBefore datetimes[0]
+        datetimes[1] = datetimes[1].add(1, 'days')
+      elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
+      if mode is 'in'
+        mode = 'none'
 
     [projects, command] = _parseProjects command
     notes = command.trim()
@@ -153,8 +152,8 @@ class Punch
       if not projectStr
         break
       else if projectStr is 'vacation' or
-         projectStr is 'sick' or
-         projectStr is 'unpaid'
+              projectStr is 'sick' or
+              projectStr is 'unpaid'
         break
       else
         if Organization.ready() and projects.length is 0
@@ -308,8 +307,8 @@ class Punch
     else if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
-      if last = user.lastPunch('in') and
-         not @times.block?
+      last = user.lastPunch('in')
+      if last and not @times.block?
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at
                 #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
@@ -563,7 +562,6 @@ _calculateElapsed = (start, end, mode, user) ->
                     .toFixed(2)
     if start? and start.isValid() and end? and end.isValid()
       numDays = end.diff(start, 'days')
-
       holidays = 0
       currentDate = moment start
       while currentDate.isSameOrBefore end
@@ -577,9 +575,7 @@ _calculateElapsed = (start, end, mode, user) ->
 
       numWorkdays = weekend.diff(start, end) - holidays
       numWeekends = numDays - numWorkdays
-
-    if elapsed > activeTime and
-       numDays?
+    if elapsed > activeTime and numDays?
       elapsed -= (inactiveTime * numDays) + (activeTime * numWeekends)
   return +elapsed.toFixed(2)
 

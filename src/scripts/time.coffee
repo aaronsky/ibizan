@@ -335,14 +335,20 @@ module.exports = (robot) ->
                           res.message.user.name
       return
     if user.punches and user.punches.length > 0
+      punch = null
       user.undoPunch()
       .then(
         (lastPunch) ->
+          punch = lastPunch
+      )
+      .then(user.updateRow.bind(user))
+      .then(
+        () ->
           Logger.reactToMessage 'dog2',
                                 res.message.user.name,
                                 res.message.rawMessage.channel,
                                 res.message.id
-          user.directMessage "Undid your last punch action, which was #{lastPunch.description(user)}",
+          user.directMessage "Undid your last punch action, which was #{punch.description(user)}",
                              Logger
       )
       .catch(
