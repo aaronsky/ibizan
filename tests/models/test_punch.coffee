@@ -244,6 +244,7 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'sick Jul 6-8', 'sick'
       expect(punch).to.have.property 'mode', 'sick'
       expect(punch).to.have.property 'times'
+      expect(punch).to.have.deep.property 'times.length', 2
       expect(punch.elapsed).to.equal 33
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
@@ -253,7 +254,8 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'vacation 1/28 - 2/4', 'vacation'
       expect(punch).to.have.property 'mode', 'vacation'
       expect(punch).to.have.property 'times'
-      expect(punch.elapsed).to.equal 66
+      expect(punch).to.have.deep.property 'times.length', 2
+      expect(punch.elapsed).to.equal 72
       expect(punch).to.have.property 'projects'
       expect(punch.projects).to.be.empty
       expect(punch).to.have.property 'notes'

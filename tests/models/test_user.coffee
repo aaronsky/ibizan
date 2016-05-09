@@ -6,11 +6,9 @@ constants = require '../../src/helpers/constants'
 
 describe 'Timetable', ->
   beforeEach ->
-    start = new Date()
-    start.setHours(7)
-    end = new Date()
-    end.setHours(18)
-    @timetable = new Timetable(start, end, 'Eastern')
+    start = moment({day: 3, hour: 7})
+    end = moment({day: 3, hour: 18})
+    @timetable = new Timetable(start, end, 'America/New_York')
 
   test_validate_set_values = (timetable, mode,
                                total, expectedTotal,
@@ -71,21 +69,7 @@ describe 'Timetable', ->
     it 'should handle less than two arguments gracefully', ->
       test_validate_set_values(@timetable, mode, undefined, 0)
 
-test_row =
-  slackusername:'aaronsky'
-  employeename:'Aaron Sky'
-  salary:'Y'
-  activehoursbegin:'9:00 AM'
-  activehoursend:'6:00 PM'
-  timezone:'Eastern'
-  totalvacationdaysavailable:'0'
-  totalvacationdayslogged:'99'
-  totalsickdaysavailable:'0'
-  totalsickdayslogged:'99'
-  totalunpaiddayslogged:'0'
-  totalovertime:'0'
-  totalloggedhours:'0'
-  averagehoursloggedweek:'0'
+test_row = require('../mocks/mocked/mocked_employees.json')[0]
 
 describe 'User', ->
   beforeEach ->
@@ -115,7 +99,7 @@ describe 'User', ->
     it 'should return the elapsed time between start and end', ->
       elapsed = @user.activeTime()
       expect(elapsed).to.be.a.Number
-      expect(elapsed).to.equal 11
+      expect(elapsed).to.equal 8
   describe '#isInactive()', ->
     it 'should be true when it is earlier than the start time', ->
       start = @user.timetable.start
