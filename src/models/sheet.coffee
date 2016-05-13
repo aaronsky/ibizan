@@ -109,7 +109,7 @@ class Spreadsheet
                 deferred.reject err
               else
                 row_matches =
-                  (r for r in rows when r[headers.id] is row[headers.id])[0]
+                  (r for r in rows when r[headers.id] is row[headers.id])
                 row_match = row_matches[0]
                 punch.assignRow row_match
                 user.punches.push punch
