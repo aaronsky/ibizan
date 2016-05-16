@@ -110,10 +110,6 @@ class Spreadsheet
               else
                 row_matches =
                   (r for r in rows when r[headers.id] is row[headers.id])
-                if row_matches?.length > 1
-                  for row, i in row_matches
-                    if i isnt 0
-                      row.del()
                 row_match = row_matches[0]
                 punch.assignRow row_match
                 user.punches.push punch
