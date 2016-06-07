@@ -180,9 +180,9 @@ module.exports = (robot) ->
                   \n
                   If you make any manual changes to the spreadsheet, you should
                   run `/sync`. Running this resyncs Ibizan with the spreadsheet.
-                  Do to some existing limitations in Google Sheets, changes
+                  Due to some existing limitations in Google Sheets, changes
                   made directly to the spreadsheet are not immediately
-                  reflected by Ibizan and must be followed up with a resync.\n
+                  reflected by Ibizan and must be followed up with a `/sync`.\n
                   \n
                   For more documentation, please check out
                   https://github.com/ibizan/ibizan.github.io/wiki"
