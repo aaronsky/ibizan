@@ -12,8 +12,6 @@ moment = require 'moment'
 
 constants = require '../helpers/constants'
 HEADERS = constants.HEADERS
-# TODO: FIX THIS FOR WIDE RELEASE
-ADMINS = ['aaronsky', 'reid', 'ryan']
 
 Organization = require('../models/organization').get()
 
@@ -22,7 +20,7 @@ module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
   isAdminUser = (user) ->
-    return user? and user in ADMINS
+    return user? and user in process.env.ADMINS.split(" ")
 
   # Org statistics
   robot.router.post '/ibizan/diagnostics/info', (req, res) ->

@@ -113,6 +113,7 @@ export HUBOT_SLACK_TOKEN=<hubot token from Slack>
 export SHEET_ID=<id from your timesheet>
 export CLIENT_EMAIL=<client_email from your Service Auth JSON>
 export PRIVATE_KEY=<private_key from your Service Auth JSON>
+export ADMINS=<space separated list of Slack admins>
 ```
 
 Note: This file is not under source control. In order to use Ibizan with Heroku, you must set environment variables manually using the Heroku Toolbelt. 

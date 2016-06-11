@@ -10,7 +10,6 @@
 
 moment = require 'moment'
 schedule = require 'node-schedule'
-ADMINS = ['aaronsky', 'reid', 'ryan']
 
 module.exports = (robot) ->
   { HEADERS, TIMEZONE } = require('../helpers/constants')
@@ -18,7 +17,7 @@ module.exports = (robot) ->
   Organization = require('../models/organization').get()
 
   isAdminUser = (user) ->
-    return user? and user in ADMINS
+    return user? and user in process.env.ADMINS.split(" ")
   
   # Weeks ‘start’ on Sunday morning.
   
@@ -112,51 +111,56 @@ module.exports = (robot) ->
 
   robot.router.post '/ibizan/diagnostics/payroll', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_PAYROLL_TOKEN and
-       isAdminUser body.user_name
-      response_url = body.response_url
-      if response_url
-        comps = body.text || []
-        start = if comps[0] then moment(comps[0]) else moment().subtract(2, 'weeks')
-        end = if comps[1] then moment(comps[1]) else moment()
-        Organization.generateReport(start, end, true)
-        .catch(
-          (err) ->
-            Logger.errorToSlack "Failed to produce a salary report", err
-            Logger.log "POSTing to #{response_url}"
-            payload =
-              text: 'Failed to produce a salary report'
-            robot.http(response_url)
-            .header('Content-Type', 'application/json')
-            .post(JSON.stringify(payload))
-        )
-        .done(
-          (reports) ->
-            numberDone = reports.length
-            Logger.log "Payroll has been generated"
-            Logger.log "POSTing to #{response_url}"
-            payload =
-              text: "Salary report generated for #{numberDone} employees"
-            robot.http(response_url)
-            .header('Content-Type', 'application/json')
-            .post(JSON.stringify(payload)) (err, response, body) ->
-              if err
-                response.send "Encountered an error :( #{err}"
-                return
-              if res.statusCode isnt 200
-                response.send "Request didn't come back HTTP 200 :("
-                return
-              Logger.log body
-        )
-        res.status 200
+    if body.token is process.env.SLASH_PAYROLL_TOKEN
+      if not isAdminUser body.user_name
+        res.status 403
         res.json {
-          "text": "Generating payroll..."
+          "text": "You must be an admin in order to access this command."
         }
       else
-        res.status 500
-        res.json {
-          "text": "No return url provided by Slack"
-        }
+        response_url = body.response_url
+        if response_url
+          comps = body.text || []
+          start = if comps[0] then moment(comps[0]) else moment().subtract(2, 'weeks')
+          end = if comps[1] then moment(comps[1]) else moment()
+          Organization.generateReport(start, end, true)
+          .catch(
+            (err) ->
+              Logger.errorToSlack "Failed to produce a salary report", err
+              Logger.log "POSTing to #{response_url}"
+              payload =
+                text: 'Failed to produce a salary report'
+              robot.http(response_url)
+              .header('Content-Type', 'application/json')
+              .post(JSON.stringify(payload))
+          )
+          .done(
+            (reports) ->
+              numberDone = reports.length
+              Logger.log "Payroll has been generated"
+              Logger.log "POSTing to #{response_url}"
+              payload =
+                text: "Salary report generated for #{numberDone} employees"
+              robot.http(response_url)
+              .header('Content-Type', 'application/json')
+              .post(JSON.stringify(payload)) (err, response, body) ->
+                if err
+                  response.send "Encountered an error :( #{err}"
+                  return
+                if res.statusCode isnt 200
+                  response.send "Request didn't come back HTTP 200 :("
+                  return
+                Logger.log body
+          )
+          res.status 200
+          res.json {
+            "text": "Generating payroll..."
+          }
+        else
+          res.status 500
+          res.json {
+            "text": "No return url provided by Slack"
+          }
     else
       res.status 401
       res.json {
