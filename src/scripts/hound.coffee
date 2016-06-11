@@ -26,47 +26,47 @@ module.exports = (robot) ->
   #     Don’t forget to check out~
 
   hound = (slackuser, channel, forceHound=false) ->
-    if not channel.private
-      channel.private = !!channel.is_im or !!channel.is_group
-    if not Organization.ready()
-      Logger.warn 'Don\'t hound, Organization isn\'t ready yet'
-      return
-    else if channel.private or
-            channel.name in Organization.exemptChannels
-      Logger.warn "##{channel.name} is not an appropriate hounding channel"
-      return
-    else if robot.name is slackuser.name
-      Logger.log 'Caught myself, don\'t hound the hound.'
-      return
-
-    user = Organization.getUserBySlackName slackuser.name
-    if not user
-      Logger.log "#{slackuser.name} couldn't be found while attempting to hound"
-      return
-    
-    now = moment.tz TIMEZONE
-    last = user.settings?.lastMessage || { time: now, channel: channel.name }
-    user.settings?.fromSettings {
-      lastMessage: {
-        time: now,
-        channel: channel.name,
-        lastPing: last.lastPing
-      }
-    }
-
-    [start, end] = user.activeHours()
-    lastPunch = user.lastPunch ['in', 'out', 'vacation', 'sick', 'unpaid']
-    timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2) || 0
-    timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2) || 0
-    timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
-    timeSinceLastMessage = user
-                            .settings?.lastMessage
-                            .time.diff(last.time, 'hours', true) || 0
-    timeSinceLastPing = user
-                        .settings?.lastMessage
-                        .lastPing?.diff(last.lastPing, 'hours', true) || 0
-
     if user.settings.shouldHound
+      if not channel.private
+        channel.private = !!channel.is_im or !!channel.is_group
+      if not Organization.ready()
+        Logger.warn 'Don\'t hound, Organization isn\'t ready yet'
+        return
+      else if channel.private or
+              channel.name in Organization.exemptChannels
+        Logger.warn "##{channel.name} is not an appropriate hounding channel"
+        return
+      else if robot.name is slackuser.name
+        Logger.log 'Caught myself, don\'t hound the hound.'
+        return
+
+      user = Organization.getUserBySlackName slackuser.name
+      if not user
+        Logger.log "#{slackuser.name} couldn't be found while attempting to hound"
+        return
+      
+      now = moment.tz TIMEZONE
+      last = user.settings?.lastMessage || { time: now, channel: channel.name }
+      user.settings?.fromSettings {
+        lastMessage: {
+          time: now,
+          channel: channel.name,
+          lastPing: last.lastPing
+        }
+      }
+
+      [start, end] = user.activeHours()
+      lastPunch = user.lastPunch ['in', 'out', 'vacation', 'sick', 'unpaid']
+      timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2) || 0
+      timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2) || 0
+      timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
+      timeSinceLastMessage = user
+                              .settings?.lastMessage
+                              .time.diff(last.time, 'hours', true) || 0
+      timeSinceLastPing = user
+                          .settings?.lastMessage
+                          .lastPing?.diff(last.lastPing, 'hours', true) || 0
+
       if timeSinceLastPing < 1
         Logger.log "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours"
       else if timeSinceLastMessage >= user.settings.houndFrequency and
