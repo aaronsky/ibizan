@@ -26,11 +26,15 @@ module.exports = (robot) ->
   #     Don’t forget to check out~
 
   hound = (slackuser, channel, forceHound=false) ->
+    if robot.name is slackuser.name
+      Logger.log 'Caught myself, don\'t hound the hound.'
+      return
+
     user = Organization.getUserBySlackName slackuser.name
     if not user
       Logger.log "#{slackuser.name} couldn't be found while attempting to hound"
       return
-    
+
     if user.settings.shouldHound
       if not channel.private
         channel.private = !!channel.is_im or !!channel.is_group
@@ -40,9 +44,6 @@ module.exports = (robot) ->
       else if channel.private or
               channel.name in Organization.exemptChannels
         Logger.warn "##{channel.name} is not an appropriate hounding channel"
-        return
-      else if robot.name is slackuser.name
-        Logger.log 'Caught myself, don\'t hound the hound.'
         return
       
       now = moment.tz TIMEZONE
