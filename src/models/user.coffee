@@ -276,6 +276,10 @@ class User
     deferred.promise
   directMessage: (msg, logger=Logger) ->
     logger.logToChannel msg, @slack
+  hound: (msg) ->
+    now = moment.tz TIMEZONE
+    @directMessage (msg)
+    @settings?.lastMessage.lastPing = now
   description: () ->
     if @punches.length > 0
       punch = @lastPunch()

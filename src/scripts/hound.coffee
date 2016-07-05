@@ -15,6 +15,9 @@ schedule = require 'node-schedule'
 TIMEZONE = require('../helpers/constants').TIMEZONE
 Organization = require('../models/organization').get()
 
+punchinMessage = "Punch in if you're on the clock~"
+punchoutMessage = "Don't forget to punch out~"
+
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
@@ -35,7 +38,7 @@ module.exports = (robot) ->
       Logger.log "#{slackuser.name} couldn't be found while attempting to hound"
       return
 
-    if user.settings.shouldHound
+    if user.settings.shouldHound and user.settings.houndFrequency > 0
       if not channel.private
         channel.private = !!channel.is_im or !!channel.is_group
       if not Organization.ready()
@@ -45,7 +48,7 @@ module.exports = (robot) ->
               channel.name in Organization.exemptChannels
         Logger.warn "##{channel.name} is not an appropriate hounding channel"
         return
-      
+
       now = moment.tz TIMEZONE
       last = user.settings?.lastMessage || { time: now, channel: channel.name }
       user.settings?.fromSettings {
@@ -74,37 +77,29 @@ module.exports = (robot) ->
               timeSinceLastPunch >= user.settings.houndFrequency
         if not lastPunch
           if timeSinceStart <= 0.5
-            user.directMessage "Check in if you're on the clock~", Logger
-            user.settings?.lastMessage.lastPing = now
+            user.hound punchinMessage
           else if timeSinceEnd <= 0.5
-            user.directMessage "Don't forget to check out~", Logger
-            user.settings?.lastMessage.lastPing = now
+            user.hound punchoutMessage
         if lastPunch.mode is 'in'
           if timeSinceEnd <= 0.5
-            user.directMessage "Don't forget to check out~", Logger
-            user.settings?.lastMessage.lastPing = now
+            user.hound punchoutMessage
         else if lastPunch.mode is 'out'
           if not user.isInactive() and timeSinceStart <= 0.5
-            user.directMessage "Check in if you're on the clock~", Logger
-            user.settings?.lastMessage.lastPing = now
+            user.hound punchinMessage
         else if lastPunch.mode is 'vacation' or
                 lastPunch.mode is 'sick' or
                 lastPunch.mode is 'unpaid'
           if lastPunch.times.length > 0 and not now.isBetween(lastPunch.times[0], lastPunch.times[1])
-            user.directMessage "Check in if you're on the clock~", Logger
-            user.settings?.lastMessage.lastPing = now
+            user.hound punchinMessage
           else if lastPunch.times.block?
             endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours')
             if not now.isBetween(lastPunch.date, endOfBlock)
-              user.directMessage "Check in if you're on the clock~", Logger
-              user.settings?.lastMessage.lastPing = now
+              user.hound punchinMessage
         else
           if timeSinceStart <= 0.5
-            user.directMessage "Check in if you're on the clock~", Logger
-            user.settings?.lastMessage.lastPing = now
+            user.hound punchinMessage
           else if timeSinceEnd <= 0.5
-            user.directMessage "Don't forget to check out~", Logger
-            user.settings?.lastMessage.lastPing = now
+            user.hound punchoutMessage
       else
         status = "#{user.slack} was active "
         if last.channel
@@ -124,7 +119,6 @@ module.exports = (robot) ->
       return
     for user in Organization.users
       hound { name: user.slack}, { private: null , name: ''}, true
-
 
   # Every morning, reset hound status for each users
   resetHoundJob = schedule.scheduleJob '0 9 * * 1-5', ->
