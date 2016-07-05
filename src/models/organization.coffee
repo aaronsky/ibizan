@@ -32,7 +32,7 @@ class Organization
 
   class OrganizationPrivate
     constructor: (id) ->
-      @name = NAME || 'Bad user'
+      @name = NAME || 'Bad organization name'
       sheet_id = id || CONFIG.sheet_id
       if sheet_id
         @spreadsheet = new Spreadsheet(sheet_id)
