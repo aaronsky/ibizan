@@ -21,10 +21,10 @@
     "hubot": "^2.19.0",
     "hubot-history": "^1.0.0",
     "hubot-slack": "^3.4.2",
-    "moment": "^2.13.0",
+    "moment": "^2.14.1",
     "moment-timezone": "^0.5.4",
     "moment-weekend": "^1.0.1",
-    "node-schedule": "^1.1.0",
+    "node-schedule": "^1.1.1",
     "node-uuid": "^1.4.7",
     "q": "^1.4.1"
   },
@@ -38,7 +38,7 @@
     "coffee-script": "^1.10.0",
     "coveralls": "^2.11.9",
     "hubot-test-helper": "^1.4.4",
-    "istanbul": "^0.4.3",
+    "istanbul": "^0.4.4",
     "mocha": "^2.5.3"
   },
   "scripts": {
