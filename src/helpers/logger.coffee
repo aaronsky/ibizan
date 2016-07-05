@@ -6,9 +6,9 @@ if debugEnvStr = process.env.DEBUG
     debugEnvStr = debugEnvStr.toLowerCase()
     DEBUG = debugEnvStr is 'true'
   else
-    DEBUG = true
+    DEBUG = false
 else
-  DEBUG = true
+  DEBUG = false
 
 logHeader = chalk.bold.blue
 log = chalk.blue
