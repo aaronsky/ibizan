@@ -46,7 +46,7 @@ module.exports = (robot) ->
         return
       else if channel.private or
               channel.name in Organization.exemptChannels
-        Logger.warn "##{channel.name} is not an appropriate hounding channel"
+        Logger.log "##{channel.name} is not an appropriate hounding channel"
         return
 
       now = moment.tz TIMEZONE
