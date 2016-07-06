@@ -76,7 +76,7 @@ class Organization
         for user in users
           if name is user.slack
             return user
-      Logger.warn "User #{name} could not be found"
+      Logger.debug "User #{name} could not be found"
     getUserByRealName: (name, users) ->
       if not users
         users = @users
@@ -84,7 +84,7 @@ class Organization
         for user in users
           if name is user.name
             return user
-      Logger.warn "User #{name} could not be found"
+      Logger.debug "Person #{name} could not be found"
     getProjectByName: (name, projects) ->
       if not projects
         projects = @projects
@@ -93,7 +93,7 @@ class Organization
         for project in @projects
           if name is project.name
             return project
-      Logger.warn "Project #{name} could not be found"
+      Logger.debug "Project #{name} could not be found"
     generateReport: (start, end, send=false) ->
       deferred = Q.defer()
       if not @spreadsheet
