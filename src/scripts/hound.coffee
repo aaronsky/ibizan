@@ -5,7 +5,12 @@
 #   ibizan stop ibizan - Disable hounding until the following morning
 #   ibizan disable ibizan - See `stop ibizan`
 # Notes:
-#
+#   Ibizan will DM an employee as soon as they’ve posted in Slack after
+#   more than [houndFrequency] hours of inactivity.
+#   If the user is logged out, the DM should say:
+#     Check in if you’re on the clock~
+#   If the user is logged in, the DM should say:
+#     Don’t forget to check out~
 # Author:
 #   aaronsky
 
@@ -21,21 +26,14 @@ punchoutMessage = "Don't forget to punch out~"
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
-  # Ibizan will DM an employee as soon as they’ve posted in Slack after
-  # more than 3 hours of inactivity.
-  #   If the user is logged out, the DM should say:
-  #     Check in if you’re on the clock~
-  #   If the user is logged in, the DM should say:
-  #     Don’t forget to check out~
-
   hound = (slackuser, channel, forceHound=false) ->
     if robot.name is slackuser.name
-      Logger.log 'Caught myself, don\'t hound the hound.'
+      Logger.debug 'Caught myself, don\'t hound the hound.'
       return
 
     user = Organization.getUserBySlackName slackuser.name
     if not user
-      Logger.log "#{slackuser.name} couldn't be found while attempting to hound"
+      Logger.debug "#{slackuser.name} couldn't be found while attempting to hound"
       return
 
     if user.settings.shouldHound and user.settings.houndFrequency > 0
@@ -72,7 +70,7 @@ module.exports = (robot) ->
                           .lastPing?.diff(last.lastPing, 'hours', true) || 0
 
       if timeSinceLastPing < 1
-        Logger.debug "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours"
+        Logger.debug "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours (#{timeSinceLastMessage})"
       else if timeSinceLastMessage >= user.settings.houndFrequency and
               timeSinceLastPunch >= user.settings.houndFrequency
         if not lastPunch
@@ -105,7 +103,7 @@ module.exports = (robot) ->
         if last.channel
           status += "in ##{last.channel} "
         status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
-        Logger.log status
+        Logger.debug status
 
   robot.adapter.client.on 'userTyping', (user, channel) ->
     hound user, channel

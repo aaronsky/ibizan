@@ -22,6 +22,8 @@ if logLevelEnvString = process.env.LOG_LEVEL
 else
   LOG_LEVEL = 0
 
+debugHeader = chalk.bold.green
+debug = chalk.green
 logHeader = chalk.bold.blue
 log = chalk.blue
 warnHeader = chalk.bold.yellow
@@ -54,9 +56,12 @@ module.exports = (robot) ->
       else
         response = message
       response
+    @debug: (msg) ->
+      if msg and LOG_LEVEL >= 4
+        console.log(debugHeader("[Ibizan] (#{new Date()}) DEBUG: ") + debug("#{msg}"))
     @log: (msg) ->
       if msg and LOG_LEVEL >= 3
-        console.log(logHeader("[Ibizan] (#{new Date()}) LOG: ") + log("#{msg}"))
+        console.log(logHeader("[Ibizan] (#{new Date()}) INFO: ") + log("#{msg}"))
     @warn: (msg) ->
       if msg and LOG_LEVEL >= 2
         console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
@@ -68,9 +73,6 @@ module.exports = (robot) ->
     @fun: (msg) ->
       if msg
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
-    @debug: (msg) ->
-      if msg and LOG_LEVEL >= 4
-        console.log(logHeader("[Ibizan] (#{new Date()}) DEBUG: ") + log("#{msg}"))
     @logToChannel: (msg, channel) ->
       if msg
         if robot and robot.send?
