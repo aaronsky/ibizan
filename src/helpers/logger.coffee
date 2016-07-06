@@ -5,21 +5,22 @@ if logLevelEnvString = process.env.LOG_LEVEL
   if typeof logLevelEnvString is 'string'
     logLevelEnvString = logLevelEnvString.toLowerCase()
     LOG_LEVEL = logLevelEnvString
-    if LOG_LEVEL not in ['info', 'warn', 'warning', 'error', 'true']
+    if LOG_LEVEL not in ['info', 'warn', 'warning', 'error', 'debug', 'true']
       LOG_LEVEL = 0
+    else if LOG_LEVEL is 'debug'
+      LOG_LEVEL = 4
     else if LOG_LEVEL is 'info' or LOG_LEVEL is 'true'
       LOG_LEVEL = 3
     else if LOG_LEVEL is 'warn' or LOG_LEVEL is 'warning'
       LOG_LEVEL = 2
     else if LOG_LEVEL is 'error'
       LOG_LEVEL = 1
-  else if typeof logLevelEnvString is 'integer' and logLevelEnvString >= 0 and logLevelEnvString <= 3
+  else if typeof logLevelEnvString is 'integer' and logLevelEnvString >= 0 and logLevelEnvString <= 4
     LOG_LEVEL = logLevelEnvString
   else
     LOG_LEVEL = 0
 else
   LOG_LEVEL = 0
-console.log(LOG_LEVEL)
 
 logHeader = chalk.bold.blue
 log = chalk.blue
@@ -54,22 +55,22 @@ module.exports = (robot) ->
         response = message
       response
     @log: (msg) ->
-      if msg
-        if LOG_LEVEL >= 3
-          console.log(logHeader("[Ibizan] (#{new Date()}) LOG: ") + log("#{msg}"))
+      if msg and LOG_LEVEL >= 3
+        console.log(logHeader("[Ibizan] (#{new Date()}) LOG: ") + log("#{msg}"))
     @warn: (msg) ->
-      if msg
-        if LOG_LEVEL >= 2
-          console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
+      if msg and LOG_LEVEL >= 2
+        console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
     @error: (msg, error) ->
-      if msg
-        if LOG_LEVEL >= 1
-          console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
-          if error and error.stack
-            console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{error.stack}"))
+      if msg and LOG_LEVEL >= 1
+        console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
+        if error and error.stack
+          console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{error.stack}"))
     @fun: (msg) ->
       if msg
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
+    @debug: (msg) ->
+      if msg and LOG_LEVEL >= 4
+        console.log(logHeader("[Ibizan] (#{new Date()}) DEBUG: ") + log("#{msg}"))
     @logToChannel: (msg, channel) ->
       if msg
         if robot and robot.send?

@@ -46,7 +46,7 @@ module.exports = (robot) ->
         return
       else if channel.private or
               channel.name in Organization.exemptChannels
-        Logger.log "##{channel.name} is not an appropriate hounding channel"
+        Logger.debug "##{channel.name} is not an appropriate hounding channel"
         return
 
       now = moment.tz TIMEZONE
@@ -72,7 +72,7 @@ module.exports = (robot) ->
                           .lastPing?.diff(last.lastPing, 'hours', true) || 0
 
       if timeSinceLastPing < 1
-        Logger.log "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours"
+        Logger.debug "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours"
       else if timeSinceLastMessage >= user.settings.houndFrequency and
               timeSinceLastPunch >= user.settings.houndFrequency
         if not lastPunch
