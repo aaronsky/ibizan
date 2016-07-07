@@ -2,7 +2,7 @@ language: node_js
 node_js:
 - '6.3'
 - '6.2.2'
-- '0.12.x'
+- '0.12'
 env:
   matrix:
   - NODE_ENV=development
