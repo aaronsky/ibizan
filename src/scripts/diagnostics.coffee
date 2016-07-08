@@ -66,6 +66,7 @@ module.exports = (robot) ->
 
   robot.respond /users/i, (res) ->
     if isAdminUser res.message.user.name
+      response = ''
       for user in Organization.users
         response += user.description() + '\n\n'
       user.directMessage response, Logger
