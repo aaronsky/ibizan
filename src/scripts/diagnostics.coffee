@@ -9,6 +9,7 @@
 #   aaronsky
 
 moment = require 'moment'
+require 'moment-precise-range-plugin'
 
 { HEADERS, STRINGS } = require '../helpers/constants'
 strings = STRINGS.diagnostics
@@ -16,7 +17,6 @@ strings = STRINGS.diagnostics
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
-
   Logger = require('../helpers/logger')(robot)
 
   isAdminUser = (user) ->
@@ -29,11 +29,8 @@ module.exports = (robot) ->
       res.status 200
       response = {
         "text": "#{Organization.name}'s Ibizan has been up since
-                  #{Organization.initTime.toDate()}
-                  (#{+moment()
-                    .diff(Organization.initTime, 'minutes', true)
-                    .toFixed(2)}
-                  minutes)",
+                 #{Organization.initTime.toDate()}
+                 (#{moment().preciseDiff(Organization.initTime)})",
         "response_type": "in_channel"
       }
     else
@@ -42,6 +39,12 @@ module.exports = (robot) ->
         "text": "Bad token in Ibizan configuration"
       }
     res.json response
+
+  robot.respond /uptime/i, (res) ->
+    Logger.logToChannel "#{Organization.name}'s Ibizan has been up since
+                         #{Organization.initTime.toDate()}
+                         (#{moment().preciseDiff(Organization.initTime)})",
+                         res.message.user.name
 
   robot.router.post '/ibizan/diagnostics/users', (req, res) ->
     body = req.body
