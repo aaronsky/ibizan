@@ -36,7 +36,7 @@ module.exports = (robot) ->
     else
       res.status 401
       response =  {
-        "text": "Bad token in Ibizan configuration"
+        "text": strings.badtoken
       }
     res.json response
 
@@ -51,7 +51,7 @@ module.exports = (robot) ->
     if body.token is process.env.SLASH_USERS_TOKEN
       if not isAdminUser body.user_name
         res.status 403
-        response = 'You must be an admin in order to access this command.'
+        response = strings.adminonly
       else
         res.status 200
         response = ''
@@ -59,17 +59,25 @@ module.exports = (robot) ->
           response += user.description() + '\n\n'
     else
       res.status 401
-      response = "Bad token in Ibizan configuration"
+      response = strings.badtoken
     res.json {
       "text": response
     }
-    
+
+  robot.respond /users/i, (res) ->
+    if isAdminUser res.message.user.name
+      for user in Organization.users
+        response += user.description() + '\n\n'
+      user.directMessage response, Logger
+    else
+      user.directMessage strings.adminonly, Logger
+
   robot.router.post '/ibizan/diagnostics/projects', (req, res) ->
     body = req.body
     if body.token is process.env.SLASH_PROJECTS_TOKEN
       if not isAdminUser body.user_name
         res.status 403
-        response = 'You must be an admin in order to access this command.'
+        response = strings.adminonly
       else
         res.status 200
         response = ''
@@ -77,7 +85,7 @@ module.exports = (robot) ->
           response += project.description() + '\n\n'
     else
       res.status 401
-      response = "Bad token in Ibizan configuration"
+      response = strings.badtoken
     res.json {
       "text": response
     }
@@ -87,13 +95,13 @@ module.exports = (robot) ->
     if body.token is process.env.SLASH_CALENDAR_TOKEN
       if not isAdminUser body.user_name
         res.status 403
-        response = 'You must be an admin in order to access this command.'
+        response = string.adminonly
       else
         res.status 200
         response = Organization.calendar.description()
     else
       res.status 401
-      response = "Bad token in Ibizan configuration"
+      response = strings.badtoken
     res.json {
       "text": response
     }
@@ -142,7 +150,7 @@ module.exports = (robot) ->
     else
       res.status 401
       res.json {
-        "text": "Bad token in Ibizan configuration"
+        "text": strings.badtoken
       }
 
   robot.respond /sync/i, (res) ->
@@ -168,7 +176,7 @@ module.exports = (robot) ->
       response = strings.help
     else
       res.status 401
-      response = "Bad token in Ibizan configuration"
+      response = strings.badtoken
     res.json {
       "text": response
     }

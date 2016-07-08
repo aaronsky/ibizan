@@ -70,6 +70,8 @@ Object.freeze cellHeaders
 
 strings = 
   diagnostics:
+    adminonly:           "You must be an admin in order to access this command."
+    badtoken:            "Bad token in Ibizan configuration"
     help:                "*Ibizan Help*\n
                           \n
                           To clock in with Ibizan, either @mention him in a public
