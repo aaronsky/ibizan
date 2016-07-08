@@ -28,10 +28,10 @@ class Punch
     original = command.slice 0
 
     [start, end] = user.activeHours()
-    [times, command] = _parseTime command, start, end
+    tz = timezone || user.timetable.timezone.name
+    [times, command] = _parseTime command, start, end, timezone
     [dates, command] = _parseDate command
 
-    tz = timezone || user.timetable.timezone.name
     datetimes = []
     if dates.length is 0 and times.length is 0
       datetimes.push(moment.tz(tz))
@@ -457,7 +457,7 @@ _parseMode = (command) ->
   else
     ['none', command]
 
-_parseTime = (command, activeStart, activeEnd) ->
+_parseTime = (command, activeStart, activeEnd, tz) ->
   # parse time component
   command = command.trimLeft() || ''
   if command.indexOf('at') is 0
@@ -487,7 +487,7 @@ _parseTime = (command, activeStart, activeEnd) ->
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.time
     timeMatch = match[0]
-    now = moment()
+    now = moment.tz(tz)
     if hourStr = timeMatch.match /\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i
       hour = parseInt(hourStr[0].replace(':', ''))
       if hour <= 12
