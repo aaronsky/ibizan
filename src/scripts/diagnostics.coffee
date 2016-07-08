@@ -10,50 +10,10 @@
 
 moment = require 'moment'
 
-constants = require '../helpers/constants'
-HEADERS = constants.HEADERS
+{ HEADERS, STRINGS } = require '../helpers/constants'
+strings = STRINGS.diagnostics
 
 Organization = require('../models/organization').get()
-
-helpEnglish = "*Ibizan Help*\n
-              \n
-              To clock in with Ibizan, either @mention him in a public
-              channel, use the slash command, or DM him directly without
-              the @mention. Your command should follow this format:\n
-              \n
-              `@ibizan [mode] [time] [date] [project] [notes]`\n
-              \n
-              Examples:\n
-              @ibizan in\n
-              @ibizan out\n
-              @ibizan in at 9:15\n
-              @ibizan out 4:30p yesterday\n
-              @ibizan in #project-name\n
-              @ibizan 3.5 hours today\n
-              \n
-              Punches can be `in`, `out`, `vacation`, `sick` or `unpaid`
-              punches. You can also clock in independent blocks of time.
-              Projects must be registered in the worksheet labeled
-              'Projects' in the Ibizan spreadsheet, and won't be recognized
-              as projects in a command without a pound-sign
-              (i.e. #fight-club).\n
-              \n
-              If something is wrong with your punch, you can undo it by
-              doing `@ibizan undo`. You can also modify it manually using
-              the Ibizan spreadsheet, in the worksheet labeled 'Raw Data'.
-              If you want to see how much time you've worked today, do
-              `@ibizan today?`.\n
-              \n
-              If you make any manual changes to the spreadsheet, you should
-              run `/sync` or `@ibizan sync`. Running this resyncs Ibizan with
-              the spreadsheet.\n
-              \n
-              Due to some existing limitations in Google Sheets, changes
-              made directly to the spreadsheet are not immediately
-              reflected by Ibizan and must be followed up with a `/sync`.\n
-              \n
-              For more documentation, please check out
-              https://github.com/ibizan/ibizan.github.io/wiki"
 
 module.exports = (robot) ->
 
@@ -202,7 +162,7 @@ module.exports = (robot) ->
     body = req.body
     if body.token is process.env.SLASH_HELP_TOKEN
       res.status 200
-      response = helpEnglish
+      response = strings.help
     else
       res.status 401
       response = "Bad token in Ibizan configuration"
@@ -212,4 +172,4 @@ module.exports = (robot) ->
 
   robot.respond /help/i, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    user.directMessage helpEnglish, Logger
+    user.directMessage strings.help, Logger
