@@ -100,11 +100,11 @@ module.exports = (robot) ->
     if body.token is process.env.SLASH_SYNC_TOKEN
       response_url = body.response_url
       if response_url
+        Logger.log "POSTing to #{response_url}"
         Organization.sync()
         .catch(
           (err) ->
             Logger.errorToSlack "Failed to resync", err
-            Logger.log "POSTing to #{response_url}"
             payload =
               text: 'Failed to resync'
             robot.http(response_url)
@@ -113,10 +113,9 @@ module.exports = (robot) ->
         )
         .done(
           (status) ->
-            Logger.log "Options have been re-loaded"
-            Logger.log "POSTing to #{response_url}"
+            Logger.log "Options have been reloaded"
             payload =
-              text: 'Re-synced with spreadsheet'
+              text: 'Resynced with spreadsheet'
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post(JSON.stringify(payload)) (err, response, body) ->
@@ -142,6 +141,22 @@ module.exports = (robot) ->
       res.json {
         "text": "Bad token in Ibizan configuration"
       }
+
+  robot.respond /sync/i, (res) ->
+    Organization.sync()
+    .catch(
+      (err) ->
+        Logger.errorToSlack "Failed to resync", err
+    )
+    .done(
+      (status) ->
+        Logger.logToChannel "Resynced with spreadsheet",
+                            res.message.user.name
+    )
+    Logger.reactToMessage 'dog2',
+                          res.message.user.name,
+                          res.message.rawMessage.channel,
+                          res.message.id
 
   robot.router.post '/ibizan/diagnostics/help', (req, res) ->
     body = req.body
