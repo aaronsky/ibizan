@@ -403,7 +403,7 @@ class Punch
        @mode is 'sick' or
        @mode is 'unpaid'
       if blockTimeQualifier?
-        modeQualifier = "for #{article} #{blockTimeQualifier} #{@mode}-block"
+        modeQualifier = "for #{article} #{blockTimeQualifier} #{@mode} block"
     else if @mode is 'none' and blockTimeQualifier?
       modeQualifier = "for #{article} #{blockTimeQualifier} block"
     else
@@ -430,10 +430,10 @@ class Punch
         notesQualifier = ')'
     if warnings
       for warning in warnings.projects
-        warningQualifier += "Warning: #{warning} isn't a registered project. It is stored in this punch's notes rather than as a project.\n"
+        warningQualifier += " (Warning: #{warning} isn't a registered project. It is stored in this punch's notes rather than as a project.)"
       for warning in warnings.other
-        warningQualifier += "Warning: #{warning} isn't a recognized input. This is stored this punch's notes.\n"
-    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}.\n#{warningQualifier}"
+        warningQualifier += " (Warning: #{warning} isn't a recognized input. This is stored this punch's notes.)"
+    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}#{warningQualifier}"
 
     return description
 
