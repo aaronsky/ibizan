@@ -76,7 +76,11 @@ module.exports = (robot) ->
     @logToChannel: (msg, channel) ->
       if msg
         if robot and robot.send?
-          robot.send {room: channel}, msg
+          attachment = {
+            channel: channel,
+            text: msg
+          }
+          robot.adapter.customMessage attachment
         else
           Logger.log msg
     @errorToSlack: (msg, error) ->
@@ -86,7 +90,7 @@ module.exports = (robot) ->
             "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
         else
           Logger.error msg, error
-    @reactToMessage: (reaction, user, channel, slack_ts) ->
+    @reactToMessage: (reaction, user, channel, slack_ts, command) ->
       if reaction and
          channel and
          slack_ts
@@ -98,7 +102,8 @@ module.exports = (robot) ->
             name: reaction,
             channel: channel,
             timestamp: slack_ts
-          client._apiCall 'reactions.add', params, (response) ->
+          api_command = command || 'reactions.add'
+          client._apiCall api_command, params, (response) ->
             if not response.ok
               Logger.errorToSlack user, response.error
               Logger.logToChannel "I just tried to react to a message, but
