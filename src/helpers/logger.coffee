@@ -75,7 +75,7 @@ module.exports = (robot) ->
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
     @logToChannel: (msg, channel) ->
       if msg
-        if robot and robot.send?
+        if robot and robot.adapter? and robot.adapter.customMessage?
           attachment = {
             channel: channel,
             text: msg
