@@ -111,6 +111,9 @@ strings =
                           \n
                           For more documentation, please check out
                           https://github.com/ibizan/ibizan.github.io/wiki"
+  hound:
+    punchin:              "Punch in if you're on the clock~"
+    punchout:             "Don't forget to punch out~"
   time:
     orgnotready:          "The organization isn't ready for
                            operations yet. It may be in the middle of

@@ -17,11 +17,9 @@
 moment = require 'moment'
 schedule = require 'node-schedule'
 
-TIMEZONE = require('../helpers/constants').TIMEZONE
+{ STRINGS, TIMEZONE } = require '../helpers/constants'
 Organization = require('../models/organization').get()
-
-punchinMessage = "Punch in if you're on the clock~"
-punchoutMessage = "Don't forget to punch out~"
+strings = STRINGS.hound
 
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
@@ -75,29 +73,29 @@ module.exports = (robot) ->
               timeSinceLastPunch >= user.settings.houndFrequency
         if not lastPunch
           if timeSinceStart <= 0.5
-            user.hound punchinMessage
+            user.hound strings.punchin
           else if timeSinceEnd <= 0.5
-            user.hound punchoutMessage
+            user.hound strings.punchout
         if lastPunch.mode is 'in'
           if timeSinceEnd <= 0.5
-            user.hound punchoutMessage
+            user.hound strings.punchout
         else if lastPunch.mode is 'out'
           if not user.isInactive() and timeSinceStart <= 0.5
-            user.hound punchinMessage
+            user.hound strings.punchin
         else if lastPunch.mode is 'vacation' or
                 lastPunch.mode is 'sick' or
                 lastPunch.mode is 'unpaid'
           if lastPunch.times.length > 0 and not now.isBetween(lastPunch.times[0], lastPunch.times[1])
-            user.hound punchinMessage
+            user.hound strings.punchin
           else if lastPunch.times.block?
             endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours')
             if not now.isBetween(lastPunch.date, endOfBlock)
-              user.hound punchinMessage
+              user.hound strings.punchin
         else
           if timeSinceStart <= 0.5
-            user.hound punchinMessage
+            user.hound strings.punchin
           else if timeSinceEnd <= 0.5
-            user.hound punchoutMessage
+            user.hound strings.punchout
       else
         status = "#{user.slack} was active "
         if last.channel
