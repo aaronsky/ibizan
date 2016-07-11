@@ -130,12 +130,13 @@ class User
   undoPunch: () ->
     deferred = Q.defer()
     lastPunch = @lastPunch()
+    that = @
+    Logger.log "Undoing #{that.slack}'s punch: #{lastPunch.description(that)}"
     if lastPunch.times.block
       elapsed = lastPunch.times.block
     else
       elapsed = lastPunch.elapsed || 0
     headers = HEADERS.rawdata
-    that = @
     if lastPunch.mode is 'vacation' or
        lastPunch.mode is 'sick' or
        lastPunch.mode is 'unpaid' or
