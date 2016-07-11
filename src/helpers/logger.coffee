@@ -105,10 +105,21 @@ module.exports = (robot) ->
           api_command = command || 'reactions.add'
           client._apiCall api_command, params, (response) ->
             if not response.ok
-              Logger.errorToSlack user, response.error
-              Logger.logToChannel "I just tried to react to a message, but
-                                   something went wrong. This is usually
-                                   the last step in an operation, so your
-                                   command probably worked.",
-                                  user
+              # Retry up to 3 times
+              retry = 1
+              setTimeout ->
+                if retry <= 3
+                  Logger.debug "Retrying #{api_command}, attempt #{retry}..."
+                  client._apiCall api_command, params, (response) ->
+                    if response.ok
+                      return true
+                  retry += 1
+                else
+                  Logger.errorToSlack user, response.error
+                  Logger.logToChannel "I just tried to react to a message, but
+                                       something went wrong. This is usually
+                                       the last step in an operation, so your
+                                       command probably worked.",
+                                      user
+              , 1000
   Logger
