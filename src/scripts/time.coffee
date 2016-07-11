@@ -144,7 +144,7 @@ module.exports = (robot) ->
       (punch) ->
         Logger.log "@#{user.slack}'s punch was successfully entered
                     into the spreadsheet."
-        punchEnglish = "Punched you *#{punch.description(user)}*"
+        punchEnglish = "Punched you *#{punch.description(user)}*."
         if res.router_res
           res.router_res.status 200
           res.router_res.json {
@@ -176,9 +176,18 @@ module.exports = (robot) ->
           Logger.error errorMsg
           Logger.errorToSlack "\"#{errorMsg}\" was returned for
                                #{user.slack}. Punch:\n", res.match.input
-          user.directMessage "#{errorMsg} You can see more details on the spreadsheet
-                               at #{Organization.spreadsheet.url}",
+          user.directMessage "\n#{errorMsg}\nYou can see more details on 
+                              <#{Organization.spreadsheet.url}|the spreadsheet>.",
                              Logger
+          Logger.reactToMessage 'clock4',
+                                res.message.user.name,
+                                res.message.rawMessage.channel,
+                                res.message.id,
+                                'reactions.remove'
+          Logger.reactToMessage 'x',
+                                res.message.user.name,
+                                res.message.rawMessage.channel,
+                                res.message.id
     )
     .done()
       

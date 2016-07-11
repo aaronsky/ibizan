@@ -282,7 +282,7 @@ class Punch
       if last = user.lastPunch 'in'
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at
-                #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
+                *#{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}*."
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
         for time in @times
@@ -298,8 +298,8 @@ class Punch
       last = user.lastPunch 'out', 'vacation', 'unpaid', 'sick'
       time = last.times[0].tz(user.timetable.timezone.name)
       return "You cannot punch out before punching in. Your last
-              out-punch was at #{time.format('h:mma')} on
-              #{time.format('dddd, MMMM Do')}."
+              out-punch was at *#{time.format('h:mma')} on
+              #{time.format('dddd, MMMM Do')}*."
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
       return 'You aren\'t eligible to punch for unpaid time because you\'re
@@ -311,22 +311,22 @@ class Punch
       if last and not @times.block?
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at
-                #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
+                *#{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}*."
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         elapsedDays = user.toDays(elapsed)
         if @mode is 'vacation' and
            user.timetable.vacationAvailable < elapsedDays
           return "This punch exceeds your remaining vacation time. You\'re
-                  trying to add #{elapsedDays} days worth of vacation time
-                  but you only have #{user.timetable.vacationAvailable} days
+                  trying to add *#{elapsedDays} days* worth of vacation time
+                  but you only have *#{user.timetable.vacationAvailable} days*
                   left."
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
                 user.timetable.sickAvailable < elapsedDays
           return "This punch exceeds your remaining sick time. You\'re
-                  trying to add #{elapsedDays} days worth of sick time
-                  but you only have #{user.timetable.sickAvailable} days
+                  trying to add *#{elapsedDays} days* worth of sick time
+                  but you only have *#{user.timetable.sickAvailable} days*
                   left."
         # if mode is 'vacation' and time isn't divisible by 4
         # if mode is 'sick' and time isn't divisible by 4
