@@ -81,6 +81,10 @@ module.exports = (robot) ->
                           res.message.user.name
       return
     if canPunchHere res.message.user.name, res.message.user.room
+      Logger.reactToMessage 'clock4',
+                            res.message.user.name,
+                            res.message.rawMessage.channel,
+                            res.message.id
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
       tz = res.message.user.slack.tz
@@ -104,11 +108,7 @@ module.exports = (robot) ->
         article = 'an'
       Logger.log "Successfully generated #{article} #{modeQualifier}-punch
                   for @#{user.slack}: #{punch.description(user)}"
-      Logger.reactToMessage 'clock4',
-                            res.message.user.name,
-                            res.message.rawMessage.channel,
-                            res.message.id
-      
+
       sendPunch punch, user, res
     else
       if res.router_res
@@ -151,11 +151,6 @@ module.exports = (robot) ->
             "text": punchEnglish
           }
         else
-          Logger.reactToMessage 'clock4',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id,
-                                'reactions.remove'
           Logger.reactToMessage 'dog2',
                                 res.message.user.name,
                                 res.message.rawMessage.channel,
@@ -179,18 +174,17 @@ module.exports = (robot) ->
           user.directMessage "\n#{errorMsg}\nYou can see more details on 
                               <#{Organization.spreadsheet.url}|the spreadsheet>.",
                              Logger
-          Logger.reactToMessage 'clock4',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id,
-                                'reactions.remove'
           Logger.reactToMessage 'x',
                                 res.message.user.name,
                                 res.message.rawMessage.channel,
                                 res.message.id
     )
     .done()
-      
+    Logger.reactToMessage 'clock4',
+                          res.message.user.name,
+                          res.message.rawMessage.channel,
+                          res.message.id,
+                          'reactions.remove'
 
   # respond to mode
   robot.respond REGEX.modes, (res) ->
