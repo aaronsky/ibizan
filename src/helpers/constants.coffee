@@ -111,6 +111,13 @@ strings =
                           \n
                           For more documentation, please check out
                           https://github.com/ibizan/ibizan.github.io/wiki"
+  time:
+    orgnotready:          "The organization isn't ready for
+                           operations yet. It may be in the middle of
+                           syncing or something has gone horribly wrong.
+                           Please try again later, and if this persists
+                           longer than five minutes, DM a maintainer as
+                           soon as possible."
 
 Object.freeze strings
 

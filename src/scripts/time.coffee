@@ -26,10 +26,11 @@
 
 moment = require 'moment-timezone'
 
-{ REGEX, HEADERS, TIMEZONE } = require '../helpers/constants'
+{ REGEX, HEADERS, STRINGS, TIMEZONE } = require '../helpers/constants'
 Organization = require('../models/organization').get()
 Punch = require '../models/punch'
 User = require '../models/user'
+strings = STRINGS.time
 
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
@@ -101,7 +102,12 @@ module.exports = (robot) ->
         article = 'a'
       else
         article = 'an'
-      Logger.log "Successfully generated #{article} #{modeQualifier}-punch for @#{user.slack}."
+      Logger.log "Successfully generated #{article} #{modeQualifier}-punch
+                  for @#{user.slack}: #{punch.description(user)}"
+      Logger.reactToMessage 'clock4',
+                            res.message.user.name,
+                            res.message.rawMessage.channel,
+                            res.message.id
       
       sendPunch punch, user, res
     else
@@ -138,13 +144,18 @@ module.exports = (robot) ->
       (punch) ->
         Logger.log "@#{user.slack}'s punch was successfully entered
                     into the spreadsheet."
-        punchEnglish = "Punched you #{punch.description(user)}"
+        punchEnglish = "Punched you *#{punch.description(user)}*"
         if res.router_res
           res.router_res.status 200
           res.router_res.json {
             "text": punchEnglish
           }
         else
+          Logger.reactToMessage 'clock4',
+                                res.message.user.name,
+                                res.message.rawMessage.channel,
+                                res.message.id,
+                                'reactions.remove'
           Logger.reactToMessage 'dog2',
                                 res.message.user.name,
                                 res.message.rawMessage.channel,
@@ -176,12 +187,7 @@ module.exports = (robot) ->
   robot.respond REGEX.modes, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
+      Logger.logToChannel strings.orgnotready,
                           res.message.user.name
       return
     parse res, res.match.input, res.match[1]
@@ -190,12 +196,7 @@ module.exports = (robot) ->
   robot.respond REGEX.rel_time, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
+      Logger.logToChannel strings.orgnotready,
                           res.message.user.name
       return
     parse res, res.match.input, 'none'
@@ -204,12 +205,7 @@ module.exports = (robot) ->
     if not Organization.ready()
       Logger.log 'Don\'t punch via slash command, Organization isn\'t ready yet'
       res.json {
-        "text": "The #{Organization.name} isn't ready for
-                 operations yet. It may be in the middle of
-                 syncing or something has gone horribly wrong.
-                 Please try again later, and if this persists
-                 longer than five minutes, DM a maintainer as
-                 soon as possible."
+        "text": strings.orgnotready
       }
       return
     body = req.body
@@ -254,12 +250,7 @@ module.exports = (robot) ->
   robot.respond /(append|add)/i, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
+      Logger.logToChannel strings.orgnotready,
                           res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
@@ -317,12 +308,7 @@ module.exports = (robot) ->
   robot.respond /undo/i, (res) ->
     if not Organization.ready()
       Logger.warn 'Don\'t undo, Organization isn\'t ready yet'
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
+      Logger.logToChannel strings.orgnotready,
                           res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
@@ -335,7 +321,12 @@ module.exports = (robot) ->
                           res.message.user.name
       return
     if user.punches and user.punches.length > 0
+      Logger.reactToMessage 'clock4',
+                            res.message.user.name,
+                            res.message.rawMessage.channel,
+                            res.message.id
       punch = null
+      lastPunchDescription = user.lastPunch().description(user)
       user.undoPunch()
       .then(
         (lastPunch) ->
@@ -348,7 +339,14 @@ module.exports = (robot) ->
                                 res.message.user.name,
                                 res.message.rawMessage.channel,
                                 res.message.id
-          user.directMessage "Undid your last punch action, which was #{punch.description(user)}",
+          Logger.reactToMessage 'clock4',
+                                res.message.user.name,
+                                res.message.rawMessage.channel,
+                                res.message.id,
+                                'reactions.remove'
+          user.directMessage "Undid your last punch, which was:
+                              *#{lastPunchDescription}*\n\nYour most current
+                              punch is now: *#{punch.description(user)}*",
                              Logger
       )
       .catch(
@@ -368,12 +366,7 @@ module.exports = (robot) ->
   robot.respond /(hours|today)+[\?\!\.¿¡]/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
+      Logger.logToChannel strings.orgnotready,
                           res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
@@ -401,7 +394,7 @@ module.exports = (robot) ->
       if not report[headers.logged]
         msg = 'You haven\'t recorded any paid work time'
       else
-        msg = "You have #{toTimeStr(report[headers.logged])} of paid work time"
+        msg = "You have *#{toTimeStr(report[headers.logged])} of paid work time*"
         loggedAny = true
       for kind in ['vacation', 'sick', 'unpaid']
         header = headers[kind]
@@ -409,10 +402,10 @@ module.exports = (robot) ->
           kind = 'unpaid work'
         if report[header]
           if not loggedAny
-            msg += ", but you have #{toTimeStr(report[header])} of #{kind} time"
+            msg += ", but you have *#{toTimeStr(report[header])} of #{kind} time*"
             loggedAny = true
           else
-            msg += " and #{toTimeStr(report[header])} of #{kind} time"
+            msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
       msg += ' recorded for today.'
     if report.extra?.projects and report.extra?.projects?.length > 0
       msg += ' ('
