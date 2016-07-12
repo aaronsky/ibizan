@@ -148,8 +148,9 @@ module.exports = (robot) ->
             "text": punchEnglish
           }
         else
-          Logger.addReaction 'dog2', res.message
           user.directMessage punchEnglish, Logger
+          Logger.addReaction 'dog2', res.message
+          Logger.removeReaction 'clock4', res.message
     )
     .catch(
       (err) ->
