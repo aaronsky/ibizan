@@ -61,3 +61,18 @@ describe 'Logger', ->
       LoggerWithBadRobot.addReaction @reaction, @message
     it 'should react to the message with a robot', ->
       LoggerWithRobot.addReaction @reaction, @message
+  describe '#removeReaction', ->
+    beforeEach ->
+      @reaction = 'clock4'
+      @message =
+        user:
+          name: 'aaronsky'
+        rawMessage:
+          channel: 'ibizan-diagnostics'
+        id: 10
+    it 'should log to the console without a robot', ->
+      LoggerWithoutRobot.removeReaction @reaction, @message
+    it 'should log to the console to the console with a bad robot', ->
+      LoggerWithBadRobot.removeReaction @reaction, @message
+    it 'should react to the message with a robot', ->
+      LoggerWithRobot.removeReaction @reaction, @message

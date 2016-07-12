@@ -119,9 +119,10 @@ module.exports = (robot) ->
               retry = 1
               setTimeout ->
                 if retry <= 3
-                  Logger.debug "Retrying removal of #{reaction} on #{slack_ts}, attempt #{retry}..."
-                  client._apiCall 'reaction.remove', params, (response) ->
+                  Logger.debug "Retrying removal of #{reaction}, attempt #{retry}..."
+                  client._apiCall 'reactions.remove', params, (response) ->
                     if response.ok
+                      Logger.debug "#{reaction} removed successfully"
                       return true
                   retry += 1
                 else
