@@ -45,10 +45,7 @@ module.exports = (robot) ->
                          #{Organization.initTime.toDate()}
                          _(#{moment().preciseDiff(Organization.initTime)})_",
                          res.message.rawMessage.channel
-    Logger.reactToMessage 'dog2',
-                          res.message.user.name,
-                          res.message.rawMessage.channel,
-                          res.message.id
+    Logger.addReaction 'dog2', res.message
 
   robot.router.post '/ibizan/diagnostics/users', (req, res) ->
     body = req.body
@@ -74,16 +71,10 @@ module.exports = (robot) ->
       for user in Organization.users
         response += user.description() + '\n\n'
       user.directMessage response, Logger
-      Logger.reactToMessage 'dog2',
-                            res.message.user.name,
-                            res.message.rawMessage.channel,
-                            res.message.id
+      Logger.addReaction 'dog2', res.message.user.name
     else
       user.directMessage strings.adminonly, Logger
-      Logger.reactToMessage 'x',
-                            res.message.user.name,
-                            res.message.rawMessage.channel,
-                            res.message.id
+      Logger.addReaction 'x', res.message
 
   robot.router.post '/ibizan/diagnostics/projects', (req, res) ->
     body = req.body
@@ -167,10 +158,7 @@ module.exports = (robot) ->
       }
 
   robot.respond /sync/i, (res) ->
-    Logger.reactToMessage 'clock4',
-                          res.message.user.name,
-                          res.message.rawMessage.channel,
-                          res.message.id
+    Logger.addReaction 'clock4', res.message
     Organization.sync()
     .catch(
       (err) ->
@@ -180,15 +168,8 @@ module.exports = (robot) ->
       (status) ->
         Logger.logToChannel "Resynced with spreadsheet",
                             res.message.user.name
-        Logger.reactToMessage 'clock4',
-                              res.message.user.name,
-                              res.message.rawMessage.channel,
-                              res.message.id,
-                              'reactions.remove'
-        Logger.reactToMessage 'dog2',
-                              res.message.user.name,
-                              res.message.rawMessage.channel,
-                              res.message.id
+        Logger.removeReaction 'clock4', res.message
+        Logger.addReaction 'dog2', res.message
     )
 
 
@@ -207,7 +188,4 @@ module.exports = (robot) ->
   robot.respond /help/i, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     user.directMessage strings.help, Logger
-    Logger.reactToMessage 'dog2',
-                          res.message.user.name,
-                          res.message.rawMessage.channel,
-                          res.message.id
+    Logger.addReaction 'dog2', res.message

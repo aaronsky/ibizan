@@ -1,5 +1,7 @@
 
 chalk = require 'chalk'
+{ STRINGS } = require '../helpers/constants'
+strings = STRINGS.logger
 
 if logLevelEnvString = process.env.LOG_LEVEL
   if typeof logLevelEnvString is 'string'
@@ -49,10 +51,7 @@ module.exports = (robot) ->
         if errorCode is '500' or
            errorCode is '502' or
            errorCode is '404'
-          response = "Something went wrong on Google's end and the
-                     operation couldn't be completed. Please try again
-                     in a minute. If this persists for longer than 5 minutes,
-                     DM a maintainer ASAP."
+          response = strings.googleerror
       else
         response = message
       response
@@ -90,36 +89,43 @@ module.exports = (robot) ->
             "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
         else
           Logger.error msg, error
-    @reactToMessage: (reaction, user, channel, slack_ts, command) ->
-      if reaction and
-         channel and
-         slack_ts
-        if robot and
-           robot.adapter and
-           robot.adapter.client._apiCall? and
-           client = robot.adapter.client
+    @addReaction: (reaction, message) ->
+      if message and
+         robot and
+         robot.adapter and
+         robot.adapter.client._apiCall? and
+         client = robot.adapter.client
           params =
             name: reaction,
-            channel: channel,
-            timestamp: slack_ts
-          api_command = command || 'reactions.add'
-          client._apiCall api_command, params, (response) ->
+            channel: message.rawMessage.channel,
+            timestamp: message.id
+          client._apiCall 'reactions.add', params, (response) ->
+            if not response.ok
+              Logger.errorToSlack message.user.name, response.error
+              Logger.logToChannel strings.failedreaction, message.user.name
+    @removeReaction: (reaction, message) ->
+      if message and
+         robot and
+         robot.adapter and
+         robot.adapter.client._apiCall? and
+         client = robot.adapter.client
+          params =
+            name: reaction,
+            channel: message.rawMessage.channel,
+            timestamp: message.id
+          client._apiCall 'reactions.remove', params, (response) ->
             if not response.ok
               # Retry up to 3 times
               retry = 1
               setTimeout ->
                 if retry <= 3
-                  Logger.debug "Retrying #{api_command}, attempt #{retry}..."
-                  client._apiCall api_command, params, (response) ->
+                  Logger.debug "Retrying removal of #{reaction} on #{slack_ts}, attempt #{retry}..."
+                  client._apiCall 'reaction.remove', params, (response) ->
                     if response.ok
                       return true
                   retry += 1
                 else
-                  Logger.errorToSlack user, response.error
-                  Logger.logToChannel "I just tried to react to a message, but
-                                       something went wrong. This is usually
-                                       the last step in an operation, so your
-                                       command probably worked.",
-                                      user
+                  Logger.errorToSlack message.user.name, response.error
+                  Logger.logToChannel strings.failedreaction, message.user.name
               , 1000
   Logger

@@ -114,6 +114,15 @@ strings =
   hound:
     punchin:              "Punch in if you're on the clock~"
     punchout:             "Don't forget to punch out~"
+  logger:
+    failedreaction:       "I just tried to react to a message, but
+                           something went wrong. This is usually
+                           the last step in an operation, so your
+                           command probably worked."
+    googleerror:          "Something went wrong on Google's end and the
+                           operation couldn't be completed. Please try again
+                           in a minute. If this persists for longer than 5 minutes,
+                           DM a maintainer ASAP."
   time:
     orgnotready:          "The organization isn't ready for
                            operations yet. It may be in the middle of

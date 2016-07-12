@@ -9,6 +9,9 @@ LoggerWithBadRobot = Logger({})
 LoggerWithRobot = Logger(mockRobot)
 
 describe 'Logger', ->
+  describe '#debug', ->
+    it 'should run without issue', ->
+      LoggerWithoutRobot.debug 'This is test output'
   describe '#log', ->
     it 'should run without issue', ->
       LoggerWithoutRobot.log 'This is test output'
@@ -43,15 +46,18 @@ describe 'Logger', ->
     it 'should log an error with a robot', ->
       LoggerWithRobot.errorToSlack @msg, null
       LoggerWithRobot.errorToSlack @msg, @err
-  describe '#reactToMessage', ->
+  describe '#addReaction', ->
     beforeEach ->
       @reaction = 'dog2'
-      @user = 'aaronsky'
-      @channel = 'ibizan-diagnostics'
-      @slackTs = 10
+      @message =
+        user:
+          name: 'aaronsky'
+        rawMessage:
+          channel: 'ibizan-diagnostics'
+        id: 10
     it 'should log to the console without a robot', ->
-      LoggerWithoutRobot.reactToMessage @reaction, @user, @channel, @slackTs
+      LoggerWithoutRobot.addReaction @reaction, @message
     it 'should log to the console to the console with a bad robot', ->
-      LoggerWithBadRobot.reactToMessage @reaction, @user, @channel, @slackTs
+      LoggerWithBadRobot.addReaction @reaction, @message
     it 'should react to the message with a robot', ->
-      LoggerWithRobot.reactToMessage @reaction, @user, @channel, @slackTs
+      LoggerWithRobot.addReaction @reaction, @message

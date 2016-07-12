@@ -81,10 +81,7 @@ module.exports = (robot) ->
                           res.message.user.name
       return
     if canPunchHere res.message.user.name, res.message.user.room
-      Logger.reactToMessage 'clock4',
-                            res.message.user.name,
-                            res.message.rawMessage.channel,
-                            res.message.id
+      Logger.addReaction 'clock4', res.message
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
       tz = res.message.user.slack.tz
@@ -151,19 +148,15 @@ module.exports = (robot) ->
             "text": punchEnglish
           }
         else
-          Logger.reactToMessage 'dog2',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id
-          user.directMessage punchEnglish,
-                             Logger
+          Logger.addReaction 'dog2', res.message
+          user.directMessage punchEnglish, Logger
     )
     .catch(
       (err) ->
         if res.router_res
           res.router_res.status 500
           res.router_res.json {
-            "text": "#{err} You can see more details on the spreadsheet
+            "text": "#{err} - You can see more details on the spreadsheet
                       at #{Organization.spreadsheet.url}"
           }
         else
@@ -174,17 +167,10 @@ module.exports = (robot) ->
           user.directMessage "\n#{errorMsg}\nYou can see more details on 
                               <#{Organization.spreadsheet.url}|the spreadsheet>.",
                              Logger
-          Logger.reactToMessage 'x',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id
+          Logger.addReaction 'x', res.message
+          Logger.removeReaction 'clock4', res.message
     )
     .done()
-    Logger.reactToMessage 'clock4',
-                          res.message.user.name,
-                          res.message.rawMessage.channel,
-                          res.message.id,
-                          'reactions.remove'
 
   # respond to mode
   robot.respond REGEX.modes, (res) ->
@@ -303,10 +289,7 @@ module.exports = (robot) ->
         notesQualifier = "'#{msg}'"
         user.directMessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
                            Logger
-        Logger.reactToMessage 'dog2',
-                              res.message.user.name,
-                              res.message.rawMessage.channel,
-                              res.message.id
+        Logger.addReaction 'dog2', res.message
 
   robot.respond /undo/i, (res) ->
     if not Organization.ready()
@@ -324,10 +307,7 @@ module.exports = (robot) ->
                           res.message.user.name
       return
     if user.punches and user.punches.length > 0
-      Logger.reactToMessage 'clock4',
-                            res.message.user.name,
-                            res.message.rawMessage.channel,
-                            res.message.id
+      Logger.addReaction 'clock4', res.message
       punch = null
       lastPunchDescription = user.lastPunch().description(user)
       user.undoPunch()
@@ -338,15 +318,8 @@ module.exports = (robot) ->
       .then(user.updateRow.bind(user))
       .then(
         () ->
-          Logger.reactToMessage 'dog2',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id
-          Logger.reactToMessage 'clock4',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id,
-                                'reactions.remove'
+          Logger.addReaction 'dog2', res.message
+          Logger.removeReaction 'clock4', res.message
           user.directMessage "Undid your last punch, which was:
                               *#{lastPunchDescription}*\n\nYour most current
                               punch is now: *#{punch.description(user)}*",
@@ -415,8 +388,5 @@ module.exports = (robot) ->
       for project in report.extra.projects
         msg += "##{project.name}"
       msg += ')' 
-    Logger.reactToMessage 'dog2',
-                          res.message.user.name,
-                          res.message.rawMessage.channel,
-                          res.message.id
+    Logger.addReaction 'dog2', res.message
     user.directMessage msg, Logger
