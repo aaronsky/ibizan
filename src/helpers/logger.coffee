@@ -76,7 +76,9 @@ module.exports = (robot) ->
       if msg
         if robot and robot.adapter? and robot.adapter.customMessage?
           attachment = {
+            username: robot.name,
             channel: channel,
+            fallback: msg.replace(/\W/g, ''),
             text: msg
           }
           robot.adapter.customMessage attachment
