@@ -137,14 +137,16 @@ class Punch
       if elapsed < 0
         Logger.error 'Invalid punch row: elapsed time is less than 0', new Error(datetimes)
         return
-      else if elapsed isnt rawElapsed
+      else if elapsed isnt rawElapsed and Math.abs(elapsed - rawElapsed) > 0.05
+        Logger.debug "#{row[headers.id]} - Updating totalTime because #{elapsed} is not #{rawElapsed}"
         hours = Math.floor elapsed
         minutes = Math.round((elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
         row[headers.totalTime] = "#{hours}:#{minute_str}:00.000"
         row.save (err) ->
+          Logger.debug "Saving #{row[headers.id]}"
           if err
-            Logger.error err
+            Logger.error err, new Error('Could not save row')
     
     foundProjects = []
     for i in [1..6]

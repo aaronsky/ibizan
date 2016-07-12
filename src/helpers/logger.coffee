@@ -68,7 +68,7 @@ module.exports = (robot) ->
       if msg and LOG_LEVEL >= 1
         console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
         if error and error.stack
-          console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{error.stack}"))
+          console.error(errHeader("[Ibizan] (#{new Date()}) STACK: ") + err("#{error.stack}"))
     @fun: (msg) ->
       if msg
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
