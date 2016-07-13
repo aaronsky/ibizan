@@ -66,12 +66,13 @@ module.exports = (robot) ->
     }
 
   robot.respond /users/i, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
     if isAdminUser res.message.user.name
       response = ''
-      for user in Organization.users
-        response += user.description() + '\n\n'
+      for u in Organization.users
+        response += u.description() + '\n\n'
       user.directMessage response, Logger
-      Logger.addReaction 'dog2', res.message.user.name
+      Logger.addReaction 'dog2', res.message
     else
       user.directMessage strings.adminonly, Logger
       Logger.addReaction 'x', res.message
@@ -93,7 +94,19 @@ module.exports = (robot) ->
     res.json {
       "text": response
     }
-    
+
+  robot.respond /projects/i, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    if isAdminUser res.message.user.name
+      response = ''
+      for project in Organization.projects
+        response += project.description() + '\n\n'
+      user.directMessage response, Logger
+      Logger.addReaction 'dog2', res.message
+    else
+      user.directMessage strings.adminonly, Logger
+      Logger.addReaction 'x', res.message
+
   robot.router.post '/ibizan/diagnostics/calendar', (req, res) ->
     body = req.body
     if body.token is process.env.SLASH_CALENDAR_TOKEN
@@ -109,6 +122,15 @@ module.exports = (robot) ->
     res.json {
       "text": response
     }
+
+  robot.respond /calendar/i, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    if isAdminUser res.message.user.name
+      user.directMessage Organization.calendar.description(), Logger
+      Logger.addReaction 'dog2', res.message
+    else
+      user.directMessage strings.adminonly, Logger
+      Logger.addReaction 'x', res.message
     
   robot.router.post '/ibizan/diagnostics/sync', (req, res) ->
     body = req.body
@@ -167,7 +189,7 @@ module.exports = (robot) ->
     .done(
       (status) ->
         Logger.logToChannel "Resynced with spreadsheet",
-                            res.message.user.name
+                            res.message.rawMessage.channel
         Logger.removeReaction 'clock4', res.message
         Logger.addReaction 'dog2', res.message
     )
