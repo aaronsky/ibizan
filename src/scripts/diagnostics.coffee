@@ -41,10 +41,9 @@ module.exports = (robot) ->
     res.json response
 
   robot.respond /uptime/i, (res) ->
-    Logger.logToChannel "#{Organization.name}'s Ibizan has been up since
-                         #{Organization.initTime.toDate()}
-                         _(#{moment().preciseDiff(Organization.initTime)})_",
-                         res.message.rawMessage.channel
+    res.send "#{Organization.name}'s Ibizan has been up since
+              #{Organization.initTime.toDate()}
+              _(#{moment().preciseDiff(Organization.initTime)})_"
     Logger.addReaction 'dog2', res.message
 
   robot.router.post '/ibizan/diagnostics/users', (req, res) ->
@@ -188,8 +187,7 @@ module.exports = (robot) ->
     )
     .done(
       (status) ->
-        Logger.logToChannel "Resynced with spreadsheet",
-                            res.message.rawMessage.channel
+        res.send "Resynced with spreadsheet"
         Logger.removeReaction 'clock4', res.message
         Logger.addReaction 'dog2', res.message
     )

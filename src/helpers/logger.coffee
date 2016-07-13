@@ -95,6 +95,7 @@ module.exports = (robot) ->
       if message and
          robot and
          robot.adapter and
+         robot.adapter.client and
          robot.adapter.client._apiCall? and
          client = robot.adapter.client
           params =
@@ -109,6 +110,7 @@ module.exports = (robot) ->
       if message and
          robot and
          robot.adapter and
+         robot.adapter.client and
          robot.adapter.client._apiCall? and
          client = robot.adapter.client
           params =
