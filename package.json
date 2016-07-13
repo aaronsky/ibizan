@@ -21,7 +21,6 @@
     "hubot": "^2.19.0",
     "hubot-history": "^1.0.0",
     "hubot-slack": "^3.4.2",
-    "hubot-test-helper": "^1.4.4",
     "moment": "^2.14.1",
     "moment-precise-range-plugin": "^1.2.0",
     "moment-timezone": "^0.5.4",
@@ -41,12 +40,13 @@
     "coveralls": "^2.11.9",
     "hubot-test-helper": "^1.4.4",
     "istanbul": "^0.4.4",
-    "mocha": "^3.0.0-0"
+    "mocha": "^3.0.0-0",
+    "request": "^2.73.1"
   },
   "scripts": {
     "start": "./bin/ibizan",
     "ibizan": "./bin/ibizan",
-    "test": "DEBUG=false mocha --compilers \"coffee:coffee-script/register\" ./tests/**/test_* && exit 0",
-    "coverage": "DEBUG=false ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul --recursive ./tests/**/test_*"
+    "test": "TEST=true mocha --compilers \"coffee:coffee-script/register\" ./tests/**/test_* && exit 0",
+    "coverage": "TEST=true ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul --recursive ./tests/**/test_*"
   }
 }

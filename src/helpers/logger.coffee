@@ -2,6 +2,7 @@
 chalk = require 'chalk'
 { STRINGS } = require '../helpers/constants'
 strings = STRINGS.logger
+TEST = process.env.TEST || false
 
 if logLevelEnvString = process.env.LOG_LEVEL
   if typeof logLevelEnvString is 'string'
@@ -70,7 +71,7 @@ module.exports = (robot) ->
         if error and error.stack
           console.error(errHeader("[Ibizan] (#{new Date()}) STACK: ") + err("#{error.stack}"))
     @fun: (msg) ->
-      if msg
+      if msg and not TEST
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
     @logToChannel: (msg, channel) ->
       if msg
