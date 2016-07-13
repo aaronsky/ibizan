@@ -21,6 +21,7 @@
     "hubot": "^2.19.0",
     "hubot-history": "^1.0.0",
     "hubot-slack": "^3.4.2",
+    "hubot-test-helper": "^1.4.4",
     "moment": "^2.14.1",
     "moment-precise-range-plugin": "^1.2.0",
     "moment-timezone": "^0.5.4",
