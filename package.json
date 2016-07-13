@@ -41,7 +41,7 @@
     "hubot-test-helper": "^1.4.4",
     "istanbul": "^0.4.4",
     "mocha": "^3.0.0-0",
-    "request": "^2.73.0"
+    "request": "^2.73.0z"
   },
   "scripts": {
     "start": "./bin/ibizan",
