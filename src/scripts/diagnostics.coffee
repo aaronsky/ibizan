@@ -134,24 +134,33 @@ module.exports = (robot) ->
   robot.router.post '/ibizan/diagnostics/sync', (req, res) ->
     body = req.body
     if body.token is process.env.SLASH_SYNC_TOKEN
-      response_url = body.response_url
+      response_url = body.response_url || null
       if response_url
         Logger.log "POSTing to #{response_url}"
-        Organization.sync()
-        .catch(
-          (err) ->
-            Logger.errorToSlack "Failed to resync", err
-            payload =
-              text: 'Failed to resync'
+      Organization.sync()
+      .catch(
+        (err) ->
+          message = "Failed to resync"
+          Logger.errorToSlack message, err
+          payload =
+            text: message
+          if response_url
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post(JSON.stringify(payload))
-        )
-        .done(
-          (status) ->
-            Logger.log "Options have been reloaded"
-            payload =
-              text: 'Resynced with spreadsheet'
+          else
+            res.status 200
+            res.json {
+              "text": message
+            }
+      )
+      .done(
+        (status) ->
+          message = "Resynced with spreadsheet"
+          Logger.log message
+          payload =
+            text: message
+          if response_url
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post(JSON.stringify(payload)) (err, response, body) ->
@@ -162,16 +171,16 @@ module.exports = (robot) ->
                 response.send "Request didn't come back HTTP 200 :("
                 return
               Logger.log body
-        )
-        res.status 200
-        res.json {
-          "text": "Beginning to resync..."
-        }
-      else
-        res.status 500
-        res.json {
-          "text": "No return url provided by Slack"
-        }
+          else
+            res.status 200
+            res.json {
+              "text": message
+            }
+      )
+      res.status 200
+      res.json {
+        "text": "Beginning to resync..."
+      }
     else
       res.status 401
       res.json {
