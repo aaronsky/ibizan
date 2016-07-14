@@ -7,38 +7,36 @@ http = require('http')
 helper = new Helper('../../src/scripts/bark.coffee')
 
 describe 'bark', ->
-  room = null
-
   beforeEach ->
-    room = helper.createRoom()
+    @room = helper.createRoom()
 
   afterEach ->
-    room.destroy()
+    @room.destroy()
 
   context 'user says: bark', ->
     beforeEach ->
-      room.user.say 'briancoia', 'bark'
+      @room.user.say 'briancoia', 'bark'
 
     it 'should reply bark(s) to user', ->
-      expect(room.messages[0]).to.eql(['briancoia', 'bark'])
-      expect(room.messages[1][1]).to.include('bark')
+      expect(@room.messages[0]).to.eql(['briancoia', 'bark'])
+      expect(@room.messages[1][1]).to.include('bark')
 
   context 'user says: hubot tell me a story', ->
     beforeEach ->
-      room.user.say 'briancoia', 'hubot tell me a story'
+      @room.user.say 'briancoia', 'hubot tell me a story'
 
     it 'should tell a story to user', ->
-      expect(room.messages).to.eql [
+      expect(@room.messages).to.eql [
         ['briancoia', 'hubot tell me a story']
         ['hubot',     'woof woof woof']
       ]
 
   context 'user says: good (dog|boy|pup|puppy|ibizan|ibi)', ->
     beforeEach ->
-      room.user.say 'briancoia', 'good boy'
+      @room.user.say 'briancoia', 'good boy'
 
     it 'should display the ultimate seal of gratitude', ->
-      expect(room.messages).to.eql [
+      expect(@room.messages).to.eql [
         ['briancoia', 'good boy']
         ['hubot',     ':ok_hand:']
       ]
