@@ -177,10 +177,6 @@ module.exports = (robot) ->
               "text": message
             }
       )
-      res.status 200
-      res.json {
-        "text": "Beginning to resync..."
-      }
     else
       res.status 401
       res.json {
