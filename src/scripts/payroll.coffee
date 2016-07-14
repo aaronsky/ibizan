@@ -11,10 +11,12 @@
 moment = require 'moment'
 schedule = require 'node-schedule'
 
+{ HEADERS, STRINGS, TIMEZONE } = require('../helpers/constants')
+Organization = require('../models/organization').get()
+strings = STRINGS.payroll
+
 module.exports = (robot) ->
-  { HEADERS, TIMEZONE } = require('../helpers/constants')
   Logger = require('../helpers/logger')(robot)
-  Organization = require('../models/organization').get()
 
   isAdminUser = (user) ->
     return user? and user in process.env.ADMINS.split(" ")
@@ -115,7 +117,7 @@ module.exports = (robot) ->
       if not isAdminUser body.user_name
         res.status 403
         res.json {
-          "text": "You must be an admin in order to access this command."
+          "text": strings.adminonly
         }
       else
         response_url = body.response_url
@@ -166,6 +168,36 @@ module.exports = (robot) ->
       res.json {
         "text": "Bad token in Ibizan configuration"
       }
+
+  robot.respond /payroll (.*) (.*)|payroll (.*)|payroll/i, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    Logger.debug "matches: #{res.match[1]} #{res.match[2]} #{res.message.user.name}"
+    if res.match[1] and not res.match[2]
+      user.directMessage "You must provide both a start and end date."
+      Logger.addReaction 'x', res.message
+    else if isAdminUser res.message.user.name
+      start = if res.match[1] then moment(res.match[1]) else moment().subtract(2, 'weeks')
+      end = if res.match[2] then moment(res.match[2]) else moment()
+      Organization.generateReport(start, end, true)
+      .catch(
+        (err) ->
+          response = "Failed to produce a salary report: #{err}"
+          user.directMessage response, Logger
+          Logger.error response
+      )
+      .done(
+        (reports) ->
+          numberDone = reports.length
+          response = "Payroll has been generated for #{numberDone} employees
+                      from #{start.format('dddd MMMM D YYYY')}
+                      to #{end.format('dddd MMMM D YYYY')}"
+          user.directMessage response, Logger
+          Logger.log response
+      )
+      Logger.addReaction 'dog2', res.message
+    else
+      user.directMessage strings.adminonly
+      Logger.addReaction 'x', res.message
 
   # Users should receive a DM “chime” every other Friday afternoon to
   # inform them that payroll runs on Monday, and that unaccounted-for

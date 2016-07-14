@@ -123,6 +123,8 @@ strings =
                            operation couldn't be completed. Please try again
                            in a minute. If this persists for longer than 5 minutes,
                            DM a maintainer ASAP."
+  payroll:
+    adminonly:            "You must be an admin in order to access this command."
   time:
     orgnotready:          "The organization isn't ready for
                            operations yet. It may be in the middle of
