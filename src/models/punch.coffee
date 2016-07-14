@@ -139,7 +139,7 @@ class Punch
       if elapsed < 0
         Logger.error 'Invalid punch row: elapsed time is less than 0', new Error(datetimes)
         return
-      else if elapsed isnt rawElapsed and Math.abs(elapsed - rawElapsed) > 0.02
+      else if elapsed isnt rawElapsed and (rawElapsed is undefined or Math.abs(elapsed - rawElapsed) > 0.02)
         Logger.debug "#{row[headers.id]} - Updating totalTime because #{elapsed} is not #{rawElapsed} - #{Math.abs(elapsed - rawElapsed)}"
         hours = Math.floor elapsed
         minutes = Math.round((elapsed - hours) * 60)
