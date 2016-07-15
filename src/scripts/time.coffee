@@ -177,8 +177,7 @@ module.exports = (robot) ->
   robot.respond REGEX.modes, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
-      Logger.logToChannel strings.orgnotready,
-                          res.message.user.name
+      Logger.logToChannel strings.orgnotready, res.message.user.name
       return
     parse res, res.match.input, res.match[1]
 
@@ -186,8 +185,7 @@ module.exports = (robot) ->
   robot.respond REGEX.rel_time, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
-      Logger.logToChannel strings.orgnotready,
-                          res.message.user.name
+      Logger.logToChannel strings.orgnotready, res.message.user.name
       return
     parse res, res.match.input, 'none'
 
@@ -240,8 +238,7 @@ module.exports = (robot) ->
   robot.respond /(append|add)/i, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
-      Logger.logToChannel strings.orgnotready,
-                          res.message.user.name
+      Logger.logToChannel strings.orgnotready, res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
@@ -295,8 +292,7 @@ module.exports = (robot) ->
   robot.respond /undo/i, (res) ->
     if not Organization.ready()
       Logger.warn 'Don\'t undo, Organization isn\'t ready yet'
-      Logger.logToChannel strings.orgnotready,
-                          res.message.user.name
+      Logger.logToChannel strings.orgnotready, res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
@@ -336,11 +332,10 @@ module.exports = (robot) ->
                          Logger
 
   # User feedback
-  robot.respond /(hours|today)+[\?\!\.¿¡]/i, (res) ->
+  robot.respond /(hours|today|week)+[\?\!\.¿¡]/i, (res) ->
     if not Organization.ready()
-      Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
-      Logger.logToChannel strings.orgnotready,
-                          res.message.user.name
+      Logger.log "Don\'t output hours, Organization isn\'t ready yet"
+      Logger.logToChannel strings.orgnotready, res.message.user.name
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
@@ -351,21 +346,31 @@ module.exports = (robot) ->
                            at #{Organization.name}.",
                           res.message.user.name
       return
-    
-    earlyToday = moment({hour: 0, minute: 0, second: 0})
-    now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
-    report = user.toRawPayroll(earlyToday, now)
+
+    mode = res.match[1]
+    Logger.debug mode
+    report = dateArticle = null
     headers = HEADERS.payrollreports
+    if mode is 'week'
+      sunday = moment({hour: 0, minute: 0, second: 0}).day("Sunday")
+      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      report = user.toRawPayroll(sunday, now)
+      dateArticle = "this week"
+    else
+      earlyToday = moment({hour: 0, minute: 0, second: 0})
+      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      report = user.toRawPayroll(earlyToday, now)
+      dateArticle = "today"
 
     loggedAny = false
     if not report[headers.logged] and
        not report[headers.vacation] and
        not report[headers.sick] and
        not report[headers.unpaid]
-      msg = 'You haven\'t recorded any hours today.'
+      msg = "You haven\'t recorded any hours #{dateArticle}."
     else
       if not report[headers.logged]
-        msg = 'You haven\'t recorded any paid work time'
+        msg = "You haven\'t recorded any paid work time"
       else
         msg = "You have *#{toTimeStr(report[headers.logged])} of paid work time*"
         loggedAny = true
@@ -379,7 +384,7 @@ module.exports = (robot) ->
             loggedAny = true
           else
             msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
-      msg += ' recorded for today.'
+      msg += " recorded for #{dateArticle}."
     if report.extra?.projects and report.extra?.projects?.length > 0
       msg += ' ('
       for project in report.extra.projects
