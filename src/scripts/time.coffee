@@ -312,10 +312,6 @@ module.exports = (robot) ->
       punch = null
       lastPunchDescription = user.lastPunch().description(user)
       user.undoPunch()
-      .then(
-        (lastPunch) ->
-          punch = lastPunch
-      )
       .then(user.updateRow.bind(user))
       .then(
         () ->
@@ -323,7 +319,7 @@ module.exports = (robot) ->
           Logger.removeReaction 'clock4', res.message
           user.directMessage "Undid your last punch, which was:
                               *#{lastPunchDescription}*\n\nYour most current
-                              punch is now: *#{punch.description(user)}*",
+                              punch is now: *#{user.lastPunch().description(user)}*",
                              Logger
       )
       .catch(
