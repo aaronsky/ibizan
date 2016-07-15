@@ -345,6 +345,7 @@ module.exports = (robot) ->
                           res.message.user.name
       return
 
+    attachments = []
     mode = res.match[1]
     report = dateArticle = null
     headers = HEADERS.payrollreports
@@ -353,6 +354,15 @@ module.exports = (robot) ->
       now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
       report = user.toRawPayroll(sunday, now)
       dateArticle = "this week"
+      for punch in user.punches
+        if punch.date.isBefore(sunday) or punch.date.isAfter(now)
+          continue
+        else if not punch.elapsed and not punch.times.block
+          continue
+        else if not punch.mode is 'out'
+          continue
+        else
+          attachments.push punch.slackAttachment()
     else if mode is 'month'
       sunday = moment({hour: 0, minute: 0, second: 0}).startOf("month")
       now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
@@ -368,6 +378,15 @@ module.exports = (robot) ->
       now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
       report = user.toRawPayroll(earlyToday, now)
       dateArticle = "today"
+      for punch in user.punches
+        if punch.date.isBefore(earlyToday) or punch.date.isAfter(now)
+          continue
+        else if not punch.elapsed and not punch.times.block
+          continue
+        else if not punch.mode is 'out'
+          continue
+        else
+          attachments.push punch.slackAttachment()
 
     loggedAny = false
     if not report[headers.logged] and
@@ -396,6 +415,7 @@ module.exports = (robot) ->
       msg += ' ('
       for project in report.extra.projects
         msg += "##{project.name}"
-      msg += ')' 
+      msg += ')'
+
     Logger.addReaction 'dog2', res.message
-    user.directMessage msg, Logger
+    user.directMessage msg, Logger, attachments

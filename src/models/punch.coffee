@@ -357,6 +357,32 @@ class Punch
               on the Ibizan spreadsheet and run `/sync`.' 
     return true
 
+  slackAttachment: () ->
+    fields = []
+    elapsed = false
+    if @times.block?
+      elapsed = @times.block
+    else if @elapsed?
+      elapsed = @elapsed
+
+    if @times[0]
+      inField =
+        title: "In"
+        value: @times[0].format("h:mm:ss A")
+        short: true
+      fields.push inField
+    if @times[1]
+      outField =
+        title: "Out"
+        value: @times[1].format("h:mm:ss A")
+        short: true
+      fields.push outField
+
+    attachment =
+      title: @times[0].format("dddd, MMMM Do YYYY")
+      text: elapsed + " hours"
+      fields: fields
+    return attachment
   description: (user) ->
     modeQualifier =
      timeQualifier =
