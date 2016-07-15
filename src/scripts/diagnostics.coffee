@@ -148,11 +148,6 @@ module.exports = (robot) ->
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post(JSON.stringify(payload))
-          else
-            res.status 200
-            res.json {
-              "text": message
-            }
       )
       .done(
         (status) ->
@@ -171,12 +166,11 @@ module.exports = (robot) ->
                 response.send "Request didn't come back HTTP 200 :("
                 return
               Logger.log body
-          else
-            res.status 200
-            res.json {
-              "text": message
-            }
       )
+      res.status 200
+      res.json {
+        "text": "Beginning to resync..."
+      }
     else
       res.status 401
       res.json {
