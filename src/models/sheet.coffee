@@ -4,9 +4,8 @@ Q = require 'q'
 moment = require 'moment'
 
 require '../../lib/moment-holidays.js'
-constants = require '../helpers/constants'
+{ HEADERS } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
-HEADERS = constants.HEADERS
 Project = require './project'
 { User, Settings, Timetable } = require './user'
 

@@ -3,9 +3,8 @@ moment = require 'moment-timezone'
 weekend = require 'moment-weekend'
 uuid = require 'node-uuid'
 
-{ HEADERS, REGEX, TIMEZONE } = require '../helpers/constants'
+{ HEADERS, MODES, REGEX, TIMEZONE } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
-MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('./organization').get()
 
 class Punch

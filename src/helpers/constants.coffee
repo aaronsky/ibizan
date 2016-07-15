@@ -132,14 +132,16 @@ strings =
                            Please try again later, and if this persists
                            longer than five minutes, DM a maintainer as
                            soon as possible."
-
 Object.freeze strings
+
+modes = ['in', 'out', 'vacation', 'unpaid', 'sick']
 
 timezone = 'America/Phoenix'
 # Object.freeze timezone
 
 module.exports =
   HEADERS: cellHeaders
+  MODES: modes
   REGEX: regex
   STRINGS: strings
   TIMEZONE: timezone

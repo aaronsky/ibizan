@@ -2,9 +2,7 @@
 moment = require 'moment-timezone'
 Q = require 'q'
 
-constants = require '../helpers/constants'
-HEADERS = constants.HEADERS
-TIMEZONE = constants.TIMEZONE
+{ HEADERS, TIMEZONE } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 
 getPositiveNumber = (input, current) ->
