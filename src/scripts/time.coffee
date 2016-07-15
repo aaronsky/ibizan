@@ -330,7 +330,7 @@ module.exports = (robot) ->
       user.directMessage 'There\'s nothing for me to undo.', Logger
 
   # User feedback
-  robot.respond /(hours|today|week)+[\?\!\.¿¡]/i, (res) ->
+  robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output hours, Organization isn\'t ready yet"
       Logger.logToChannel strings.orgnotready, res.message.user.name
@@ -346,7 +346,6 @@ module.exports = (robot) ->
       return
 
     mode = res.match[1]
-    Logger.debug mode
     report = dateArticle = null
     headers = HEADERS.payrollreports
     if mode is 'week'
@@ -354,6 +353,16 @@ module.exports = (robot) ->
       now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
       report = user.toRawPayroll(sunday, now)
       dateArticle = "this week"
+    else if mode is 'month'
+      sunday = moment({hour: 0, minute: 0, second: 0}).startOf("month")
+      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      report = user.toRawPayroll(sunday, now)
+      dateArticle = "this month"
+    else if mode is 'year'
+      sunday = moment({hour: 0, minute: 0, second: 0}).startOf("year")
+      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      report = user.toRawPayroll(sunday, now)
+      dateArticle = "this year"
     else
       earlyToday = moment({hour: 0, minute: 0, second: 0})
       now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
