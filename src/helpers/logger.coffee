@@ -84,7 +84,6 @@ module.exports = (robot) ->
       if msg
         if robot and robot.adapter? and robot.adapter.customMessage?
           message = null
-          Logger.debug typeIsArray attachment
           if attachment and typeIsArray attachment
             message = {
               channel: channel,

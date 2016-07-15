@@ -118,8 +118,8 @@ module.exports = (robot) ->
       else
         user.directMessage "You cannot punch in ##{res.message.user.room}.
                              Try punching in ##{Organization.clockChannel},
-                             a designated project channel, or here.",
-                           Logger
+                             a designated project channel, or here.".
+                            Logger
 
   sendPunch = (punch, user, res) ->
     if not punch
@@ -133,7 +133,7 @@ module.exports = (robot) ->
         Logger.errorToSlack "Somehow, a punch was not generated
                              for \"#{user.slack}\". Punch:\n", res.match.input
         user.directMessage "An unexpected error occured while
-                             generating your punch.",
+                            generating your punch.",
                            Logger
       return
     Organization.spreadsheet.enterPunch(punch, user)
@@ -280,8 +280,7 @@ module.exports = (robot) ->
     row = punch.toRawRow user.name
     row.save (err) ->
       if err
-        user.directMessage err,
-                           Logger
+        user.directMessage err, Logger
       else
         projectsQualifier = projects?.join(', ') ? ''
         notesQualifier = "'#{msg}'"
@@ -328,8 +327,7 @@ module.exports = (robot) ->
       )
       .done()
     else
-      user.directMessage 'There\'s nothing for me to undo.',
-                         Logger
+      user.directMessage 'There\'s nothing for me to undo.', Logger
 
   # User feedback
   robot.respond /(hours|today|week)+[\?\!\.¿¡]/i, (res) ->
