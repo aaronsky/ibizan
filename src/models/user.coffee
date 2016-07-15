@@ -74,7 +74,7 @@ class User
           row[header] = '12:00 am'
         else if row[header] is 'noon'
           row[header] = '12:00 pm'
-        temp[key] = moment.tz(row[header], 'hh:mm a', constants.TIMEZONE)
+        temp[key] = moment.tz(row[header], 'hh:mm a', TIMEZONE)
       else if header is headers.salary
         temp[key] = row[header] is 'Y'
       else if header is headers.timezone
@@ -191,7 +191,7 @@ class User
   toRawPayroll: (start, end) ->
     headers = HEADERS.payrollreports
     row = {}
-    row[headers.date] = moment.tz(constants.TIMEZONE).format('M/DD/YYYY')
+    row[headers.date] = moment.tz(TIMEZONE).format('M/DD/YYYY')
     row[headers.name] = @name
     loggedTime = unpaidTime = vacationTime = sickTime = 0
     projectsForPeriod = []
