@@ -39,6 +39,13 @@ fun = chalk.magenta
 module.exports = (robot) ->
   class Logger
     constructor: () ->
+    typeIsArray = (value) ->
+      value and
+        typeof value is 'object' and
+        value instanceof Array and
+        typeof value.length is 'number' and
+        typeof value.splice is 'function' and
+        not ( value.propertyIsEnumerable 'length' )
     @clean: (msg) ->
       response = ''
       if typeof msg is 'string'
@@ -73,16 +80,31 @@ module.exports = (robot) ->
     @fun: (msg) ->
       if msg and not TEST
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
-    @logToChannel: (msg, channel) ->
+    @logToChannel: (msg, channel, attachment) ->
       if msg
         if robot and robot.adapter? and robot.adapter.customMessage?
-          attachment = {
-            username: robot.name,
-            channel: channel,
-            fallback: msg.replace(/\W/g, ''),
-            text: msg
-          }
-          robot.adapter.customMessage attachment
+          message = null
+          Logger.debug typeIsArray attachment
+          if attachment and typeIsArray attachment
+            message = {
+              channel: channel,
+              text: msg,
+              attachments: attachment
+            }
+          else if attachment
+            message = {
+              channel: channel,
+              text: msg,
+              attachments:
+                text: attachment,
+                fallback: attachment.replace(/\W/g, '')
+            }
+          else
+            message = {
+              channel: channel,
+              text: msg
+            }
+          robot.adapter.customMessage message
         else
           Logger.log msg
     @errorToSlack: (msg, error) ->
