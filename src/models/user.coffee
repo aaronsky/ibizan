@@ -125,6 +125,27 @@ class User
         else if last.mode in modes
           return last
     return
+  lastPunchTime: ->
+    if @punches.length > 0
+      punch = @lastPunch()
+      if punch.times.length > 0
+        time = punch.times.slice(-1)[0]
+        if time.isSame(moment(), 'day')
+          date = 'today'
+        else if time.isSame(moment().subtract(1, 'days'), 'day')
+          date = 'yesterday'
+        else
+          date = 'on ' + time.format('MMM Do')
+        return "#{date}, #{time.format('h:mm a')}"
+      else if punch.times.block
+        if punch.mode is 'none'
+          type = ' '
+        else if punch.mode is 'vacation' or
+                punch.mode is 'sick' or
+                punch.mode is 'unpaid'
+          type = punch.mode + ' '
+        return "a #{punch.times.block} hour #{type}block punch"
+    return "never"
   undoPunch: () ->
     deferred = Q.defer()
     lastPunch = @lastPunch()
@@ -273,35 +294,57 @@ class User
     else
       deferred.reject 'Row is null'
     deferred.promise
-  directMessage: (msg, logger=Logger) ->
-    logger.logToChannel msg, @slack
+  directMessage: (msg, logger=Logger, attachment) ->
+    logger.logToChannel msg, @slack, attachment
   hound: (msg) ->
     now = moment.tz TIMEZONE
     @directMessage (msg)
     @settings?.lastMessage.lastPing = now
+  hexColor: ->
+    hash = 0
+    for i in [0...@slack.length]
+      hash = @slack.charCodeAt(i) + ((hash << 3) - hash)
+    color = Math.abs(hash).toString(16).substring(0, 6)
+    hexColor = "#" + '000000'.substring(0, 6 - color.length) + color
+    return hexColor
+  slackAttachment: () ->
+    fields = []
+    punchesField =
+      title: "Punches"
+      value: (@punches || []).length
+      short: true
+    fields.push punchesField
+    lastPunchField =
+      title: "Last Punch"
+      value: @lastPunchTime()
+      short: true
+    fields.push lastPunchField
+    activeHoursField =
+      title: "Active Hours"
+      value: "#{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}"
+      short: true
+    fields.push activeHoursField
+    timeZoneField =
+      title: "Time Zone"
+      value: "#{@timetable.timezone.name}"
+      short: true
+    fields.push timeZoneField
+    lastMessageField =
+      title: "Last Message"
+      value: "#{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
+      short: true
+    fields.push lastMessageField
+    attachment =
+      title: @name
+      text: "@" + @slack
+      fallback: @name.replace(/\W/g, '') + " @" + @slack.replace(/\W/g, '')
+      color: @hexColor()
+      fields: fields
+    return attachment
   description: () ->
-    if @punches.length > 0
-      punch = @lastPunch()
-      if punch.times.length > 0
-        time = punch.times.slice(-1)[0]
-        if time.isSame(moment(), 'day')
-          date = 'today'
-        else if time.isSame(moment().subtract(1, 'days'), 'day')
-          date = 'yesterday'
-        else
-          date = 'on ' + time.format('MMM Do')
-        punchTime = "#{date}, #{time.format('h:mm a')}"
-      else if punch.times.block
-        if punch.mode is 'none'
-          type = ' '
-        else if punch.mode is 'vacation' or
-                punch.mode is 'sick' or
-                punch.mode is 'unpaid'
-          type = punch.mode + ' '
-        punchTime = "a #{punch.times.block} hour #{type}block punch"
     return "User: #{@name} (#{@slack})\n
             They have #{(@punches || []).length} punches on record\n
-            Last punch was #{punchTime}\n
+            Last punch was #{@lastPunchTime()}\n
             Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
             They are in #{@timetable.timezone.name}\n
             The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"

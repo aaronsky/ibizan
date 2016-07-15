@@ -67,10 +67,11 @@ module.exports = (robot) ->
   robot.respond /users/i, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     if isAdminUser res.message.user.name
-      response = ''
+      response = 'All users:'
+      attachments = []
       for u in Organization.users
-        response += u.description() + '\n\n'
-      user.directMessage response, Logger
+        attachments.push u.slackAttachment()
+      user.directMessage response, Logger, attachments
       Logger.addReaction 'dog2', res.message
     else
       user.directMessage strings.adminonly, Logger
