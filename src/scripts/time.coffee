@@ -278,15 +278,18 @@ module.exports = (robot) ->
             op is 'notes'
       punch.appendNotes msg
     row = punch.toRawRow user.name
-    row.save (err) ->
-      if err
+    Organization.spreadsheet.saveRow(row)
+    .catch(
+      (err) ->
         user.directMessage err, Logger
-      else
-        projectsQualifier = projects?.join(', ') ? ''
-        notesQualifier = "'#{msg}'"
-        user.directMessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
-                           Logger
-        Logger.addReaction 'dog2', res.message
+        Logger.error 'Unable to append row', new Error(err)
+    ).done(
+      projectsQualifier = projects?.join(', ') ? ''
+      notesQualifier = "'#{msg}'"
+      user.directMessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
+                         Logger
+      Logger.addReaction 'dog2', res.message
+    )
 
   robot.respond /undo/i, (res) ->
     if not Organization.ready()

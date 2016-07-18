@@ -45,6 +45,60 @@ class Spreadsheet
     )
     return deferred.promise
 
+  saveRow: (row, rowname="row") ->
+    deferred = Q.defer()
+    if not row
+      deferred.reject "No row passed to saveRow"
+    else
+      row.save (err) ->
+        if err
+          # Retry up to 3 times
+          retry = 1
+          setTimeout ->
+            if retry <= 3
+              Logger.debug "Retrying save of #{rowname}, attempt #{retry}..."
+              row.save (err) ->
+                if not err
+                  Logger.debug "#{rowname} saved successfully"
+                  deferred.resolve row
+                  return true
+              retry += 1
+            else
+              deferred.reject err
+              Logger.error "Unable to save #{rowname}", new Error(err)
+          , 1000
+        else
+          deferred.resolve row
+    return deferred.promise
+
+  newRow: (sheet, row, rowname="row") ->
+    deferred = Q.defer()
+    if not sheet
+      deferred.reject "No sheet passed to newRow"
+    else if not row
+      deferred.reject "No row passed to newRow"
+    else
+      sheet.addRow row, (err) ->
+        if err
+          # Retry up to 3 times
+          retry = 1
+          setTimeout ->
+            if retry <= 3
+              Logger.debug "Retrying adding #{rowname}, attempt #{retry}..."
+              sheet.addRow row, (err) ->
+                if not err
+                  Logger.debug "#{rowname} saved successfully"
+                  deferred.resolve row
+                  return true
+              retry += 1
+            else
+              deferred.reject err
+              Logger.error "Unable to add #{rowname}", new Error(err)
+          , 1000
+        else
+          deferred.resolve row
+    return deferred.promise
+
   enterPunch: (punch, user) ->
     deferred = Q.defer()
     valid = punch.isValid user
@@ -70,10 +124,9 @@ class Spreadsheet
             deferred.reject 'You haven\'t punched out yet.'
           last.out punch
           row = last.toRawRow user.name
-          row.save (err) ->
-            if err
-              deferred.reject err
-            else
+          @saveRow(row, "punch for #{user.name}")
+          .then(
+            () ->
               # add hours to project in projects
               if last.times.block
                 elapsed = last.times.block
@@ -96,52 +149,60 @@ class Spreadsheet
                 () ->
                   deferred.resolve last
               )
+          )
+          .catch(
+            (err) ->
+              deferred.reject err
+          ).done()
       else
         row = punch.toRawRow user.name
-        @rawData.addRow row, (err) =>
-          if err
-            deferred.reject err
-          else
-            params = {}
-            @rawData.getRows params, (err, rows) ->
-              if err or not rows
-                deferred.reject err
-              else
-                row_matches =
-                  (r for r in rows when r[headers.id] is row[headers.id])
-                row_match = row_matches[0]
-                punch.assignRow row_match
-                user.punches.push punch
-                if punch.mode is 'vacation' or
-                   punch.mode is 'sick' or
-                   punch.mode is 'unpaid'
-                  if punch.times.block
-                    elapsed = punch.times.block
-                  else
-                    elapsed = punch.elapsed
-                  elapsedDays = user.toDays elapsed
-                  if punch.mode is 'vacation'
-                    total = user.timetable.vacationTotal
-                    available = user.timetable.vacationAvailable
-                    user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
-                  else if punch.mode is 'sick'
-                    total = user.timetable.sickTotal
-                    available = user.timetable.sickAvailable
-                    user.timetable.setSick(total + elapsedDays, available - elapsedDays)
-                  else if punch.mode is 'unpaid'
-                    total = user.timetable.unpaidTotal
-                    user.timetable.setUnpaid(total + elapsedDays)
-                  user.updateRow()
-                  .catch(
-                    (err) ->
-                      deferred.reject err
-                  )
-                  .done(
-                    () ->
-                      deferred.resolve punch
-                  )
+        @newRow(@rawData, row)
+        .then(
+          params = {}
+          @rawData.getRows params, (err, rows) ->
+            if err or not rows
+              deferred.reject "Could not get rawData rows: #{err}"
+            else
+              row_matches =
+                (r for r in rows when r[headers.id] is row[headers.id])
+              row_match = row_matches[0]
+              punch.assignRow row_match
+              user.punches.push punch
+              if punch.mode is 'vacation' or
+                 punch.mode is 'sick' or
+                 punch.mode is 'unpaid'
+                if punch.times.block
+                  elapsed = punch.times.block
                 else
-                  deferred.resolve punch
+                  elapsed = punch.elapsed
+                elapsedDays = user.toDays elapsed
+                if punch.mode is 'vacation'
+                  total = user.timetable.vacationTotal
+                  available = user.timetable.vacationAvailable
+                  user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
+                else if punch.mode is 'sick'
+                  total = user.timetable.sickTotal
+                  available = user.timetable.sickAvailable
+                  user.timetable.setSick(total + elapsedDays, available - elapsedDays)
+                else if punch.mode is 'unpaid'
+                  total = user.timetable.unpaidTotal
+                  user.timetable.setUnpaid(total + elapsedDays)
+                user.updateRow()
+                .catch(
+                  (err) ->
+                    deferred.reject "Could not update user row: #{err}"
+                )
+                .done(
+                  () ->
+                    deferred.resolve punch
+                )
+              else
+                deferred.resolve punch
+        )
+        .catch(
+          (err) ->
+            deferred.reject "Could not add row: #{err}"
+        ).done()
       
     deferred.promise
 

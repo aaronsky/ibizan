@@ -144,21 +144,11 @@ class Punch
         minutes = Math.round((elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
         row[headers.totalTime] = "#{hours}:#{minute_str}:00.000"
-        row.save (err) ->
-          if err
-            # Retry up to 3 times
-            retry = 1
-            setTimeout ->
-              if retry <= 3
-                Logger.debug "Retrying save of #{row[headers.id]}, attempt #{retry}..."
-                row.save (err) ->
-                  if not err
-                    Logger.debug "#{row[headers.id]} saved successfully"
-                    return true
-                retry += 1
-              else
-                Logger.error 'Unable to save row', new Error(err)
-            , 1000
+        Organization.spreadsheet.saveRow(row)
+        .catch(
+          (err) ->
+            Logger.error 'Unable to save row', new Error(err)
+        ).done()
     
     foundProjects = []
     for i in [1..6]
