@@ -49,8 +49,6 @@ class Spreadsheet
     deferred = Q.defer()
     if not row
       deferred.reject "No row passed to saveRow"
-    else if not row.save?
-      deferred.reject "Row cannot be saved"
     else
       row.save (err) ->
         if err
