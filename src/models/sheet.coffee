@@ -156,48 +156,50 @@ class Spreadsheet
           ).done()
       else
         row = punch.toRawRow user.name
+        rawData = @rawData
         @newRow(@rawData, row)
         .then(
-          params = {}
-          @rawData.getRows params, (err, rows) ->
-            if err or not rows
-              deferred.reject "Could not get rawData rows: #{err}"
-            else
-              row_matches =
-                (r for r in rows when r[headers.id] is row[headers.id])
-              row_match = row_matches[0]
-              punch.assignRow row_match
-              user.punches.push punch
-              if punch.mode is 'vacation' or
-                 punch.mode is 'sick' or
-                 punch.mode is 'unpaid'
-                if punch.times.block
-                  elapsed = punch.times.block
-                else
-                  elapsed = punch.elapsed
-                elapsedDays = user.toDays elapsed
-                if punch.mode is 'vacation'
-                  total = user.timetable.vacationTotal
-                  available = user.timetable.vacationAvailable
-                  user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
-                else if punch.mode is 'sick'
-                  total = user.timetable.sickTotal
-                  available = user.timetable.sickAvailable
-                  user.timetable.setSick(total + elapsedDays, available - elapsedDays)
-                else if punch.mode is 'unpaid'
-                  total = user.timetable.unpaidTotal
-                  user.timetable.setUnpaid(total + elapsedDays)
-                user.updateRow()
-                .catch(
-                  (err) ->
-                    deferred.reject "Could not update user row: #{err}"
-                )
-                .done(
-                  () ->
-                    deferred.resolve punch
-                )
+          (row) ->
+            params = {}
+            rawData.getRows params, (err, rows) ->
+              if err or not rows
+                deferred.reject "Could not get rawData rows: #{err}"
               else
-                deferred.resolve punch
+                row_matches =
+                  (r for r in rows when r[headers.id] is row[headers.id])
+                row_match = row_matches[0]
+                punch.assignRow row_match
+                user.punches.push punch
+                if punch.mode is 'vacation' or
+                   punch.mode is 'sick' or
+                   punch.mode is 'unpaid'
+                  if punch.times.block
+                    elapsed = punch.times.block
+                  else
+                    elapsed = punch.elapsed
+                  elapsedDays = user.toDays elapsed
+                  if punch.mode is 'vacation'
+                    total = user.timetable.vacationTotal
+                    available = user.timetable.vacationAvailable
+                    user.timetable.setVacation(total + elapsedDays, available - elapsedDays)
+                  else if punch.mode is 'sick'
+                    total = user.timetable.sickTotal
+                    available = user.timetable.sickAvailable
+                    user.timetable.setSick(total + elapsedDays, available - elapsedDays)
+                  else if punch.mode is 'unpaid'
+                    total = user.timetable.unpaidTotal
+                    user.timetable.setUnpaid(total + elapsedDays)
+                  user.updateRow()
+                  .catch(
+                    (err) ->
+                      deferred.reject "Could not update user row: #{err}"
+                  )
+                  .done(
+                    () ->
+                      deferred.resolve punch
+                  )
+                else
+                  deferred.resolve punch
         )
         .catch(
           (err) ->

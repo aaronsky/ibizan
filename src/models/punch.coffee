@@ -373,6 +373,7 @@ class Punch
       text: elapsed + " hours"
       fields: fields
     return attachment
+
   description: (user) ->
     modeQualifier =
      timeQualifier =
