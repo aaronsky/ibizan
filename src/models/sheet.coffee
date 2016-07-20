@@ -156,12 +156,12 @@ class Spreadsheet
           ).done()
       else
         row = punch.toRawRow user.name
-        rawData = @rawData
+        that = @
         @newRow(@rawData, row)
         .then(
-          (row) ->
+          (row, rawData) ->
             params = {}
-            rawData.getRows params, (err, rows) ->
+            that.rawData.getRows params, (err, rows) ->
               if err or not rows
                 deferred.reject "Could not get rawData rows: #{err}"
               else
