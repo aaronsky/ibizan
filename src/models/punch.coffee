@@ -356,17 +356,23 @@ class Punch
 
   slackAttachment: () ->
     fields = []
-    elapsed = false
+    elapsed =
+     punchTitle = ''
     if @times.block?
-      elapsed = @times.block
+      elapsed = "#{@times.block} hours"
     else if @elapsed?
-      elapsed = @elapsed
+      elapsed = "#{@elapsed} hours"
+
+    headers = HEADERS.rawdata
+    if @row and @row[headers.today]
+      punchTitle = moment(@row[headers.today], "MM/DD/YYYY").format("dddd, MMMM Do YYYY")
 
     if @times[0]
       inField =
         title: "In"
         value: @times[0].format("h:mm:ss A")
         short: true
+      punchTitle = @times[0].format("dddd, MMMM Do YYYY")
       fields.push inField
     if @times[1]
       outField =
@@ -376,8 +382,8 @@ class Punch
       fields.push outField
 
     attachment =
-      title: @times[0].format("dddd, MMMM Do YYYY")
-      text: elapsed + " hours"
+      title: punchTitle
+      text: elapsed
       fields: fields
     return attachment
 

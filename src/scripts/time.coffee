@@ -337,6 +337,7 @@ module.exports = (robot) ->
     if not Organization.ready()
       Logger.log "Don\'t output hours, Organization isn\'t ready yet"
       Logger.logToChannel strings.orgnotready, res.message.user.name
+      Logger.addReaction 'x', res.message
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
@@ -383,10 +384,6 @@ module.exports = (robot) ->
       dateArticle = "today"
       for punch in user.punches
         if punch.date.isBefore(earlyToday) or punch.date.isAfter(now)
-          continue
-        else if not punch.elapsed and not punch.times.block
-          continue
-        else if not punch.mode is 'out'
           continue
         else
           attachments.push punch.slackAttachment()
