@@ -90,6 +90,13 @@ class Punch
       return
     headers = HEADERS.rawdata
     date = moment.tz(row[headers.today], 'MM/DD/YYYY', TIMEZONE)
+
+    # UUID sanity check
+    if row[headers.id].length != 36
+      Logger.debug "#{row[headers.id]} is not a valid UUID, changing to valid UUID"
+      row[headers.id] = uuid.v1()
+      Organization.spreadsheet.saveRow(row)
+
     if row[headers.project1] is 'vacation' or
        row[headers.project1] is 'sick' or
        row[headers.project1] is 'unpaid'
