@@ -29,27 +29,46 @@ moment = require 'moment-timezone'
 { REGEX, HEADERS, STRINGS, TIMEZONE } = require '../helpers/constants'
 Organization = require('../models/organization').get()
 Punch = require '../models/punch'
+Q = require 'q'
 User = require '../models/user'
 strings = STRINGS.time
 
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
-  isDM = (name, channel) ->
-    name is channel
+  isDM = (channel) ->
+    channel.substring(0,1) is 'D'
+
+  getChannelName = (channel) ->
+    # TODO: make not async
+    deferred = Q.defer()
+    info = robot.adapter.client.web.channels.info channel
+    .then(
+      (response) ->
+        deferred.resolve response.channel.name
+    )
+    .catch(
+      (err) ->
+        deferred.reject err
+    )
+    deferred.promise
 
   isClockChannel = (channel) ->
-    channel is Organization.clockChannel
+    return true # TODO: remove reliance on getChannelName
+    @getChannelName channel
+    .then(
+      (name) ->
+        return name is Organization.clockChannel
+    )
 
   isProjectChannel = (channel) ->
-    return not isClockChannel(channel.room) and
-           not isDM(channel.name, channel.room) and
-           Organization.getProjectByName(channel.room)?
+    return false # TODO: remove reliance on getChannelName
+    info.channel.name is Organization.getProjectByName(channel.room)?
 
-  canPunchHere = (name, channel) ->
-    isDM(name, channel) or
-    isClockChannel(channel) or
-    isProjectChannel(channel)
+  canPunchHere = (channel) ->
+    isDM(channel) # or
+    # isClockChannel(channel) or
+    # isProjectChannel(channel)
 
   toTimeStr = (duration) ->
     hours = Math.floor duration
@@ -71,20 +90,19 @@ module.exports = (robot) ->
   parse = (res, msg, mode) ->
     mode = mode.toLowerCase()
     user = Organization.getUserBySlackName res.message.user.name
-    Logger.log "Parsing '#{msg}' for @#{user.slack}."
     if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
+      res.reply "Either you aren't part of the
+                 Employee worksheet, something has gone
+                 horribly wrong, or you aren\'t an employee
+                 at #{Organization.name}."
+      Logger.addReaction 'x', res.message
       return
-    if canPunchHere res.message.user.name, res.message.user.room
+    Logger.log "Parsing '#{msg}' for @#{user.slack}."
+    if canPunchHere res.message.user.room
       Logger.addReaction 'clock4', res.message
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
-      tz = res.message.user.slack.tz
+      tz = res.message.user.tz
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
          isProjectChannel res.message.user
@@ -112,14 +130,15 @@ module.exports = (robot) ->
         res.router_res.status 500
         res.router_res.json {
           "text": "You cannot punch in ##{res.message.user.room}.
-                    Try punching in ##{Organization.clockChannel},
-                    a designated project channel, or here."
+                   Try punching in ##{Organization.clockChannel},
+                   a designated project channel, or here."
         }
       else
+        Logger.addReaction 'x', res.message
         user.directMessage "You cannot punch in ##{res.message.user.room}.
-                             Try punching in ##{Organization.clockChannel},
-                             a designated project channel, or here.".
-                            Logger
+                            Try punching in ##{Organization.clockChannel},
+                            a designated project channel, or here.",
+                           Logger
 
   sendPunch = (punch, user, res) ->
     if not punch
@@ -177,7 +196,8 @@ module.exports = (robot) ->
   robot.respond REGEX.modes, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
-      Logger.logToChannel strings.orgnotready, res.message.user.name
+      res.send strings.orgnotready
+      Logger.addReaction 'x', res.message
       return
     parse res, res.match.input, res.match[1]
 
@@ -185,7 +205,8 @@ module.exports = (robot) ->
   robot.respond REGEX.rel_time, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
-      Logger.logToChannel strings.orgnotready, res.message.user.name
+      res.send strings.orgnotready
+      Logger.addReaction 'x', res.message
       return
     parse res, res.match.input, 'none'
 
@@ -238,24 +259,24 @@ module.exports = (robot) ->
   robot.respond /(append|add)/i, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
-      Logger.logToChannel strings.orgnotready, res.message.user.name
+      res.send strings.orgnotready
+      Logger.addReaction 'x', res.message
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
+      res.reply "Either you aren't part of the
+                 Employee worksheet, something has gone
+                 horribly wrong, or you aren\'t an employee
+                 at #{Organization.name}."
+      Logger.addReaction 'x', res.message
       return
     punch = user.lastPunch 'in'
     if not punch
-      Logger.logToChannel "Based on my records, I don't think you're
-                           punched in right now. If this is in error, run
-                           `/sync` and try your punch again, or DM a
-                           maintainer as soon as possible.",
-                          res.message.user.name
+      user.directMessage "Based on my records, I don't think you're
+                          punched in right now. If this is in error, run
+                          `/sync` and try your punch again, or DM a
+                          maintainer as soon as possible.",
+                          Logger
       return
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
@@ -294,16 +315,15 @@ module.exports = (robot) ->
   robot.respond /undo/i, (res) ->
     if not Organization.ready()
       Logger.warn 'Don\'t undo, Organization isn\'t ready yet'
-      Logger.logToChannel strings.orgnotready, res.message.user.name
+      res.send strings.orgnotready
+      Logger.addReaction 'x', res.message
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
+      res.reply "Either you aren't part of the
+                 Employee worksheet, something has gone
+                 horribly wrong, or you aren\'t an employee
+                 at #{Organization.name}."
       return
     if user.punches and user.punches.length > 0
       Logger.addReaction 'clock4', res.message
@@ -333,20 +353,87 @@ module.exports = (robot) ->
       user.directMessage 'There\'s nothing for me to undo.', Logger
 
   # User feedback
-  robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, (res) ->
+
+  robot.respond /hours (.*)/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output hours, Organization isn\'t ready yet"
-      Logger.logToChannel strings.orgnotready, res.message.user.name
+      res.send strings.orgnotready
       Logger.addReaction 'x', res.message
       return
     user = Organization.getUserBySlackName res.message.user.name
     if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
+      res.reply "Either you aren't part of the
+                 Employee worksheet, something has gone
+                 horribly wrong, or you aren\'t an employee
+                 at #{Organization.name}."
+      Logger.addReaction 'x', res.message
+      return
+    date = moment(res.match[1])
+    if not date.isValid()
+      Logger.log "hours: #{date} is an invalid date"
+      user.directMessage "#{date} is not a valid date", Logger
+      Logger.addReaction 'x', res.message
+      return
+
+    attachments = []
+    report = null
+    headers = HEADERS.payrollreports
+
+    startOfDay = date.startOf('day')
+    endOfDay = date.endOf('day')
+    report = user.toRawPayroll(startOfDay, endOfDay)
+    for punch in user.punches
+      if punch.date.isBefore(startOfDay) or punch.date.isAfter(endOfDay)
+        continue
+      else
+        attachments.push punch.slackAttachment()
+
+    loggedAny = false
+    if not report[headers.logged] and
+       not report[headers.vacation] and
+       not report[headers.sick] and
+       not report[headers.unpaid]
+      msg = "You haven\'t recorded any hours on #{date}."
+    else
+      if not report[headers.logged]
+        msg = "You haven\'t recorded any paid work time"
+      else
+        msg = "You have *#{toTimeStr(report[headers.logged])} of paid work time*"
+        loggedAny = true
+      for kind in ['vacation', 'sick', 'unpaid']
+        header = headers[kind]
+        if kind is 'unpaid'
+          kind = 'unpaid work'
+        if report[header]
+          if not loggedAny
+            msg += ", but you have *#{toTimeStr(report[header])} of #{kind} time*"
+            loggedAny = true
+          else
+            msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
+      msg += " recorded for #{date}."
+    if report.extra?.projects and report.extra?.projects?.length > 0
+      msg += ' ('
+      for project in report.extra.projects
+        msg += "##{project.name}"
+      msg += ')'
+
+    Logger.addReaction 'dog2', res.message
+    user.directMessage msg, Logger, attachments
+
+
+  robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, (res) ->
+    if not Organization.ready()
+      Logger.log "Don\'t output hours, Organization isn\'t ready yet"
+      res.send strings.orgnotready
+      Logger.addReaction 'x', res.message
+      return
+    user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      res.reply "Either you aren't part of the
+                 Employee worksheet, something has gone
+                 horribly wrong, or you aren\'t an employee
+                 at #{Organization.name}."
+      Logger.addReaction 'x', res.message
       return
 
     attachments = []

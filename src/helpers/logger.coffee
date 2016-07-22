@@ -1,5 +1,6 @@
 
 chalk = require 'chalk'
+Q = require 'q'
 { STRINGS } = require '../helpers/constants'
 strings = STRINGS.logger
 TEST = process.env.TEST || false
@@ -35,6 +36,13 @@ errHeader = chalk.bold.red
 err = chalk.red
 funHeader = chalk.bold.magenta
 fun = chalk.magenta
+
+class UserID
+  constructor: (@id) ->
+  setID: (id) ->
+    @id = id
+  getID: () ->
+    return @id
 
 module.exports = (robot) ->
   class Logger
@@ -80,79 +88,153 @@ module.exports = (robot) ->
     @fun: (msg) ->
       if msg and not TEST
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
-    @logToChannel: (msg, channel, attachment) ->
+    @getSlackIM: (username) ->
+      deferred = Q.defer()
+      if username and
+         robot and
+         robot.adapter and
+         robot.adapter.client and
+         robot.adapter.client.web and
+         web = robot.adapter.client.web
+        userid = new UserID(username)
+        web.users.list()
+        .then(
+          (response) ->
+            id = userid.getID()
+            for member in response.members
+              if member.name is id
+                userid.setID member.id
+                web.im.list()
+                .then(
+                  (response) ->
+                    id = userid.getID()
+                    for im in response.ims
+                      if im.user is id
+                        userid.setID im.id
+                        deferred.resolve userid.getID()
+                )
+                .catch(
+                  (err) ->
+                    deferred.reject "Unable to list IMs in getSlackUserID - #{err}"
+                )
+        )
+        .catch(
+          (err) ->
+            deferred.reject "Unable to list users in getSlackUserID - #{err}"
+        )
+      else
+        deferred.reject "Slack web client unavailable to getSlackUserID"
+      deferred.promise
+    @logToChannel: (msg, channel, attachment, isUser) ->
       if msg
-        if robot and robot.adapter? and robot.adapter.customMessage?
+        if robot and robot.send?
           message = null
           if attachment and typeIsArray attachment
             message = {
-              channel: channel,
               text: msg,
+              parse: 'full',
+              username: 'ibizan',
+              icon_emoji: ':dog2:',
               attachments: attachment
             }
           else if attachment
             message = {
-              channel: channel,
               text: msg,
+              parse: 'full',
+              username: 'ibizan',
+              icon_emoji: ':dog2:',
               attachments:
                 text: attachment,
                 fallback: attachment.replace(/\W/g, '')
             }
           else
             message = {
-              channel: channel,
-              text: msg
+              text: msg,
+              parse: 'full',
+              username: 'ibizan',
+              icon_emoji: ':dog2:'
             }
-          robot.adapter.customMessage message
+          if isUser
+            @getSlackIM channel
+            .then(
+              (id) ->
+                if id
+                  robot.send {room: id}, message
+                else
+                  Logger.debug "Unable to find username #{channel}"
+                  robot.send {room: channel}, message
+            )
+          else
+            @debug "Sending to room #{channel}"
+            robot.send {room: channel}, message
         else
-          Logger.log msg
+          @error "No robot available to send message: #{msg}"
     @errorToSlack: (msg, error) ->
       if msg
         if robot and robot.send?
           robot.send {room: 'ibizan-diagnostics'},
             "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
         else
-          Logger.error msg, error
-    @addReaction: (reaction, message) ->
-      if message and
-         robot and
-         robot.adapter and
-         robot.adapter.client and
-         robot.adapter.client._apiCall? and
-         client = robot.adapter.client
-          params =
-            name: reaction,
-            channel: message.rawMessage.channel,
-            timestamp: message.id
-          client._apiCall 'reactions.add', params, (response) ->
-            if not response.ok
-              Logger.errorToSlack message.user.name, response.error
-              Logger.logToChannel strings.failedreaction, message.user.name
-    @removeReaction: (reaction, message) ->
-      if message and
-         robot and
-         robot.adapter and
-         robot.adapter.client and
-         robot.adapter.client._apiCall? and
-         client = robot.adapter.client
-          params =
-            name: reaction,
-            channel: message.rawMessage.channel,
-            timestamp: message.id
-          client._apiCall 'reactions.remove', params, (response) ->
-            if not response.ok
-              # Retry up to 3 times
-              retry = 1
-              setTimeout ->
-                if retry <= 3
-                  Logger.debug "Retrying removal of #{reaction}, attempt #{retry}..."
-                  client._apiCall 'reactions.remove', params, (response) ->
-                    if response.ok
-                      Logger.debug "#{reaction} removed successfully"
-                      return true
-                  retry += 1
-                else
-                  Logger.errorToSlack message.user.name, response.error
-                  Logger.logToChannel strings.failedreaction, message.user.name
-              , 1000
+          @error msg, error
+    @addReaction: (reaction, message, attempt=0) ->
+      if attempt > 0 and attempt <= 2
+        @debug "Retrying adding #{reaction}, attempt #{attempt}..."
+      if attempt >= 3
+        @error "Failed to add #{reaction} to #{message} after #{attempt} attempts"
+        @logToChannel strings.failedreaction, message.user.name
+      else if message and
+              robot and
+              robot.adapter and
+              robot.adapter.client and
+              robot.adapter.client.web and
+              web = robot.adapter.client.web
+        params =
+          channel: message.room,
+          timestamp: message.id
+        setTimeout ->
+          web.reactions.add reaction, params
+          .then(
+            (response) ->
+              if attempt >= 1
+                Logger.debug "Added #{reaction} to #{message} after #{attempt} attempts"
+          )
+          .catch(
+            (err) ->
+              attempt += 1
+              Logger.addReaction reaction, message, attempt
+          )
+        , 1000 * attempt
+      else
+        @error "Slack web client unavailable"
+    @removeReaction: (reaction, message, attempt=0) ->
+      if attempt > 0 and attempt <= 2
+        @debug "Retrying removal of #{reaction}, attempt #{attempt}..."
+      if attempt >= 3
+        @error "Failed to remove #{reaction} from #{message} after #{attempt} attempts"
+        @logToChannel strings.failedreaction, message.user.name
+      else if message and
+              robot and
+              robot.adapter and
+              robot.adapter.client and
+              robot.adapter.client.web and
+              web = robot.adapter.client.web
+        params =
+          channel: message.room,
+          timestamp: message.id
+        setTimeout ->
+          web.reactions.remove reaction, params
+          .then(
+            (response) ->
+              if attempt >= 1
+                Logger.debug "Removed #{reaction} from #{message} after #{attempt} attempts"
+          )
+          .catch(
+            (err) ->
+              attempt += 1
+              Logger.removeReaction reaction, message, attempt
+          )
+        , 1000 * attempt
+      else
+        @error "Slack web client unavailable"
+
   Logger

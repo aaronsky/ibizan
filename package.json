@@ -1,6 +1,6 @@
 {
   "name": "ibizan",
-  "version": "0.7.35",
+  "version": "0.8.0",
   "description": "Dog-themed Employee Time Tracking Slack Bot",
   "keywords": [
     "ibizan",
@@ -20,7 +20,7 @@
     "google-spreadsheet": "^2.0.3",
     "hubot": "^2.19.0",
     "hubot-history": "^1.0.0",
-    "hubot-slack": "^3.4.2",
+    "hubot-slack": "^4.0.1",
     "moment": "^2.14.1",
     "moment-precise-range-plugin": "^1.2.0",
     "moment-timezone": "^0.5.4",
@@ -37,7 +37,7 @@
     "co": "^4.6.0",
     "coffee-coverage": "^1.0.1",
     "coffee-script": "^1.10.0",
-    "coveralls": "^2.11.9",
+    "coveralls": "^2.11.11",
     "hubot-test-helper": "^1.4.4",
     "istanbul": "^0.4.4",
     "mocha": "^3.0.0-0",

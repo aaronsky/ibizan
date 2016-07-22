@@ -295,7 +295,7 @@ class User
       deferred.reject 'Row is null'
     deferred.promise
   directMessage: (msg, logger=Logger, attachment) ->
-    logger.logToChannel msg, @slack, attachment
+    logger.logToChannel msg, @slack, attachment, true
   hound: (msg) ->
     now = moment.tz TIMEZONE
     @directMessage (msg)
