@@ -88,43 +88,9 @@ module.exports = (robot) ->
     @fun: (msg) ->
       if msg and not TEST
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
-    @getSlackIM: (username) ->
-      deferred = Q.defer()
-      if username and
-         robot and
-         robot.adapter and
-         robot.adapter.client and
-         robot.adapter.client.web and
-         web = robot.adapter.client.web
-        userid = new UserID(username)
-        web.users.list()
-        .then(
-          (response) ->
-            id = userid.getID()
-            for member in response.members
-              if member.name is id
-                userid.setID member.id
-                web.im.list()
-                .then(
-                  (response) ->
-                    id = userid.getID()
-                    for im in response.ims
-                      if im.user is id
-                        userid.setID im.id
-                        deferred.resolve userid.getID()
-                )
-                .catch(
-                  (err) ->
-                    deferred.reject "Unable to list IMs in getSlackUserID - #{err}"
-                )
-        )
-        .catch(
-          (err) ->
-            deferred.reject "Unable to list users in getSlackUserID - #{err}"
-        )
-      else
-        deferred.reject "Slack web client unavailable to getSlackUserID"
-      deferred.promise
+    @getSlackDM: (username) ->
+      dm = robot.adapter.client.rtm.dataStore.getDMByName username
+      return dm.id
     @logToChannel: (msg, channel, attachment, isUser) ->
       if msg
         if robot and robot.send?
@@ -155,18 +121,8 @@ module.exports = (robot) ->
               icon_emoji: ':dog2:'
             }
           if isUser
-            @getSlackIM channel
-            .then(
-              (id) ->
-                if id
-                  robot.send {room: id}, message
-                else
-                  Logger.debug "Unable to find username #{channel}"
-                  robot.send {room: channel}, message
-            )
-          else
-            @debug "Sending to room #{channel}"
-            robot.send {room: channel}, message
+            channel = @getSlackDM channel
+          robot.send {room: channel}, message
         else
           @error "No robot available to send message: #{msg}"
     @errorToSlack: (msg, error) ->

@@ -36,39 +36,27 @@ strings = STRINGS.time
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
-  isDM = (channel) ->
-    channel.substring(0,1) is 'D'
+  getRoomName = (room) ->
+    chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
 
-  getChannelName = (channel) ->
-    # TODO: make not async
-    deferred = Q.defer()
-    info = robot.adapter.client.web.channels.info channel
-    .then(
-      (response) ->
-        deferred.resolve response.channel.name
-    )
-    .catch(
-      (err) ->
-        deferred.reject err
-    )
-    deferred.promise
+  isDM = (channel) ->
+    channelname = channel.toString()
+    channelname.substring(0,1) is 'D'
 
   isClockChannel = (channel) ->
-    return true # TODO: remove reliance on getChannelName
-    @getChannelName channel
-    .then(
-      (name) ->
-        return name is Organization.clockChannel
-    )
+    chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
+    return chan.name is Organization.clockChannel
 
   isProjectChannel = (channel) ->
-    return false # TODO: remove reliance on getChannelName
-    info.channel.name is Organization.getProjectByName(channel.room)?
+    chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
+    return not isClockChannel(channel) and
+           not isDM(channel) and
+           Organization.getProjectByName(chan.name)?
 
   canPunchHere = (channel) ->
-    isDM(channel) # or
-    # isClockChannel(channel) or
-    # isProjectChannel(channel)
+    isDM(channel) or
+    isClockChannel(channel) or
+    isProjectChannel(channel)
 
   toTimeStr = (duration) ->
     hours = Math.floor duration
@@ -98,15 +86,15 @@ module.exports = (robot) ->
       Logger.addReaction 'x', res.message
       return
     Logger.log "Parsing '#{msg}' for @#{user.slack}."
-    if canPunchHere res.message.user.room
+    if canPunchHere res.message.room
       Logger.addReaction 'clock4', res.message
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
       tz = res.message.user.tz
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
-         isProjectChannel res.message.user
-        project = Organization.getProjectByName res.message.user.room
+         isProjectChannel res.message.room
+        project = Organization.getProjectByName res.message.room
         if project?
           punch.projects.push project
       moment.tz.setDefault TIMEZONE
