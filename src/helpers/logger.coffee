@@ -126,9 +126,11 @@ module.exports = (robot) ->
         else
           @error "No robot available to send message: #{msg}"
     @errorToSlack: (msg, error) ->
+      diagnosticsRoom = robot.adapter.client.rtm.dataStore.getChannelOrGroupByName 'ibizan-diagnostics'
+      diagnosticsID = diagnosticsRoom.id
       if msg
-        if robot and robot.send?
-          robot.send {room: 'ibizan-diagnostics'},
+        if robot and robot.send? and diagnosticsRoom
+          robot.send {room: diagnosticsID},
             "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
         else
           @error msg, error
