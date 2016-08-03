@@ -127,16 +127,21 @@ module.exports = (robot) ->
           @error "No robot available to send message: #{msg}"
     @errorToSlack: (msg, error) ->
       if msg
-        if robot and robot.send?
+        if robot and
+           robot.send? and
+           robot.adapter and
+           robot.adapter.client and
+           robot.adapter.client.rtm and
+           robot.adapter.client.rtm.dataStore and
+           robot.adapter.client.rtm.dataStore.getChannelOrGroupByName?
           diagnosticsRoom = robot.adapter.client.rtm.dataStore.getChannelOrGroupByName 'ibizan-diagnostics'
           diagnosticsID = diagnosticsRoom.id
-          if diagnosticsRoom
-            robot.send {room: diagnosticsID},
-              "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
-          else
-            @error msg, error
+          robot.send {room: diagnosticsID},
+            "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
         else
           @error msg, error
+      else
+        @error "errorToSlack called with no msg"
     @addReaction: (reaction, message, attempt=0) ->
       if attempt > 0 and attempt <= 2
         @debug "Retrying adding #{reaction}, attempt #{attempt}..."
