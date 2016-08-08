@@ -40,8 +40,8 @@
     "coveralls": "^2.11.12",
     "hubot-test-helper": "^1.4.4",
     "istanbul": "^0.4.4",
-    "mocha": "^3.0.0",
-    "request": "^2.73.0z"
+    "mocha": "^3.0.2",
+    "request": "^2.74.0z"
   },
   "scripts": {
     "start": "./bin/ibizan",
