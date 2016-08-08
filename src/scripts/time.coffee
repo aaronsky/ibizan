@@ -407,6 +407,25 @@ module.exports = (robot) ->
     user.directMessage msg, Logger, attachments
 
 
+  robot.respond /(status|info)/i, (res) ->
+    if not Organization.ready()
+      Logger.log "Don\'t output hours, Organization isn\'t ready yet"
+      res.send strings.orgnotready
+      Logger.addReaction 'x', res.message
+      return
+    user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      res.reply "Either you aren't part of the
+                 Employee worksheet, something has gone
+                 horribly wrong, or you aren\'t an employee
+                 at #{Organization.name}."
+      Logger.addReaction 'x', res.message
+      return
+
+    user.directMessage "Your status:", Logger, [user.slackAttachment()]
+    Logger.addReaction 'dog2', res.message
+
+
   robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, (res) ->
     if not Organization.ready()
       Logger.log "Don\'t output hours, Organization isn\'t ready yet"

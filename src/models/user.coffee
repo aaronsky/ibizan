@@ -309,34 +309,40 @@ class User
     return hexColor
   slackAttachment: () ->
     fields = []
-    punchesField =
-      title: "Punches"
-      value: (@punches || []).length
-      short: true
-    fields.push punchesField
-    lastPunchField =
-      title: "Last Punch"
-      value: @lastPunchTime()
-      short: true
-    fields.push lastPunchField
-    activeHoursField =
-      title: "Active Hours"
-      value: "#{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}"
-      short: true
-    fields.push activeHoursField
+    statusString = ""
+    if @salary
+      statusString = "Salary (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')})"
+    else
+      statusString = "Hourly (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')})"
     timeZoneField =
       title: "Time Zone"
       value: "#{@timetable.timezone.name}"
       short: true
     fields.push timeZoneField
-    lastMessageField =
-      title: "Last Message"
-      value: "#{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
+    lastPunchField =
+      title: "Last Punch"
+      value: @lastPunchTime()
       short: true
-    fields.push lastMessageField
+    fields.push lastPunchField
+    vacationDaysField =
+      title: "Vacation Days"
+      value: "#{@vacationAvailable} (#{@vacationLogged} used)"
+      short: true
+    fields.push vacationDaysField
+    sickDaysField =
+      title: "Sick Days"
+      value: "#{@sickAvailable} (#{@sickLogged} used)"
+      short: true
+    fields.push sickDaysField
+    if @unpaidLogged > 0
+      unpaidField =
+        title: "Unpaid Days"
+        value: "#{@unpaidLogged} used"
+        short: true
+      fields.push unpaidField
     attachment =
-      title: @name
-      text: "@" + @slack
+      title: @name + " (@" + @slack + ")",
+      text: statusString,
       fallback: @name.replace(/\W/g, '') + " @" + @slack.replace(/\W/g, '')
       color: @hexColor()
       fields: fields
