@@ -91,6 +91,9 @@ module.exports = (robot) ->
     @getSlackDM: (username) ->
       dm = robot.adapter.client.rtm.dataStore.getDMByName username
       return dm.id
+    @getChannelName: (channel) ->
+      channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
+      return channel.name
     @logToChannel: (msg, channel, attachment, isUser) ->
       if msg
         if robot and robot.send?

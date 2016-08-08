@@ -36,9 +36,6 @@ strings = STRINGS.time
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
-  getRoomName = (room) ->
-    chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
-
   isDM = (channel) ->
     channelname = channel.toString()
     channelname.substring(0,1) is 'D'
@@ -114,16 +111,17 @@ module.exports = (robot) ->
 
       sendPunch punch, user, res
     else
+      channelName = Logger.getChannelName res.message.user.room
       if res.router_res
         res.router_res.status 500
         res.router_res.json {
-          "text": "You cannot punch in ##{res.message.user.room}.
+          "text": "You cannot punch in ##{channelName}.
                    Try punching in ##{Organization.clockChannel},
                    a designated project channel, or here."
         }
       else
         Logger.addReaction 'x', res.message
-        user.directMessage "You cannot punch in ##{res.message.user.room}.
+        user.directMessage "You cannot punch in ##{channelName}.
                             Try punching in ##{Organization.clockChannel},
                             a designated project channel, or here.",
                            Logger
