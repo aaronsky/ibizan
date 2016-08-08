@@ -92,12 +92,12 @@ strings =
                           `@ibizan [mode] [time] [date] [project] [notes]`\n
                           \n
                           Examples:\n
-                          @ibizan in\n
-                          @ibizan out\n
-                          @ibizan in at 9:15\n
-                          @ibizan out 4:30p yesterday\n
-                          @ibizan in #project-name\n
-                          @ibizan 3.5 hours today\n
+                          `@ibizan in`\n
+                          `@ibizan out`\n
+                          `@ibizan in at 9:15`\n
+                          `@ibizan out 4:30p yesterday`\n
+                          `@ibizan in #project-name`\n
+                          `@ibizan 3.5 hours today`\n
                           \n
                           Punches can be `in`, `out`, `vacation`, `sick` or `unpaid`
                           punches. You can also clock in independent blocks of time.
