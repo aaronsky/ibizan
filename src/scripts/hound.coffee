@@ -127,8 +127,20 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
-  robot.respond /hound (.*)/i, (res) ->
+  robot.respond /hound\s*(.*)?$/i, (res) ->
+    if res.message.user.name is 'hubot'
+      return
+    user = Organization.getUserBySlackName res.message.user.name
+    if not user
+      res.reply "#{res.message.user.name} is not a valid user"
+      Logger.addReaction 'x', res.message
+      return
+
     command = res.match[1]
+    if not command
+      user.directMessage "Change hounding settings using `hound (scope) (command)`! Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+      Logger.addReaction 'dog2', res.message
+      return
     comps = command.split(' ') || []
     scope = comps[0] || 'self'
     if scope is Organization.name
@@ -147,11 +159,7 @@ module.exports = (robot) ->
     action = comps[1] || 'unknown'
 
     if scope is 'self'
-      user = Organization.getUserBySlackName res.message.user.name
-      if not user
-        user.directMessage "#{res.message.user.name} is not a valid user", Logger
-        Logger.addReaction 'x', res.message
-      else if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
+      if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
         block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
         block = parseFloat block_str
         user.settings.fromSettings {
@@ -236,5 +244,6 @@ module.exports = (robot) ->
         user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
         Logger.addReaction 'x', res.message
     else
+      Logger.debug "Hound could not parse #{command}"
       user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
       Logger.addReaction 'x', res.message
