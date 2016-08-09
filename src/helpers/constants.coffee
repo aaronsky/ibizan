@@ -109,16 +109,13 @@ strings =
                           If something is wrong with your punch, you can undo it by
                           doing `@ibizan undo`. You can also modify it manually using
                           the Ibizan spreadsheet, in the worksheet labeled 'Raw Data'.
-                          If you want to see how much time you've worked today, do
-                          `@ibizan today?`.\n
+                          If you want to see how much time you've worked, use
+                          `@ibizan today?` or `@ibizan week?`.\n
                           \n
                           If you make any manual changes to the spreadsheet, you should
-                          run `/sync` or `@ibizan sync`. Running this resyncs Ibizan with
-                          the spreadsheet.\n
-                          \n
-                          Due to some existing limitations in Google Sheets, changes
-                          made directly to the spreadsheet are not immediately
-                          reflected by Ibizan and must be followed up with a `/sync`.\n
+                          use `@ibizan sync`. Running this resyncs Ibizan with
+                          the spreadsheet. Note that Ibizan syncs automatically after
+                          editing or deleting rows.\n
                           \n
                           For more documentation, please check out
                           https://github.com/ibizan/ibizan.github.io/wiki"
