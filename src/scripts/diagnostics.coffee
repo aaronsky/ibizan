@@ -98,6 +98,57 @@ module.exports = (robot) ->
           Logger.addReaction 'dog2', res.message
       )
 
+  robot.router.post '/diagnostics/sync', (req, res) ->
+    body = req.body
+    if not Organization.ready()
+      res.status 401
+      res.json {
+        "text": strings.orgnotready
+      }
+    else if body.token is not process.env.SLASH_SYNC_TOKEN
+      res.status 401
+      res.json {
+        "text": strings.badtoken
+      }
+    else
+      response_url = body.response_url || null
+      if response_url
+        Logger.log "POSTing to #{response_url}"
+      Organization.sync()
+      .catch(
+        (err) ->
+          message = "Failed to resync"
+          Logger.errorToSlack message, err
+          payload =
+            text: message
+          if response_url
+            robot.http(response_url)
+            .header('Content-Type', 'application/json')
+            .post(JSON.stringify(payload))
+      )
+      .done(
+        (status) ->
+          message = "Resynced with spreadsheet"
+          Logger.log message
+          payload =
+            text: message
+          if response_url
+            robot.http(response_url)
+            .header('Content-Type', 'application/json')
+            .post(JSON.stringify(payload)) (err, response, body) ->
+              if err
+                response.send "Encountered an error :( #{err}"
+                return
+              if res.statusCode isnt 200
+                response.send "Request didn't come back HTTP 200 :("
+                return
+              Logger.log body
+      )
+      res.status 200
+      res.json {
+        "text": "Beginning to resync..."
+      }
+
   robot.respond /help/i, (res) ->
     if not Organization.ready()
       res.send strings.orgnotready
