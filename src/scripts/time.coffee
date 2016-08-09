@@ -196,52 +196,6 @@ module.exports = (robot) ->
       return
     parse res, res.match.input, 'none'
 
-  robot.router.post '/ibizan/punch', (req, res) ->
-    if not Organization.ready()
-      Logger.log 'Don\'t punch via slash command, Organization isn\'t ready yet'
-      res.json {
-        "text": strings.orgnotready
-      }
-      return
-    body = req.body
-    if body.token is process.env.SLASH_PUNCH_TOKEN
-      msg = body.text
-      channel_name = body.channel_name?.replace('#', '')
-      if channel_name and channel_name is 'directmessage'
-        channel_name = body.user_name
-      response = {
-        match: {
-          input: msg
-        },
-        message: {
-          user: {
-            name: body.user_name,
-            room: channel_name,
-            slack: {
-              tz: TIMEZONE
-            }
-          }
-        },
-        router_res: res
-      }
-      if match = msg.match REGEX.rel_time
-        mode = 'none'
-      else if match = msg.match REGEX.modes
-        mode = msg.split(' ')[0]
-      else
-        res.status 500
-        response = 'No mode could be extrapolated from your punch.'
-        res.json {
-          "text": response
-        }
-        return
-      parse response, msg, mode
-    else
-      res.status 401
-      res.json  {
-        "text": "Bad token in Ibizan configuration"
-      }
-
   robot.respond /(append|add)/i, (res) ->
     if not Organization.ready()
       Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
