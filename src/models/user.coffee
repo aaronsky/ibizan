@@ -319,25 +319,27 @@ class User
       value: "#{@timetable.timezone.name}"
       short: true
     fields.push timeZoneField
+    lastPunch = @lastPunch()
     lastPunchField =
       title: "Last Punch"
-      value: @lastPunchTime()
+      value: "#{lastPunch.description(@)}"
       short: true
     fields.push lastPunchField
-    vacationDaysField =
-      title: "Vacation Days"
-      value: "#{@vacationAvailable} (#{@vacationLogged} used)"
-      short: true
-    fields.push vacationDaysField
-    sickDaysField =
-      title: "Sick Days"
-      value: "#{@sickAvailable} (#{@sickLogged} used)"
-      short: true
-    fields.push sickDaysField
-    if @unpaidLogged > 0
+    if @salary
+      vacationDaysField =
+        title: "Vacation Days"
+        value: "#{@timetable.vacationAvailable} available, #{@timetable.vacationTotal} used"
+        short: true
+      fields.push vacationDaysField
+      sickDaysField =
+        title: "Sick Days"
+        value: "#{@timetable.sickAvailable} available, #{@timetable.sickTotal} used"
+        short: true
+      fields.push sickDaysField
+    if @unpaidTotal > 0
       unpaidField =
         title: "Unpaid Days"
-        value: "#{@unpaidLogged} used"
+        value: "#{@timetable.unpaidTotal} used"
         short: true
       fields.push unpaidField
     attachment =
