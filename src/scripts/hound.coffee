@@ -127,126 +127,114 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
-  robot.router.post '/ibizan/diagnostics/hound', (req, res) ->
-    body = req.body
-    if body.token is process.env.SLASH_HOUND_TOKEN
-      comps = body?.text?.split(' ') || []
-      scope = comps[0] || 'self'
-      if scope is Organization.name
-        scope = 'org'
-      else if scope is body.user_name
-        scope = 'self'
-      else if scope isnt 'self' and scope isnt 'org'
-        if not isNaN(comps[0]) and
-           (comps[1] is 'hour' or comps[1] is 'hours')
-          comps = ['self', comps.join(' ')]
-        else if comps.length > 2
-          comps = ['self', comps.slice(1).join(' ')]
-        else
-          comps = ['self', comps[0]]
-        scope = comps[0]
-      action = comps[1] || 'info'
-
-      if scope is 'self'
-        user = Organization.getUserBySlackName body.user_name
-        if not user
-          # TODO: Improve output
-          err = "User not found"
-          res.status 500
-        else if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
-          block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
-          block = parseFloat block_str
-          user.settings.fromSettings {
-            houndFrequency: block
-          }
-          res.status 200
-          response = "Hounding frequency set to be every #{block} hours during your active time."
-        else if action is 'start'
-          user.settings.fromSettings {
-            shouldHound: true,
-            shouldResetHound: true
-          }
-          res.status 200
-          response = "Hounding is on."
-        else if action is 'stop'
-          user.settings.fromSettings {
-            shouldHound: false
-          }
-          res.status 200
-          response = "Hounding is off for the rest of today."
-        else if action is 'enable'
-          user.settings.fromSettings {
-            shouldHound: true,
-            shouldResetHound: true
-          }
-          res.status 200
-          response = "Enabled hounding."
-        else if action is 'disable'
-          user.settings.fromSettings {
-            shouldHound: false,
-            shouldResetHound: false
-          }
-          res.status 200
-          response = "Disabled hounding. You will not be hounded until you turn this setting back on."
-        else if action is 'reset'
-          user.settings.fromSettings {
-            houndFrequency: Organization.houndFrequency
-          }
-          res.status 200
-          response = "Reset your hounding status to organization defaults (#{Organization.houndFrequency} hours)."
-        else
-          status = if user.settings.shouldHound then 'on' else 'off'
-          status = if user.settings.shouldResetHound then status else 'disabled'
-          if status is 'on'
-            status += ", and is set to ping every #{user.settings.houndFrequency} hours while active"
-          res.status 200
-          response = "Hounding is #{status}."
-      else if scope is 'org'
-        if not Organization.ready()
-          res.status 500
-          response = "Organization is not ready for operation"
-        if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
-          block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
-          block = parseFloat block_str
-          Organization.setHoundFrequency(+block.toFixed(2))
-          res.status 200
-          response = "Hounding frequency set to every #{block} hours for #{Organization.name}, time until next hound reset."
-        else if action is 'start'
-          Organization.shouldHound = true
-          Organization.shouldResetHound = true
-          res.status 200
-          response = "Hounding is on for the organization."
-        else if action is 'stop'
-          Organization.shouldHound = false
-          res.status 200
-          response = "Hounding is off for the organization."
-        else if action is 'enable'
-          Organization.shouldHound = true
-          Organization.shouldResetHound = true
-          res.status 200
-          response = "Enabled hounding for #{Organization.name}."
-        else if action is 'disable'
-          Organization.shouldHound = false
-          Organization.shouldResetHound = false
-          res.status 200
-          response = "Disabled hounding for #{Organization.name}."
-        else if action is 'reset'
-          Organization.resetHounding()
-          res.status 200
-          response = "Reset hounding status for all #{Organization.name} employees."
-        else
-          status = if Organization.shouldHound then 'on' else 'off'
-          status = if Organization.shouldResetHound then status else 'disabled'
-          if status is 'on'
-            status += ", and is set to ping every #{Organization.houndFrequency} hours while active"
-          res.status 200
-          response = "Hounding is #{status}."
+  robot.respond /hound (.*)/i, (res) ->
+    command = res.match[1]
+    comps = command.split(' ') || []
+    scope = comps[0] || 'self'
+    if scope is Organization.name
+      scope = 'org'
+    else if scope is res.message.user.name
+      scope = 'self'
+    else if scope isnt 'self' and scope isnt 'org'
+      if not isNaN(comps[0]) and
+         (comps[1] is 'hour' or comps[1] is 'hours')
+        comps = ['self', comps.join(' ')]
+      else if comps.length > 2
+        comps = ['self', comps.slice(1).join(' ')]
       else
-        res.status 500
-        response = "Bad command: #{body.text}"
+        comps = ['self', comps[0]]
+      scope = comps[0]
+    action = comps[1] || 'unknown'
+
+    if scope is 'self'
+      user = Organization.getUserBySlackName res.message.user.name
+      if not user
+        user.directMessage "#{res.message.user.name} is not a valid user", Logger
+        Logger.addReaction 'x', res.message
+      else if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
+        block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
+        block = parseFloat block_str
+        user.settings.fromSettings {
+          houndFrequency: block
+        }
+        user.directMessage "Hounding frequency set to be every #{block} hours during your active time.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'start' or action is 'on' or action is 'enable'
+        user.settings.fromSettings {
+          shouldHound: true,
+          shouldResetHound: true
+        }
+        user.directMessage "Hounding is now *on*.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'stop' or action is 'off' or action is 'disable'
+        user.settings.fromSettings {
+          shouldHound: false,
+          shouldResetHound: false
+        }
+        user.directMessage "Hounding is now *off*. You will not be hounded until you turn this setting back on.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'pause'
+        user.settings.fromSettings {
+          shouldHound: false,
+          shouldResetHound: true
+        }
+        user.directMessage "Hounding is now *paused*. Hounding will resume tomorrow.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'reset'
+        user.settings.fromSettings {
+          houndFrequency: Organization.houndFrequency
+        }
+        user.directMessage "Reset your hounding status to organization defaults *(#{Organization.houndFrequency} hours)*.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'status' or action is 'info'
+        status = if user.settings.shouldHound then 'on' else 'off'
+        status = if user.settings.shouldResetHound then status else 'disabled'
+        if status is 'on'
+          status += ", and is set to ping every *#{user.settings.houndFrequency} hours* while active"
+        user.directMessage "Hounding is #{status}.", Logger
+        Logger.addReaction 'dog2', res.message
+      else
+        user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+        Logger.addReaction 'x', res.message
+    else if scope is 'org'
+      if not Organization.ready()
+        user.directMessage "Organization is not ready", Logger
+        Logger.addReaction 'x', res.message
+      if match = action.match /((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i
+        block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
+        block = parseFloat block_str
+        Organization.setHoundFrequency(+block.toFixed(2))
+        user.directMessage "Hounding frequency set to every #{block} hours for #{Organization.name}, time until next hound reset.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'start' or action is 'enable' or action is 'on'
+        Organization.shouldHound = true
+        Organization.shouldResetHound = true
+        user.directMessage "Hounding is now *on* for the organization.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'stop' or action is 'disable' or action is 'off'
+        Organization.shouldHound = false
+        Organization.shouldResetHound = false
+        user.directMessage "Hounding is now *off* for the organization. Hounding status will not reset until it is reactivated.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'pause'
+        Organization.shouldHound = false
+        Organization.shouldResetHound = true
+        user.directMessage "Hounding is now *paused* for the organization. Hounding will resume tomorrow.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'reset'
+        Organization.resetHounding()
+        user.directMessage "Reset hounding status for all #{Organization.name} employees.", Logger
+        Logger.addReaction 'dog2', res.message
+      else if action is 'status' or action is 'info'
+        status = if Organization.shouldHound then 'on' else 'off'
+        status = if Organization.shouldResetHound then status else 'disabled'
+        if status is 'on'
+          status += ", and is set to ping every #{Organization.houndFrequency} hours while active"
+        user.directMessage "Hounding is #{status}.", Logger
+        Logger.addReaction 'dog2', res.message
+      else
+        user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+        Logger.addReaction 'x', res.message
     else
-      res.status 401
-      response = "Bad token in Ibizan configuration"
-    res.json {
-      "text": response
-    }
+      user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+      Logger.addReaction 'x', res.message
