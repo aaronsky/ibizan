@@ -318,7 +318,7 @@ module.exports = (robot) ->
   robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, id: 'time.hours', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     attachments = []
-    mode = res.match[1]
+    mode = res.match[1].toLowerCase()
     report = dateArticle = null
     headers = HEADERS.payrollreports
     if mode is 'week'
