@@ -320,11 +320,12 @@ class User
       short: true
     fields.push timeZoneField
     lastPunch = @lastPunch()
-    lastPunchField =
-      title: "Last Punch"
-      value: "#{lastPunch.description(@)}"
-      short: true
-    fields.push lastPunchField
+    if lastPunch
+      lastPunchField =
+        title: "Last Punch"
+        value: "#{lastPunch.description(@)}"
+        short: true
+      fields.push lastPunchField
     if @salary
       vacationDaysField =
         title: "Vacation Days"
