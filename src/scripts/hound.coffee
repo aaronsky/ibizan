@@ -103,9 +103,9 @@ module.exports = (robot) ->
         status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
         Logger.debug status
 
-  robot.adapter.client.on 'userTyping', (user, channel) ->
+  robot.adapter.client.on 'userTyping', id: "hound.userTyping", (user, channel) ->
     hound user, channel
-  robot.adapter.client.on 'presenceChange', (user, status) ->
+  robot.adapter.client.on 'presenceChange', id: "hound.presenceChange", (user, status) ->
     hound user, { private: null, name: '' }
 
   # Every morning, reset hound status for each users
@@ -127,7 +127,7 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
-  robot.respond /hound\s*(.*)?$/i, id: 'hound', userRequired: true, (res) ->
+  robot.respond /hound\s*(.*)?$/i, id: 'hound.hound', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
 
     command = res.match[1]
