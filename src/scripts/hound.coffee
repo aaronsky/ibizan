@@ -127,14 +127,8 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
-  robot.respond /hound\s*(.*)?$/i, id: 'hound', (res) ->
-    if res.message.user.name is 'hubot'
-      return
+  robot.respond /hound\s*(.*)?$/i, id: 'hound', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    if not user
-      res.reply "#{res.message.user.name} is not a valid user"
-      Logger.addReaction 'x', res.message
-      return
 
     command = res.match[1]
     if not command
