@@ -323,7 +323,7 @@ module.exports = (robot) ->
     headers = HEADERS.payrollreports
     if mode is 'week'
       sunday = moment({hour: 0, minute: 0, second: 0}).day("Sunday")
-      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      now = moment().add(1, 'days')
       report = user.toRawPayroll(sunday, now)
       dateArticle = "this week"
       for punch in user.punches
@@ -337,17 +337,17 @@ module.exports = (robot) ->
           attachments.push punch.slackAttachment()
     else if mode is 'month'
       sunday = moment({hour: 0, minute: 0, second: 0}).startOf("month")
-      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      now = moment().add(1, 'days')
       report = user.toRawPayroll(sunday, now)
       dateArticle = "this month"
     else if mode is 'year'
       sunday = moment({hour: 0, minute: 0, second: 0}).startOf("year")
-      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      now = moment().add(1, 'days')
       report = user.toRawPayroll(sunday, now)
       dateArticle = "this year"
     else
       earlyToday = moment({hour: 0, minute: 0, second: 0})
-      now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
+      now = moment().add(1, 'days')
       report = user.toRawPayroll(earlyToday, now)
       dateArticle = "today"
       for punch in user.punches
