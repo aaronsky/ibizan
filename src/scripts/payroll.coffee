@@ -102,15 +102,17 @@ module.exports = (robot) ->
                               'ibizan-diagnostics'
       )
 
-  robot.respond /payroll (.*) (.*)|payroll (.*)|payroll/i, id: 'payroll', (res) ->
+  robot.respond /payroll\s*(.*)?$/i, id: 'payroll.payroll', (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    Logger.debug "matches: #{res.match[1]} #{res.match[2]} #{res.message.user.name}"
-    if res.match[1] and not res.match[2]
-      user.directMessage "You must provide both a start and end date."
+    dates = res.match[1]
+    if dates?
+      dates = dates.split ' '
+    if dates? and dates[0] and not dates[1]
+      user.directMessage "You must provide both a start and end date.", Logger
       Logger.addReaction 'x', res.message
     else
-      start = if res.match[1] then moment(res.match[1]) else moment().subtract(2, 'weeks')
-      end = if res.match[2] then moment(res.match[2]) else moment()
+      start = if dates? and dates[0] then moment(dates[0], "MM/DD/YYYY") else moment().subtract(2, 'weeks')
+      end = if dates? and dates[1] then moment(dates[1], "MM/DD/YYYY") else moment()
       Organization.generateReport(start, end, true)
       .catch(
         (err) ->
@@ -122,8 +124,8 @@ module.exports = (robot) ->
         (reports) ->
           numberDone = reports.length
           response = "Payroll has been generated for #{numberDone} employees
-                      from #{start.format('dddd MMMM D YYYY')}
-                      to #{end.format('dddd MMMM D YYYY')}"
+                      from #{start.format('dddd, MMMM D, YYYY')}
+                      to #{end.format('dddd, MMMM D, YYYY')}"
           user.directMessage response, Logger
           Logger.log response
       )
