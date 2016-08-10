@@ -105,34 +105,19 @@ module.exports = (robot) ->
       sendPunch punch, user, res
     else
       channelName = Logger.getChannelName res.message.user.room
-      if res.router_res
-        res.router_res.status 500
-        res.router_res.json {
-          "text": "You cannot punch in ##{channelName}.
-                   Try punching in ##{Organization.clockChannel},
-                   a designated project channel, or here."
-        }
-      else
-        Logger.addReaction 'x', res.message
-        user.directMessage "You cannot punch in ##{channelName}.
-                            Try punching in ##{Organization.clockChannel},
-                            a designated project channel, or here.",
-                           Logger
+      Logger.addReaction 'x', res.message
+      user.directMessage "You cannot punch in ##{channelName}.
+                          Try punching in ##{Organization.clockChannel},
+                          a designated project channel, or here.",
+                         Logger
 
   sendPunch = (punch, user, res) ->
     if not punch
-      if res.router_res
-        res.router_res.status 500
-        res.router_res.json {
-          "text": "An unexpected error occured while
-                    generating your punch."
-        }
-      else
-        Logger.errorToSlack "Somehow, a punch was not generated
-                             for \"#{user.slack}\". Punch:\n", res.match.input
-        user.directMessage "An unexpected error occured while
-                            generating your punch.",
-                           Logger
+      Logger.errorToSlack "Somehow, a punch was not generated
+                           for \"#{user.slack}\". Punch:\n", res.match.input
+      user.directMessage "An unexpected error occured while
+                          generating your punch.",
+                         Logger
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
@@ -152,22 +137,15 @@ module.exports = (robot) ->
     )
     .catch(
       (err) ->
-        if res.router_res
-          res.router_res.status 500
-          res.router_res.json {
-            "text": "#{err} - You can see more details on the spreadsheet
-                      at #{Organization.spreadsheet.url}"
-          }
-        else
-          errorMsg = Logger.clean err
-          Logger.error errorMsg
-          Logger.errorToSlack "\"#{errorMsg}\" was returned for
-                               #{user.slack}. Punch:\n", res.match.input
-          user.directMessage "\n#{errorMsg}\nYou can see more details on 
-                              <#{Organization.spreadsheet.url}|the spreadsheet>.",
-                             Logger
-          Logger.addReaction 'x', res.message
-          Logger.removeReaction 'clock4', res.message
+        errorMsg = Logger.clean err
+        Logger.error errorMsg
+        Logger.errorToSlack "\"#{errorMsg}\" was returned for
+                             #{user.slack}. Punch:\n", res.match.input
+        user.directMessage "\n#{errorMsg}\nYou can see more details on 
+                            <#{Organization.spreadsheet.url}|the spreadsheet>.",
+                           Logger
+        Logger.addReaction 'x', res.message
+        Logger.removeReaction 'clock4', res.message
     )
     .done()
 
@@ -256,19 +234,20 @@ module.exports = (robot) ->
 
   robot.respond /hours (.*)/i, id: 'time.hoursOnDate', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    date = moment(res.match[1])
+    date = moment(res.match[1], "MM/DD/YYYY")
     if not date.isValid()
-      Logger.log "hours: #{date} is an invalid date"
-      user.directMessage "#{date} is not a valid date", Logger
+      Logger.log "hours: #{res.match[1]} is an invalid date"
+      user.directMessage "#{res.match[1]} is not a valid date", Logger
       Logger.addReaction 'x', res.message
       return
+    formattedDate = date.format('dddd, MMMM D, YYYY')
 
     attachments = []
     report = null
     headers = HEADERS.payrollreports
 
-    startOfDay = date.startOf('day')
-    endOfDay = date.endOf('day')
+    startOfDay = moment(date).startOf('day')
+    endOfDay = moment(date).endOf('day')
     report = user.toRawPayroll(startOfDay, endOfDay)
     for punch in user.punches
       if punch.date.isBefore(startOfDay) or punch.date.isAfter(endOfDay)
@@ -281,7 +260,7 @@ module.exports = (robot) ->
        not report[headers.vacation] and
        not report[headers.sick] and
        not report[headers.unpaid]
-      msg = "You haven\'t recorded any hours on #{date}."
+      msg = "You haven\'t recorded any hours on #{formattedDate}."
     else
       if not report[headers.logged]
         msg = "You haven\'t recorded any paid work time"
@@ -298,7 +277,7 @@ module.exports = (robot) ->
             loggedAny = true
           else
             msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
-      msg += " recorded for #{date}."
+      msg += " recorded for #{formattedDate}."
     if report.extra?.projects and report.extra?.projects?.length > 0
       msg += ' ('
       for project in report.extra.projects
