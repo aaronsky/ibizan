@@ -68,21 +68,18 @@ cellHeaders =
 
 Object.freeze cellHeaders
 
-sharedStrings =
-  adminonly:           "You must be an admin in order to access this command."
-  badtoken:            "Bad token in Ibizan configuration"
-  orgnotready:         "The organization isn't ready for
-                        operations yet. It may be in the middle of
-                        syncing or something has gone horribly wrong.
-                        Please try again later, and if this persists
-                        longer than five minutes, DM a maintainer as
-                        soon as possible."
-Object.freeze sharedStrings
-
 strings = 
+  access:
+    adminonly:           "You must be an admin in order to access this command."
+    badtoken:            "Bad token in Ibizan configuration. Please contact an admin."
+    notanemployee:       "You are not a recognized employee. Please contact an admin."
+    orgnotready:         "The organization isn't ready for
+                          operations yet. It may be in the middle of
+                          syncing or something has gone horribly wrong.
+                          Please try again later, and if this persists
+                          longer than five minutes, DM a maintainer as
+                          soon as possible."
   diagnostics:
-    adminonly:           sharedStrings.adminonly
-    badtoken:            sharedStrings.badtoken
     help:                "*Ibizan Help*\n
                           \n
                           To clock in with Ibizan, either @mention him in a public
@@ -119,7 +116,6 @@ strings =
                           \n
                           For more documentation, please check out
                           https://github.com/ibizan/ibizan.github.io/wiki"
-    orgnotready:          sharedStrings.orgnotready
   hound:
     punchin:              "Punch in if you're on the clock~"
     punchout:             "Don't forget to punch out~"
@@ -132,10 +128,6 @@ strings =
                            operation couldn't be completed. Please try again
                            in a minute. If this persists for longer than 5 minutes,
                            DM a maintainer ASAP."
-  payroll:
-    adminonly:            sharedStrings.adminonly
-  time:
-    orgnotready:          sharedStrings.orgnotready
 Object.freeze strings
 
 modes = ['in', 'out', 'vacation', 'unpaid', 'sick']
@@ -143,7 +135,15 @@ modes = ['in', 'out', 'vacation', 'unpaid', 'sick']
 timezone = 'America/Phoenix'
 # Object.freeze timezone
 
+adminCommands = [
+  'diagnostics.users',
+  'diagnostics.projects',
+  'diagnostics.calendar',
+  'payroll'
+]
+
 module.exports =
+  ADMIN_COMMANDS: adminCommands
   HEADERS: cellHeaders
   MODES: modes
   REGEX: regex

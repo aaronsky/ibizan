@@ -127,7 +127,7 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
-  robot.respond /hound\s*(.*)?$/i, (res) ->
+  robot.respond /hound\s*(.*)?$/i, id: 'hound', (res) ->
     if res.message.user.name is 'hubot'
       return
     user = Organization.getUserBySlackName res.message.user.name

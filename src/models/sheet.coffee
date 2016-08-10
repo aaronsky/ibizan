@@ -329,11 +329,6 @@ class Spreadsheet
         deferred.reject err
       else
         users = members = []
-        # Slack.web.users.list (response) ->
-        #   if not response.ok
-        #     Logger.debug "UH OH!!!"
-        #   else
-        #     members = response.members
         for row in rows
           user = User.parse row
           if user
@@ -345,12 +340,6 @@ class Spreadsheet
               lastMessage: null,
               lastPing: null
             }
-            # if not user.slack.match /U[A-Z0-9]{8}/i
-            #   logger.Debug "#{user.slack} does not match Slack ID, updating"
-            #   for member in members
-            #     if member.name is user.slack
-            #       user.slack = member.id
-            #       logger.Debug "Set to #{user.slack}"
             users.push user
         opts.users = users
         Logger.fun "Loaded #{users.length} users"

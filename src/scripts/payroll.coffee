@@ -4,6 +4,7 @@
 # Commands:
 #
 # Notes:
+#   Weeks ‘start’ on Sunday morning.
 #
 # Author:
 #   aaronsky
@@ -13,16 +14,10 @@ schedule = require 'node-schedule'
 
 { HEADERS, STRINGS, TIMEZONE } = require('../helpers/constants')
 Organization = require('../models/organization').get()
-strings = STRINGS.payroll
 
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
-  isAdminUser = (user) ->
-    return user? and user in process.env.ADMINS.split(" ")
-  
-  # Weeks ‘start’ on Sunday morning.
-  
   dailyReport = (reports, today, yesterday) ->
     PAYROLL = HEADERS.payrollreports
     response = "DAILY WORK LOG: #{yesterday.format('dddd MMMM D YYYY').toUpperCase()}\n"
@@ -89,11 +84,7 @@ module.exports = (robot) ->
 
   # Ibizan will export a Payroll Report every other Sunday night.
   generatePayrollReportJob = schedule.scheduleJob '0 20 * * 0', ->
-    if not Organization.ready()
-      Logger.warn "Don\'t make scheduled payroll report,
-                  Organization isn\'t ready yet"
-      return
-    else if not Organization.calendar.isPayWeek()
+    if not Organization.calendar.isPayWeek()
       Logger.warn "Don\'t run scheduled payroll reminder,
                    it isn't a pay-week."
       return
@@ -111,13 +102,13 @@ module.exports = (robot) ->
                               'ibizan-diagnostics'
       )
 
-  robot.respond /payroll (.*) (.*)|payroll (.*)|payroll/i, (res) ->
+  robot.respond /payroll (.*) (.*)|payroll (.*)|payroll/i, id: 'payroll', (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     Logger.debug "matches: #{res.match[1]} #{res.match[2]} #{res.message.user.name}"
     if res.match[1] and not res.match[2]
       user.directMessage "You must provide both a start and end date."
       Logger.addReaction 'x', res.message
-    else if isAdminUser res.message.user.name
+    else
       start = if res.match[1] then moment(res.match[1]) else moment().subtract(2, 'weeks')
       end = if res.match[2] then moment(res.match[2]) else moment()
       Organization.generateReport(start, end, true)
@@ -137,19 +128,12 @@ module.exports = (robot) ->
           Logger.log response
       )
       Logger.addReaction 'dog2', res.message
-    else
-      user.directMessage strings.adminonly
-      Logger.addReaction 'x', res.message
 
   # Users should receive a DM “chime” every other Friday afternoon to
   # inform them that payroll runs on Monday, and that unaccounted-for
   # time will not be paid.
   reminderJob = schedule.scheduleJob '0 13 * * 5', ->
-    if not Organization.ready()
-      Logger.warn "Don\'t run scheduled payroll reminder,
-                  Organization isn\'t ready yet"
-      return
-    else if not Organization.calendar.isPayWeek()
+    if not Organization.calendar.isPayWeek()
       Logger.warn "Don\'t run scheduled payroll reminder,
                    it isn't a pay-week."
       return
