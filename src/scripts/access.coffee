@@ -28,8 +28,12 @@ module.exports = (robot) ->
         # Organization is not ready, ignore command
         context.response.send strings.orgnotready
         Logger.addReaction 'x', context.response.message
+        done()
+        return
       else
-        if context.listener.options.id in ADMIN_COMMANDS
+        command = context.listener.options.id
+        Logger.debug "Responding to '#{context.response.message}' (#{command}) from #{username}"
+        if command in ADMIN_COMMANDS
           if not isAdminUser username
             # Admin command, but user isn't in whitelist
             context.response.send strings.adminonly
