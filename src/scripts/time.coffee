@@ -392,13 +392,49 @@ module.exports = (robot) ->
     user = Organization.getUserBySlackName res.message.user.name
     userTime = moment.tz(user.timetable.timezone.name)
     ibizanTime = moment.tz(TIMEZONE)
-    res.reply "It's currently *#{userTime.format('h:m A')}* in your timezone (#{userTime.format('z, Z')}).\n\n
-               It's #{ibizanTime.format('h:m A')} in the default timezone (#{ibizanTime.format('z, Z')})."
+    msg = "It's currently *#{userTime.format('h:mm A')}* in your timezone (#{userTime.format('z, Z')})."
+    if userTime.format('z') != ibizanTime.format('z')
+      msg += "\n\nIt's #{ibizanTime.format('h:mm A')} in the default timezone (#{ibizanTime.format('z, Z')})."
+    user.directMessage msg, Logger
     Logger.addReaction 'dog2', res.message
 
   # Returns the user's timezone
   robot.respond /\btimezone$/i, id: 'time.time', (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     userTime = moment.tz(user.timetable.timezone.name)
-    res.reply "Your timezone is set to *#{user.timetable.timezone.name}* (#{userTime.format('z, Z')})."
+    user.directMessage "Your timezone is set to
+                        *#{user.timetable.timezone.name}*
+                        (#{userTime.format('z, Z')}).",
+                        Logger
     Logger.addReaction 'dog2', res.message
+
+  # Sets the user's timezone
+  robot.respond /timezone (.*)/i, id: 'time.time', (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    input = res.match[1]
+
+    tz = user.setTimezone(input)
+    if tz
+      userTime = moment.tz(user.timetable.timezone.name)
+      user.directMessage "Your timezone is now *#{user.timetable.timezone.name}*
+                          (#{userTime.format('z, Z')}).",
+                          Logger
+      Logger.addReaction 'dog2', res.message
+    else
+      # Try adding 'America/' if a region is not specified
+      if input.indexOf("/") < 0
+        input = "America/" + input
+
+      tz = user.setTimezone(input)
+      if tz
+        userTime = moment.tz(user.timetable.timezone.name)
+        user.directMessage "Your timezone is now *#{user.timetable.timezone.name}*
+                            (#{userTime.format('z, Z')}).",
+                            Logger
+        Logger.addReaction 'dog2', res.message
+      else
+        user.directMessage "I do not recognize that timezone.
+                            Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list>
+                            for a valid time zone name.",
+                            Logger
+        Logger.addReaction 'x', res.message

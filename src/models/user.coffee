@@ -42,6 +42,8 @@ class Timetable
     @loggedTotal = getPositiveNumber(total, @loggedTotal)
   setAverageLogged: (average) ->
     @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
+  setTimezone: (timezone) ->
+    @timezone = timezone
 
 class Settings
   constructor: () ->
@@ -101,6 +103,12 @@ class User
     return @timetable.activeHours()
   activeTime: ->
     return @timetable.activeTime()
+  setTimezone: (timezone) ->
+    tz = moment.tz.zone(timezone)
+    if tz
+      @timetable.setTimezone(tz)
+      @updateRow()
+    return tz
   toDays: (hours) ->
     return @timetable.toDays hours
   isInactive: (current) ->
@@ -278,6 +286,7 @@ class User
     deferred = Q.defer()
     if @row?
       headers = HEADERS.users
+      @row[headers.timezone] = @timetable.timezone.name
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal
       @row[headers.sickAvailable] = @timetable.sickAvailable
