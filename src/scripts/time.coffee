@@ -12,11 +12,23 @@
 #   ibizan 1.5 hours - Append 1.5 hours to today's total time
 #   ibizan 2 hours yesterday - Append 2 hours on to yesterday's total time
 #   ibizan 3.25 hours tuesday #project1 - Append 3.25 hours on to Tuesday's total time and assigns it to #project1
-#   ibizan vacation today - flags the user’s entire day as vacation time
-#   ibizan sick half-day - flags half the user’s day as sick time
-#   ibizan vacation half-day yesterday - flags half the user’s previous day (4 hours) as vacation time
-#   ibizan sick Jul 6-8 - flags July 6-8 of this year as sick time
-#   ibizan vacation 1/28 - 2/4 - flags January 28th to February 4th of this year as vacation time.
+#   ibizan vacation today - Flags the user’s entire day as vacation time
+#   ibizan sick half-day - Flags half the user’s day as sick time
+#   ibizan vacation half-day yesterday - Flags half the user’s previous day (4 hours) as vacation time
+#   ibizan sick Jul 6-8 - Flags July 6-8 of this year as sick time
+#   ibizan vacation 1/28 - 2/4 - Flags January 28th to February 4th of this year as vacation time.
+#   
+#   ibizan hours - Replies with helpful info for hours? and hours [date]
+#   ibizan hours 8/4 - Replies with punches recorded on a given date
+#   ibizan hours? - Replies with the user's total time for today, with punches
+#   ibizan today? - Replies with the user's total time for today, with punches
+#   ibizan week? - Replies with the user's total time for the week, with punches
+#   ibizan month? - Replies with the user's total time for the month
+#   ibizan year? - Replies with the user's total time for the year
+#   ibizan status - Replies with the user's Employee sheet info
+#   ibizan time - Replies with the current time in both Ibizan's default timezone and the user's timezone
+#   ibizan timezone - Replies with the user's timezone
+#   ibizan timezone america/chicago - Sets the user's timezone
 #
 # Notes:
 #   All dates are formatted in MM/DD notation with no support for overriding year. Ibizan will extrapolate year from your ranges, even if it stretches over multiple years.
@@ -72,6 +84,7 @@ module.exports = (robot) ->
       minutesStr = "#{minutes} minutes"
     return "#{hoursStr}#{if hours > 0 and minutes > 0 then ', ' else ''}#{minutesStr}"
 
+  # Parse a textual punch and product a new Punch object
   parse = (res, msg, mode) ->
     mode = mode.toLowerCase()
     user = Organization.getUserBySlackName res.message.user.name
@@ -80,7 +93,7 @@ module.exports = (robot) ->
       Logger.addReaction 'clock4', res.message
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
-      tz = res.message.user.tz
+      tz = user.timetable.timezone.name
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
          isProjectChannel res.message.room
@@ -111,6 +124,7 @@ module.exports = (robot) ->
                           a designated project channel, or here.",
                          Logger
 
+  # Send the punch to the Organization's Spreadsheet
   sendPunch = (punch, user, res) ->
     if not punch
       Logger.errorToSlack "Somehow, a punch was not generated
@@ -149,23 +163,21 @@ module.exports = (robot) ->
     )
     .done()
 
-  # respond to mode
+  # Punch for a given mode
   robot.respond REGEX.modes, id: 'time.punchByMode', userRequired: true, (res) ->
     parse res, res.match.input, res.match[1]
 
-  # respond to simple time block
+  # Punch for a block of time
   robot.respond REGEX.rel_time, id: 'time.punchByTime', userRequired: true, (res) ->
     parse res, res.match.input, 'none'
 
+  # Append to lastPunch
   robot.respond /(append|add)/i, id: 'time.append', (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     punch = user.lastPunch 'in'
     if not punch
-      user.directMessage "Based on my records, I don't think you're
-                          punched in right now. If this is in error, run
-                          `/sync` and try your punch again, or DM a
-                          maintainer as soon as possible.",
-                          Logger
+      user.directMessage strings.notpunchedin,
+                         Logger
       return
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
@@ -201,7 +213,7 @@ module.exports = (robot) ->
       Logger.addReaction 'dog2', res.message
     )
 
-  robot.respond /undo/i, id: 'time.undo', userRequired: true, (res) ->
+  robot.respond /\bundo$/i, id: 'time.undo', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     if user.punches and user.punches.length > 0
       Logger.addReaction 'clock4', res.message
@@ -230,8 +242,16 @@ module.exports = (robot) ->
     else
       user.directMessage 'There\'s nothing for me to undo.', Logger
 
-  # User feedback
 
+  ## User feedback ##
+
+  # Gives helpful info if a user types 'hours' with no question mark or date
+  robot.respond /\bhours$/i, id: 'time.hoursHelp', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    user.directMessage strings.hourshelp, Logger
+    Logger.addReaction 'dog2', res.message
+
+  # Returns the hours worked on a given date
   robot.respond /hours (.*)/i, id: 'time.hoursOnDate', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     date = moment(res.match[1], "MM/DD/YYYY")
@@ -287,13 +307,7 @@ module.exports = (robot) ->
     Logger.addReaction 'dog2', res.message
     user.directMessage msg, Logger, attachments
 
-
-  robot.respond /(status|info)/i, id: 'time.status', userRequired: true, (res) ->
-    user = Organization.getUserBySlackName res.message.user.name
-    user.directMessage "Your status:", Logger, [user.slackAttachment()]
-    Logger.addReaction 'dog2', res.message
-
-
+  # Returns the hours worked for the given time period
   robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, id: 'time.hours', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     attachments = []
@@ -366,3 +380,25 @@ module.exports = (robot) ->
 
     Logger.addReaction 'dog2', res.message
     user.directMessage msg, Logger, attachments
+
+  # Returns the user's info as a slackAttachment
+  robot.respond /\b(status|info)$/i, id: 'time.status', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    user.directMessage "Your status:", Logger, [user.slackAttachment()]
+    Logger.addReaction 'dog2', res.message
+
+  # Returns the user's time in their timezone, as well as Ibizan's default time
+  robot.respond /\btime$/i, id: 'time.time', (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    userTime = moment.tz(user.timetable.timezone.name)
+    ibizanTime = moment.tz(TIMEZONE)
+    res.reply "It's currently *#{userTime.format('h:m A')}* in your timezone (#{userTime.format('z, Z')}).\n\n
+               It's #{ibizanTime.format('h:m A')} in the default timezone (#{ibizanTime.format('z, Z')})."
+    Logger.addReaction 'dog2', res.message
+
+  # Returns the user's timezone
+  robot.respond /\btimezone$/i, id: 'time.time', (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    userTime = moment.tz(user.timetable.timezone.name)
+    res.reply "Your timezone is set to *#{user.timetable.timezone.name}* (#{userTime.format('z, Z')})."
+    Logger.addReaction 'dog2', res.message

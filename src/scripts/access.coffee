@@ -18,9 +18,10 @@ module.exports = (robot) ->
     return user? and user in process.env.ADMINS.split(" ")
 
   robot.listenerMiddleware (context, next, done) ->
+    command = context.listener.options.id
     username = context.response.message.user.name
-    if username is 'hubot' or username is 'ibizan'
-      # Ignore myself
+    if username is 'hubot' or username is 'ibizan' or command is null
+      # Ignore myself and messages overheard
       done()
       return
     else
@@ -31,7 +32,6 @@ module.exports = (robot) ->
         done()
         return
       else
-        command = context.listener.options.id
         Logger.debug "Responding to '#{context.response.message}' (#{command}) from #{username}"
         if command in ADMIN_COMMANDS
           if not isAdminUser username

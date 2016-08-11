@@ -1,7 +1,7 @@
 
 regex =
   ibizan:          /(?:@)?ibizan(?::)? ?/i
-  modes:           /(in|out|vacation|sick|unpaid)/i
+  modes:           /\b(in|out|vacation|sick|unpaid)\b/i
   days:            /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i
   rel_time:        /(half-day|(half day)|noon|midnight|((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours))/i
   time:            /(\b(0?[1-9])|(1[0-2]))(?:(:[0-5][0-9] ?(am?|pm?)?\b)| ?(am?|pm?)\b)|((\b([0-1][0-9])|(2[0-3])):([0-5][0-9])\b)/i
@@ -118,7 +118,7 @@ strings =
                           https://github.com/ibizan/ibizan.github.io/wiki"
   hound:
     punchin:              "Punch in if you're on the clock~"
-    punchout:             "Don't forget to punch out~"
+    punchout:             "Don't forget to punch out if you're not working~"
   logger:
     failedreaction:       "I just tried to react to a message, but
                            something went wrong. This is usually
@@ -128,18 +128,24 @@ strings =
                            operation couldn't be completed. Please try again
                            in a minute. If this persists for longer than 5 minutes,
                            DM a maintainer ASAP."
+  time:
+    hourshelp:            "Use `@ibizan hours [date]` to view your punches on that date!\n
+                           Use `@ibizan hours?` (or today?/week?/month?/year?) to view
+                           your punches for the given time period!"
+    notpunchedin:         "I don't think you're punched in right now.
+                           If this is in error, ask me to `sync` then try your
+                           punch again, or contact an admin."
 Object.freeze strings
 
 modes = ['in', 'out', 'vacation', 'unpaid', 'sick']
 
 timezone = 'America/Phoenix'
-# Object.freeze timezone
 
 adminCommands = [
   'diagnostics.users',
   'diagnostics.projects',
   'diagnostics.calendar',
-  'payroll'
+  'payroll.payroll'
 ]
 
 module.exports =
