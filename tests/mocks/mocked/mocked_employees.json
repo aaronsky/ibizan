@@ -13,4 +13,19 @@
     "totalovertime": "0",
     "totalloggedhours": "0",
     "averagehoursloggedweek": "0"
+}, {
+    "slackusername": "admin",
+    "employeename": "Admin User",
+    "salary": "Y",
+    "activehoursbegin": "8:00 AM",
+    "activehoursend": "6:00 PM",
+    "timezone": "America/Chicago",
+    "totalvacationdaysavailable": "13",
+    "totalvacationdayslogged": "0",
+    "totalsickdaysavailable": "3",
+    "totalsickdayslogged": "2",
+    "totalunpaiddayslogged": "2",
+    "totalovertime": "0",
+    "totalloggedhours": "0",
+    "averagehoursloggedweek": "0"
 }]
