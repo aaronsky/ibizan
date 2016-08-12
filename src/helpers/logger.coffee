@@ -4,6 +4,7 @@ Q = require 'q'
 { STRINGS } = require '../helpers/constants'
 strings = STRINGS.logger
 TEST = process.env.TEST || false
+ICON_URL = process.env.ICON_URL || false
 
 if logLevelEnvString = process.env.LOG_LEVEL
   if typeof logLevelEnvString is 'string'
@@ -97,32 +98,20 @@ module.exports = (robot) ->
     @logToChannel: (msg, channel, attachment, isUser) ->
       if msg
         if robot and robot.send?
-          message = null
-          if attachment and typeIsArray attachment
-            message = {
-              text: msg,
-              parse: 'full',
-              username: 'ibizan',
-              icon_emoji: ':dog2:',
-              attachments: attachment
-            }
-          else if attachment
-            message = {
-              text: msg,
-              parse: 'full',
-              username: 'ibizan',
-              icon_emoji: ':dog2:',
-              attachments:
-                text: attachment,
-                fallback: attachment.replace(/\W/g, '')
-            }
+          message =
+            text: msg,
+            parse: 'full',
+            username: 'ibizan',
+          if ICON_URL
+            message.icon_url = ICON_URL
           else
-            message = {
-              text: msg,
-              parse: 'full',
-              username: 'ibizan',
-              icon_emoji: ':dog2:'
-            }
+            message.icon_emoji = ':dog2:'
+          if attachment and typeIsArray attachment
+            message.attachments = attachment
+          else if attachment
+            message.attachments =
+              text: attachment,
+              fallback: attachment.replace(/\W/g, '')
           if isUser
             channel = @getSlackDM channel
           robot.send {room: channel}, message
