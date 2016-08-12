@@ -109,7 +109,7 @@ module.exports = (robot) ->
             else if timeSinceEnd <= 0.5
               user.hound strings.punchout[Math.floor(Math.random() * strings.punchout.length)], Logger
         else # Part-timer-only hounding
-          if lastPunch.mode is 'in' and timeSinceLastPunch > 4
+          if lastPunch and lastPunch.mode is 'in' and timeSinceLastPunch > 4
             user.hound strings.tempout, Logger
       else
         Logger.debug "#{user.slack} is safe from hounding for another

@@ -44,6 +44,8 @@ class Timetable
     @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
   setTimezone: (timezone) ->
     @timezone = timezone
+    @start = @start.tz(@timezone.name)
+    @end = @end.tz(@timezone.name)
 
 class Settings
   constructor: () ->
