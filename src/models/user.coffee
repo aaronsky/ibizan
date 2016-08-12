@@ -307,7 +307,7 @@ class User
     logger.logToChannel msg, @slack, attachment, true
   hound: (msg) ->
     now = moment.tz TIMEZONE
-    @directMessage (msg)
+    @directMessage msg
     @settings?.lastMessage.lastPing = now
   hexColor: ->
     hash = 0

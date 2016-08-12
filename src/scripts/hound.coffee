@@ -28,6 +28,9 @@ module.exports = (robot) ->
     if robot.name is slackuser.name
       Logger.debug 'Caught myself, don\'t hound the hound.'
       return
+    else if not Organization.ready()
+      Logger.debug 'Don\'t hound, Organization isn\'t ready yet'
+      return
 
     user = Organization.getUserBySlackName slackuser.name
     if not user
@@ -37,9 +40,6 @@ module.exports = (robot) ->
     if user.settings.shouldHound and user.settings.houndFrequency > 0
       if not channel.private
         channel.private = !!channel.is_im or !!channel.is_group
-      if not Organization.ready()
-        Logger.warn 'Don\'t hound, Organization isn\'t ready yet'
-        return
       else if channel.private or
               channel.name in Organization.exemptChannels
         Logger.debug "##{channel.name} is not an appropriate hounding channel"
@@ -61,14 +61,14 @@ module.exports = (robot) ->
       timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2) || 0
       timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
       timeSinceLastMessage = user
-                              .settings?.lastMessage
-                              .time.diff(last.time, 'hours', true) || 0
+                             .settings?.lastMessage
+                             .time.diff(last.time, 'hours', true) || 0
       timeSinceLastPing = user
                           .settings?.lastMessage
                           .lastPing?.diff(last.lastPing, 'hours', true) || 0
 
-      if timeSinceLastPing < 1
-        Logger.debug "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours (#{timeSinceLastMessage})"
+      if timeSinceLastPing > 0
+        Logger.debug "#{user.slack} is safe from hounding for another #{timeSinceLastPing} hours"
       else if timeSinceLastMessage >= user.settings.houndFrequency and
               timeSinceLastPunch >= user.settings.houndFrequency
         if not lastPunch
@@ -103,9 +103,14 @@ module.exports = (robot) ->
         status += "recently (#{last.time.format('MMM Do, YYYY h:mma')})"
         Logger.debug status
 
-  robot.adapter.client.on 'userTyping', id: "hound.userTyping", (user, channel) ->
+  robot.adapter.client.on 'user_typing', (res) ->
+    user = robot.adapter.client.rtm.dataStore.getUserById res.user
+    channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById res.channel
+    if not channel.name
+      channel = { private: null, name: '' }
     hound user, channel
-  robot.adapter.client.on 'presenceChange', id: "hound.presenceChange", (user, status) ->
+  robot.adapter.client.on 'presence_change', (res) ->
+    user = robot.adapter.client.rtm.dataStore.getUserById res.user
     hound user, { private: null, name: '' }
 
   # Every morning, reset hound status for each users
@@ -114,7 +119,7 @@ module.exports = (robot) ->
       Logger.warn "Don\'t run scheduled reset, Organization isn\'t ready yet"
       return
     for user in Organization.users
-      hound { name: user.slack}, { private: null , name: ''}, true
+      hound { name: user.slack }, { private: null , name: ''}, true
 
   # Every morning, reset hound status for each users
   resetHoundJob = schedule.scheduleJob '0 9 * * 1-5', ->
