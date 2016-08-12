@@ -1,5 +1,5 @@
 
-moment = require 'moment-timezone'
+moment = require 'moment'
 expect = require('chai').expect
 
 Organization = require('../../src/models/organization').get('test')
@@ -87,10 +87,9 @@ describe 'Punch', ->
       punch = Punch.parse @user, 'in 9:15', 'in'
       expect(punch).to.have.property 'mode', 'in'
       expect(punch).to.have.deep.property 'times[0]'
-      tz = @user.timetable.timezone.name
-      now = moment.tz(tz)
+      now = moment()
       amPm = now.format('A')
-      expectedTime = moment.tz("9:15 #{amPm}", 'h:mm A', tz)
+      expectedTime = moment("9:15 #{amPm}", 'h:mm A')
       if expectedTime.isAfter now
         if expectedTime.diff(now, 'hours', true) > 6
           expectedTime.subtract(12, 'hours')
