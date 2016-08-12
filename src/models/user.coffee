@@ -76,7 +76,7 @@ class User
           row[header] = '12:00 am'
         else if row[header] is 'noon'
           row[header] = '12:00 pm'
-        temp[key] = moment.tz(row[header], 'hh:mm a', TIMEZONE)
+        temp[key] = moment(row[header], 'hh:mm a')
       else if header is headers.salary
         temp[key] = row[header] is 'Y'
       else if header is headers.timezone
@@ -112,7 +112,7 @@ class User
   toDays: (hours) ->
     return @timetable.toDays hours
   isInactive: (current) ->
-    current = current || moment()
+    current = current || moment.tz(@timetable.timezone.name)
     if current.holiday()?
       return true
     else if current.isBetween(@timetable.start, @timetable.end)
@@ -305,10 +305,11 @@ class User
     deferred.promise
   directMessage: (msg, logger=Logger, attachment) ->
     logger.logToChannel msg, @slack, attachment, true
-  hound: (msg) ->
+  hound: (msg, logger=Logger) ->
     now = moment.tz TIMEZONE
-    @directMessage msg
-    @settings?.lastMessage.lastPing = now
+    @directMessage msg, logger
+    @settings?.lastPing = now
+    Logger.log "Hounded #{@slack} with '#{msg}'"
   hexColor: ->
     hash = 0
     for i in [0...@slack.length]

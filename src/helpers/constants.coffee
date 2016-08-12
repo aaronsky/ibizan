@@ -121,8 +121,18 @@ strings =
                           For more documentation, please check out
                           https://github.com/ibizan/ibizan.github.io/wiki"
   hound:
-    punchin:              "Punch in if you're on the clock~"
-    punchout:             "Don't forget to punch out if you're not working~"
+    punchin:              ["Punch in if you're on the clock~",
+                           "Don't forget to punch in if you're working~",
+                           "You should punch in if you're working~",
+                           "Make sure to punch in if you're doing work~"
+                          ]
+    punchout:             ["Don't forget to punch out if you're not working~",
+                           "Punch out if you're off the clock~",
+                           "You should punch out if you're not working~",
+                           "Make sure to punch out when you're done working~"
+                          ]
+    tempout:              "You've been on the clock for more than 4 hours.
+                           Don't forget to punch out if you're not working~"
   logger:
     failedreaction:       "I just tried to react to a message, but
                            something went wrong. This is usually
