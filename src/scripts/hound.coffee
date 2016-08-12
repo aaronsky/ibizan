@@ -230,16 +230,20 @@ module.exports = (robot) ->
       else if action is 'start' or action is 'enable' or action is 'on'
         Organization.shouldHound = true
         Organization.shouldResetHound = true
+        Organization.setShouldHound true
+        Organization.setHoundFrequency(+block.toFixed(2))
         user.directMessage "Hounding is now *on* for the organization.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'stop' or action is 'disable' or action is 'off'
         Organization.shouldHound = false
         Organization.shouldResetHound = false
+        Organization.setShouldHound false
         user.directMessage "Hounding is now *off* for the organization. Hounding status will not reset until it is reactivated.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'pause'
         Organization.shouldHound = false
         Organization.shouldResetHound = true
+        Organization.setShouldHound false
         user.directMessage "Hounding is now *paused* for the organization. Hounding will resume tomorrow.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'reset'

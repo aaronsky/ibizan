@@ -21,8 +21,10 @@ class Timetable
   constructor: (@start, @end, @timezone) ->
     if typeof @timezone is 'string'
       @timezone = moment.tz.zone(@timezone)
-    @start = @start.tz(@timezone.name)
-    @end = @end.tz(@timezone.name)
+    @startRaw = @start
+    @endRaw = @end
+    @start = moment.tz(@start, 'hh:mm a', @timezone.name)
+    @end = moment.tz(@end, 'hh:mm a', @timezone.name)
   activeHours: ->
     [@start, @end]
   activeTime: ->
@@ -44,8 +46,8 @@ class Timetable
     @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
   setTimezone: (timezone) ->
     @timezone = timezone
-    @start = @start.tz(@timezone.name)
-    @end = @end.tz(@timezone.name)
+    @start = moment.tz(@startRaw, 'hh:mm a', @timezone.name)
+    @end = moment.tz(@endRaw, 'hh:mm a', @timezone.name)
 
 class Settings
   constructor: () ->
@@ -78,7 +80,7 @@ class User
           row[header] = '12:00 am'
         else if row[header] is 'noon'
           row[header] = '12:00 pm'
-        temp[key] = moment(row[header], 'hh:mm a')
+        temp[key] = row[header]
       else if header is headers.salary
         temp[key] = row[header] is 'Y'
       else if header is headers.timezone
@@ -323,9 +325,9 @@ class User
     fields = []
     statusString = ""
     if @salary
-      statusString = "Salary (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')})"
+      statusString = "Salary (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a z')})"
     else
-      statusString = "Hourly (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')})"
+      statusString = "Hourly (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a z')})"
     timeZoneField =
       title: "Time Zone"
       value: "#{@timetable.timezone.name}"

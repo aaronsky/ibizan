@@ -147,6 +147,14 @@ class Organization
         }
         i += 1
       i
+    setShouldHound: (should) ->
+      i = 0
+      for user in @users
+        user.settings.fromSettings {
+          shouldHound: should
+        }
+        i += 1
+      i
   @get: (id) ->
     instance ?= new OrganizationPrivate(id)
     instance
