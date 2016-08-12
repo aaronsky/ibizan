@@ -79,6 +79,10 @@ strings =
                           Please try again later, and if this persists
                           longer than five minutes, DM a maintainer as
                           soon as possible."
+    unknowncommand:     ["_tilts their head confusedly. Maybe you should ask for help?_",
+                         "_stares blankly. Maybe you should ask for help?_",
+                         "_listens intently, but doesn't know what you meant. Maybe you should ask for help?_"
+                        ]
   diagnostics:
     help:                "*Ibizan Help*\n
                           \n
