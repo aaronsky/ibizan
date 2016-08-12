@@ -139,15 +139,10 @@ module.exports = (robot) ->
         Logger.log "@#{user.slack}'s punch was successfully entered
                     into the spreadsheet."
         punchEnglish = "Punched you *#{punch.description(user)}*."
-        if res.router_res
-          res.router_res.status 200
-          res.router_res.json {
-            "text": punchEnglish
-          }
-        else
-          user.directMessage punchEnglish, Logger
-          Logger.addReaction 'dog2', res.message
-          Logger.removeReaction 'clock4', res.message
+
+        user.directMessage punchEnglish, Logger
+        Logger.addReaction 'dog2', res.message
+        Logger.removeReaction 'clock4', res.message
     )
     .catch(
       (err) ->
@@ -266,8 +261,8 @@ module.exports = (robot) ->
     report = null
     headers = HEADERS.payrollreports
 
-    startOfDay = moment(date).startOf('day')
-    endOfDay = moment(date).endOf('day')
+    startOfDay = moment.tz(date, tz).startOf('day')
+    endOfDay = moment.tz(date, tz).endOf('day')
     report = user.toRawPayroll(startOfDay, endOfDay)
     for punch in user.punches
       if punch.date.isBefore(startOfDay) or punch.date.isAfter(endOfDay)
@@ -280,10 +275,10 @@ module.exports = (robot) ->
        not report[headers.vacation] and
        not report[headers.sick] and
        not report[headers.unpaid]
-      msg = "You haven\'t recorded any hours on #{formattedDate}."
+      msg = "You haven't recorded any hours on #{formattedDate}."
     else
       if not report[headers.logged]
-        msg = "You haven\'t recorded any paid work time"
+        msg = "You haven't recorded any paid work time"
       else
         msg = "You have *#{toTimeStr(report[headers.logged])} of paid work time*"
         loggedAny = true
@@ -310,13 +305,14 @@ module.exports = (robot) ->
   # Returns the hours worked for the given time period
   robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, id: 'time.hours', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
+    tz = user.timetable.timezone.name
+    now = moment.tz(tz)
     attachments = []
     mode = res.match[1].toLowerCase()
     report = dateArticle = null
     headers = HEADERS.payrollreports
     if mode is 'week'
       sunday = moment({hour: 0, minute: 0, second: 0}).day("Sunday")
-      now = moment().add(1, 'days')
       report = user.toRawPayroll(sunday, now)
       dateArticle = "this week"
       for punch in user.punches
@@ -329,18 +325,15 @@ module.exports = (robot) ->
         else
           attachments.push punch.slackAttachment()
     else if mode is 'month'
-      sunday = moment({hour: 0, minute: 0, second: 0}).startOf("month")
-      now = moment().add(1, 'days')
-      report = user.toRawPayroll(sunday, now)
+      startOfMonth = moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("month")
+      report = user.toRawPayroll(startOfMonth, now)
       dateArticle = "this month"
     else if mode is 'year'
-      sunday = moment({hour: 0, minute: 0, second: 0}).startOf("year")
-      now = moment().add(1, 'days')
-      report = user.toRawPayroll(sunday, now)
+      startOfYear = moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("year")
+      report = user.toRawPayroll(startOfYear, now)
       dateArticle = "this year"
     else
-      earlyToday = moment({hour: 0, minute: 0, second: 0})
-      now = moment().add(1, 'days')
+      earlyToday = moment.tz({hour: 0, minute: 0, second: 0}, tz)
       report = user.toRawPayroll(earlyToday, now)
       dateArticle = "today"
       for punch in user.punches
@@ -354,10 +347,10 @@ module.exports = (robot) ->
        not report[headers.vacation] and
        not report[headers.sick] and
        not report[headers.unpaid]
-      msg = "You haven\'t recorded any hours #{dateArticle}."
+      msg = "You haven't recorded any hours #{dateArticle}."
     else
       if not report[headers.logged]
-        msg = "You haven\'t recorded any paid work time"
+        msg = "You haven't recorded any paid work time"
       else
         msg = "You have *#{toTimeStr(report[headers.logged])} of paid work time*"
         loggedAny = true

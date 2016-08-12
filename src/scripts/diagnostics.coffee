@@ -61,7 +61,7 @@ module.exports = (robot) ->
         res.send "Resynced with spreadsheet"
         Logger.removeReaction 'clock4', res.message
         Logger.addReaction 'dog2', res.message
-      )
+    )
 
   robot.router.post '/diagnostics/sync', (req, res) ->
     body = req.body
