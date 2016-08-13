@@ -249,6 +249,7 @@ module.exports = (robot) ->
   # Returns the hours worked on a given date
   robot.respond /hours (.*)/i, id: 'time.hoursOnDate', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
+    tz = user.timetable.timezone.name
     date = moment(res.match[1], "MM/DD/YYYY")
     if not date.isValid()
       Logger.log "hours: #{res.match[1]} is an invalid date"
