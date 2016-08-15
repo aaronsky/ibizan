@@ -122,6 +122,8 @@ strings =
                           https://github.com/ibizan/ibizan.github.io/wiki"
     userhelp:             "Use `@ibizan user [slack name]` to view a user's slack info!"
   hound:
+    houndhelp:            "Change hounding settings using `hound (scope) (command)`!
+                           Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`"
     punchin:              ["Punch in if you're on the clock~",
                            "Don't forget to punch in if you're working~",
                            "You should punch in if you're working~",

@@ -156,7 +156,7 @@ module.exports = (robot) ->
 
     command = res.match[1]
     if not command
-      res.send "Change hounding settings using `hound (scope) (command)`! Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+      res.send strings.houndhelp
       Logger.addReaction 'dog2', res.message
       return
     comps = command.split(' ') || []
