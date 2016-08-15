@@ -105,9 +105,9 @@ module.exports = (robot) ->
                 user.hound strings.punchin[Math.floor(Math.random() * strings.punchin.length)], Logger
           else
             Logger.debug "Considering hounding #{user.slack} because it's during their active period with no in punch"
-            if now.isAfter(start) and timeSinceStart >= 0.5
+            if now.isAfter(start) and timeSinceStart >= 0.5 and not passive
               user.hound strings.punchin[Math.floor(Math.random() * strings.punchin.length)], Logger
-            else if now.isAfter(end) and timeSinceEnd >= 0.5
+            else if now.isAfter(end) and timeSinceEnd >= 0.5 and not passive
               user.hound strings.punchout[Math.floor(Math.random() * strings.punchout.length)], Logger
         else # Part-timer-only hounding
           if lastPunch and lastPunch.mode is 'in' and timeSinceLastPunch > 4
