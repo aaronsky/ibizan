@@ -24,7 +24,7 @@ strings = STRINGS.hound
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
-  hound = (slackuser, channel, forceHound=false) ->
+  hound = (slackuser, channel, forceHound=false, passive=false) ->
     if robot.name is slackuser.name
       Logger.debug "Caught myself, don't hound the hound."
       return
@@ -65,7 +65,8 @@ module.exports = (robot) ->
                              .time.diff(last.time, 'hours', true) || 0
       timeSinceLastPing = +Math.abs(now.diff(lastPing, 'hours', true)) || 0
 
-      Logger.debug "isInactive: #{user.isInactive()},
+      Logger.debug "now: #{now.format('h:mm A, z')},
+                    isInactive: #{user.isInactive()},
                     start: #{start.format('h:mm A')},
                     end: #{end.format('h:mm A')},
                     timeSinceLastPunch: #{timeSinceLastPunch},
@@ -75,12 +76,12 @@ module.exports = (robot) ->
                     timeSinceLastPing: #{timeSinceLastPing},
                     houndFrequency: #{user.settings.houndFrequency}"
 
-      if timeSinceLastPing == 0 or
-         timeSinceLastPing >= user.settings.houndFrequency
+      if (timeSinceLastPing == 0 or timeSinceLastPing >= user.settings.houndFrequency) and
+         timeSinceLastPunch > 0.25
         if user.salary
-          if not lastPunch and not user.isInactive()
+          if not lastPunch and not user.isInactive() and not passive
             Logger.debug "Considering hounding #{user.slack} because of missing lastPunch during active period"
-            if now.isAfter(start) and timeSinceStart <= 0.5
+            if now.isAfter(start) and timeSinceStart >= 0.5
               user.hound strings.punchin[Math.floor(Math.random() * strings.punchin.length)], Logger
             else if now.isAfter(end) and timeSinceEnd >= 0.5
               user.hound strings.punchout[Math.floor(Math.random() * strings.punchout.length)], Logger
@@ -88,7 +89,7 @@ module.exports = (robot) ->
             Logger.debug "Considering hounding #{user.slack} because lastPunch is in"
             if user.isInactive() and timeSinceEnd >= 0.5
               user.hound strings.punchout[Math.floor(Math.random() * strings.punchout.length)], Logger
-          else if lastPunch.mode is 'out'
+          else if lastPunch.mode is 'out' and not passive
             Logger.debug "Considering hounding #{user.slack} because lastPunch is out during active period"
             if not user.isInactive() and timeSinceStart >= 0.5
               user.hound strings.punchin[Math.floor(Math.random() * strings.punchin.length)], Logger
@@ -96,21 +97,24 @@ module.exports = (robot) ->
                   lastPunch.mode is 'sick' or
                   lastPunch.mode is 'unpaid'
             Logger.debug "Considering hounding #{user.slack} because lastPunch is special"
-            if lastPunch.times.length > 0 and not now.isBetween(lastPunch.times[0], lastPunch.times[1])
+            if lastPunch.times.length > 0 and not now.isBetween(lastPunch.times[0], lastPunch.times[1]) and not passive
               user.hound strings.punchin[Math.floor(Math.random() * strings.punchin.length)], Logger
-            else if lastPunch.times.block?
+            else if lastPunch.times.block? and not passive
               endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours')
               if not now.isBetween(lastPunch.date, endOfBlock)
                 user.hound strings.punchin[Math.floor(Math.random() * strings.punchin.length)], Logger
           else
             Logger.debug "Considering hounding #{user.slack} because it's during their active period with no in punch"
-            if timeSinceStart <= 0.5
+            if now.isAfter(start) and timeSinceStart >= 0.5
               user.hound strings.punchin[Math.floor(Math.random() * strings.punchin.length)], Logger
-            else if timeSinceEnd <= 0.5
+            else if now.isAfter(end) and timeSinceEnd >= 0.5
               user.hound strings.punchout[Math.floor(Math.random() * strings.punchout.length)], Logger
         else # Part-timer-only hounding
           if lastPunch and lastPunch.mode is 'in' and timeSinceLastPunch > 4
             user.hound strings.tempout, Logger
+      else if timeSinceLastPunch <= 0.25
+        Logger.debug "#{user.slack} is safe from hounding as they punched
+                      #{timeSinceLastPunch.toFixed(2)} hours ago"
       else
         Logger.debug "#{user.slack} is safe from hounding for another
                       #{user.settings.houndFrequency - timeSinceLastPing.toFixed(2)} hours"
@@ -120,12 +124,12 @@ module.exports = (robot) ->
     channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById res.channel
     if not channel.name
       channel = { private: null, name: '' }
-    hound user, channel
+    hound user, channel, false
 
-  # robot.adapter.client.on 'presence_change', (res) ->
-  #   if res.presence is 'active'
-  #     user = robot.adapter.client.rtm.dataStore.getUserById res.user
-  #     hound user, { private: null, name: '' }
+  robot.adapter.client.on 'presence_change', (res) ->
+    if res.presence is 'active'
+      user = robot.adapter.client.rtm.dataStore.getUserById res.user
+      hound user, { private: null, name: '' }, false, true
 
   # Every five minutes, attempt to hound non-salaried users
   autoHoundJob = schedule.scheduleJob '*/5 * * * *', ->
@@ -133,8 +137,7 @@ module.exports = (robot) ->
       Logger.warn "Don't autohound, Organization isn\'t ready yet"
       return
     for user in Organization.users
-      if not user.salary
-        hound { name: user.slack }, { private: null , name: ''}, true
+      hound { name: user.slack }, { private: null , name: ''}, true, true
 
   # Every morning, reset hound status for each user
   resetHoundJob = schedule.scheduleJob '0 9 * * 1-5', ->
