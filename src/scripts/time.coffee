@@ -303,7 +303,7 @@ module.exports = (robot) ->
     user.directMessage msg, Logger, attachments
 
   # Returns the hours worked for the given time period
-  robot.respond /(hours|today|week|month|year)+[\?\!\.¿¡]/i, id: 'time.hours', userRequired: true, (res) ->
+  robot.respond /.*(hours|today|week|month|year|period)+[\?\!\.¿¡]/i, id: 'time.hours', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     tz = user.timetable.timezone.name
     now = moment.tz(tz)
@@ -320,8 +320,6 @@ module.exports = (robot) ->
           continue
         else if not punch.elapsed and not punch.times.block
           continue
-        else if not punch.mode is 'out'
-          continue
         else
           attachments.push punch.slackAttachment()
     else if mode is 'month'
@@ -332,6 +330,20 @@ module.exports = (robot) ->
       startOfYear = moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("year")
       report = user.toRawPayroll(startOfYear, now)
       dateArticle = "this year"
+    else if mode is 'period'
+      periodStart = moment({hour: 0, minute: 0, second: 0}).day("Sunday")
+      if not Organization.calendar.isPayWeek()
+        periodStart = periodStart.subtract(1, 'weeks')
+      periodEnd = periodStart.clone().add(2, 'weeks')
+      report = user.toRawPayroll(periodStart, periodEnd)
+      dateArticle = "this pay period (#{periodStart.format('M/DD')} to #{periodEnd.format('M/DD')})"
+      for punch in user.punches
+        if punch.date.isBefore(periodStart) or punch.date.isAfter(periodEnd)
+          continue
+        else if not punch.elapsed and not punch.times.block
+          continue
+        else
+          attachments.push punch.slackAttachment()
     else
       earlyToday = moment.tz({hour: 0, minute: 0, second: 0}, tz)
       report = user.toRawPayroll(earlyToday, now)
