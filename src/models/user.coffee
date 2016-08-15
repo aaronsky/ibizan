@@ -343,16 +343,9 @@ class User
     return hexColor
   slackAttachment: () ->
     fields = []
-    statusString = ""
-    if @salary
-      statusString = "Salary (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a z')})"
-    else
-      statusString = "Hourly (Active from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a z')})"
-    timeZoneField =
-      title: "Time Zone"
-      value: "#{@timetable.timezone.name}"
-      short: true
-    fields.push timeZoneField
+    statusString = "#{if @status then 'Salary' else 'Hourly'} -
+                    Active #{@timetable.start.format('h:mm a')} to
+                    #{@timetable.end.format('h:mm a z')}"
     lastPunch = @lastPunch()
     if lastPunch
       lastPunchField =
@@ -360,6 +353,14 @@ class User
         value: "#{lastPunch.description(@)}"
         short: true
       fields.push lastPunchField
+    houndString = "#{if @settings?.shouldHound then 'On' else 'Off'}"
+    if @settings?.shouldHound
+      houndString += " (#{@settings?.houndFrequency} hours)"
+    houndField =
+      title: "Hounding"
+      value: houndString
+      short: true
+    fields.push houndField
     if @salary
       vacationDaysField =
         title: "Vacation Days"
