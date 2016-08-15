@@ -121,10 +121,11 @@ module.exports = (robot) ->
     if not channel.name
       channel = { private: null, name: '' }
     hound user, channel
-  robot.adapter.client.on 'presence_change', (res) ->
-    if res.presence is 'active'
-      user = robot.adapter.client.rtm.dataStore.getUserById res.user
-      hound user, { private: null, name: '' }
+
+  # robot.adapter.client.on 'presence_change', (res) ->
+  #   if res.presence is 'active'
+  #     user = robot.adapter.client.rtm.dataStore.getUserById res.user
+  #     hound user, { private: null, name: '' }
 
   # Every five minutes, attempt to hound non-salaried users
   autoHoundJob = schedule.scheduleJob '*/5 * * * *', ->
