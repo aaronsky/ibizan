@@ -332,7 +332,7 @@ module.exports = (robot) ->
       dateArticle = "this year"
     else if mode is 'period'
       periodStart = moment({hour: 0, minute: 0, second: 0}).day("Sunday")
-      if not Organization.calendar.isPayWeek()
+      if Organization.calendar.isPayWeek()
         periodStart = periodStart.subtract(1, 'weeks')
       periodEnd = periodStart.clone().add(2, 'weeks')
       report = user.toRawPayroll(periodStart, periodEnd)
