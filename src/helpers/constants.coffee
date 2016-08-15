@@ -120,6 +120,7 @@ strings =
                           \n
                           For more documentation, please check out
                           https://github.com/ibizan/ibizan.github.io/wiki"
+    userhelp:             "Use `@ibizan user [slack name]` to view a user's slack info!"
   hound:
     punchin:              ["Punch in if you're on the clock~",
                            "Don't forget to punch in if you're working~",
@@ -143,6 +144,10 @@ strings =
                            in a minute. If this persists for longer than 5 minutes,
                            DM a maintainer ASAP."
   time:
+    activefail:           "I couldn't understand your request. Make sure you're using the
+                           correct syntax, for example: `@ibizan active start 10am`"
+    activehelp:           "Use `@ibizan active [start/end] [time]` to set your active hours!\n
+                           Example: `@ibizan active start 10am`"
     hourshelp:            "Use `@ibizan hours [date]` to view your punches on that date!\n
                            Use `@ibizan hours?` (or today?/week?/month?/year?) to view
                            your punches for the given time period!"

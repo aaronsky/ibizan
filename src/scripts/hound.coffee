@@ -147,12 +147,13 @@ module.exports = (robot) ->
                 hound status for the morning"
     Logger.logToChannel response, 'ibizan-diagnostics'
 
+  # Check/adjust hounding settings
   robot.respond /hound\s*(.*)?$/i, id: 'hound.hound', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
 
     command = res.match[1]
     if not command
-      user.directMessage "Change hounding settings using `hound (scope) (command)`! Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+      res.send "Change hounding settings using `hound (scope) (command)`! Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
       Logger.addReaction 'dog2', res.message
       return
     comps = command.split(' ') || []

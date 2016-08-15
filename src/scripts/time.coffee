@@ -241,9 +241,8 @@ module.exports = (robot) ->
   ## User feedback ##
 
   # Gives helpful info if a user types 'hours' with no question mark or date
-  robot.respond /\bhours$/i, id: 'time.hoursHelp', userRequired: true, (res) ->
-    user = Organization.getUserBySlackName res.message.user.name
-    user.directMessage strings.hourshelp, Logger
+  robot.respond /\bhours$/i, id: 'time.hoursHelp', (res) ->
+    res.send strings.hourshelp
     Logger.addReaction 'dog2', res.message
 
   # Returns the hours worked on a given date
@@ -382,7 +381,7 @@ module.exports = (robot) ->
     Logger.addReaction 'dog2', res.message
 
   # Returns the user's time in their timezone, as well as Ibizan's default time
-  robot.respond /\btime$/i, id: 'time.time', (res) ->
+  robot.respond /\btime$/i, id: 'time.time', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     userTime = moment.tz(user.timetable.timezone.name)
     ibizanTime = moment.tz(TIMEZONE)
@@ -393,17 +392,17 @@ module.exports = (robot) ->
     Logger.addReaction 'dog2', res.message
 
   # Returns the user's timezone
-  robot.respond /\btimezone$/i, id: 'time.time', (res) ->
+  robot.respond /\btimezone$/i, id: 'time.time', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     userTime = moment.tz(user.timetable.timezone.name)
     user.directMessage "Your timezone is set to
                         *#{user.timetable.timezone.name}*
                         (#{userTime.format('z, Z')}).",
-                        Logger
+                       Logger
     Logger.addReaction 'dog2', res.message
 
   # Sets the user's timezone
-  robot.respond /timezone (.*)/i, id: 'time.time', (res) ->
+  robot.respond /timezone (.*)/i, id: 'time.time', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     input = res.match[1]
 
@@ -412,7 +411,7 @@ module.exports = (robot) ->
       userTime = moment.tz(user.timetable.timezone.name)
       user.directMessage "Your timezone is now *#{user.timetable.timezone.name}*
                           (#{userTime.format('z, Z')}).",
-                          Logger
+                         Logger
       Logger.addReaction 'dog2', res.message
     else
       # Try adding 'America/' if a region is not specified
@@ -424,11 +423,53 @@ module.exports = (robot) ->
         userTime = moment.tz(user.timetable.timezone.name)
         user.directMessage "Your timezone is now *#{user.timetable.timezone.name}*
                             (#{userTime.format('z, Z')}).",
-                            Logger
+                           Logger
         Logger.addReaction 'dog2', res.message
       else
         user.directMessage "I do not recognize that timezone.
                             Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list>
-                            for a valid time zone name.",
-                            Logger
+                            for a valid time zone name."
         Logger.addReaction 'x', res.message
+
+  # Sets the user's active times
+  robot.respond /active\s*(.*)?$/i, id: 'time.active', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    command = res.match[1]
+    if not command
+      res.send strings.activehelp
+      Logger.addReaction 'dog2', res.message
+      return
+    comps = command.split(' ') || []
+    scope = comps[0] || 'unknown'
+    time = comps[1] || 'notime'
+
+    if scope isnt 'unknown' and time isnt 'notime'
+      newtime = moment.tz(time, 'h:mm A', user.timetable.timezone.name)
+      if not newtime.isValid()
+        user.directMessage "#{time} is not a valid time.", Logger
+        Logger.addReaction 'x', res.message
+        return
+      if scope is 'start'
+        if not newtime.isBefore(user.timetable.end)
+          user.directMessage "#{newtime.format('h:mm A')} is not before your
+                              current end time of #{user.timetable.start.format('h:mm A')}.",
+                             Logger
+          Logger.addReaction 'x', res.message
+          return
+        else
+          user.setStart newtime
+      else if scope is 'end'
+        if not newtime.isAfter(user.timetable.start)
+          user.directMessage "#{newtime.format('h:mm A')} is not after your
+                              current start time of #{user.timetable.start.format('h:mm A')}.",
+                             Logger
+          Logger.addReaction 'x', res.message
+          return
+        else
+          user.setEnd newtime
+      user.directMessage "Your active *#{scope}* time is now *#{newtime.format('h:mm A')}*.",
+                         Logger
+      Logger.addReaction 'dog2', res.message
+    else
+      user.directMessage strings.activefail, Logger
+      Logger.addReaction 'x', res.message

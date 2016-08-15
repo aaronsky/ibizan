@@ -34,8 +34,8 @@ module.exports = (robot) ->
     user.directMessage response, Logger, attachments
     Logger.addReaction 'dog2', res.message
 
-  robot.respond /user$/i, id: 'diagnostics.userHelp', userRequired: true, adminOnly: true, (res) ->
-    res.send "Use `ibizan user [slack name]` to view a user's slack info!"
+  robot.respond /user$/i, id: 'diagnostics.userHelp', adminOnly: true, (res) ->
+    res.send strings.userhelp
     Logger.addReaction 'dog2', res.message
 
   robot.respond /user (.*)/i, id: 'diagnostics.user', userRequired: true, adminOnly: true, (res) ->

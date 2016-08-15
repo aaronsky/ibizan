@@ -101,7 +101,7 @@ module.exports = (robot) ->
           message =
             text: msg,
             parse: 'full',
-            username: 'ibizan',
+            username: 'ibizan'
           if ICON_URL
             message.icon_url = ICON_URL
           else

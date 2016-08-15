@@ -48,6 +48,12 @@ class Timetable
     @timezone = timezone
     @start = moment.tz(@startRaw, 'hh:mm a', @timezone.name)
     @end = moment.tz(@endRaw, 'hh:mm a', @timezone.name)
+  setStart: (start) ->
+    @startRaw = start
+    @start = moment.tz(@startRaw, 'hh:mm a', @timezone.name)
+  setEnd: (end) ->
+    @endRaw = end
+    @end = moment.tz(@endRaw, 'hh:mm a', @timezone.name)
 
 class Settings
   constructor: () ->
@@ -113,6 +119,18 @@ class User
       @timetable.setTimezone(tz)
       @updateRow()
     return tz
+  setStart: (start) ->
+    time = moment(start, 'h:mm A')
+    if time
+      @timetable.setStart(time)
+      @updateRow()
+    return time
+  setEnd: (end) ->
+    time = moment(end, 'h:mm A')
+    if time
+      @timetable.setEnd(time)
+      @updateRow()
+    return time
   toDays: (hours) ->
     return @timetable.toDays hours
   isInactive: (current) ->
@@ -290,6 +308,8 @@ class User
     deferred = Q.defer()
     if @row?
       headers = HEADERS.users
+      @row[headers.start] = @timetable.start.format('h:mm A')
+      @row[headers.end] = @timetable.end.format('h:mm A')
       @row[headers.timezone] = @timetable.timezone.name
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal
