@@ -26,10 +26,10 @@ module.exports = (robot) ->
 
   hound = (slackuser, channel, forceHound=false) ->
     if robot.name is slackuser.name
-      Logger.debug 'Caught myself, don\'t hound the hound.'
+      Logger.debug "Caught myself, don't hound the hound."
       return
     else if not Organization.ready()
-      Logger.debug 'Don\'t hound, Organization isn\'t ready yet'
+      Logger.debug "Don't hound, Organization isn't ready yet"
       return
 
     user = Organization.getUserBySlackName slackuser.name

@@ -102,7 +102,7 @@ module.exports = (robot) ->
                               'ibizan-diagnostics'
       )
 
-  robot.respond /payroll\s*(.*)?$/i, id: 'payroll.payroll', (res) ->
+  robot.respond /payroll\s*(.*)?$/i, id: 'payroll.payroll', userRequired: true, adminOnly: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     dates = res.match[1]
     if dates?

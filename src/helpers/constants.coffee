@@ -155,15 +155,7 @@ modes = ['in', 'out', 'vacation', 'unpaid', 'sick']
 
 timezone = 'America/Phoenix'
 
-adminCommands = [
-  'diagnostics.users',
-  'diagnostics.projects',
-  'diagnostics.calendar',
-  'payroll.payroll'
-]
-
 module.exports =
-  ADMIN_COMMANDS: adminCommands
   HEADERS: cellHeaders
   MODES: modes
   REGEX: regex

@@ -6,7 +6,7 @@
 # Author:
 #   bcoia
 
-{ ADMIN_COMMANDS, REGEX, STRINGS } = require '../helpers/constants'
+{ REGEX, STRINGS } = require '../helpers/constants'
 strings = STRINGS.access
 
 Organization = require('../models/organization').get()
@@ -32,7 +32,7 @@ module.exports = (robot) ->
         done()
       else
         Logger.debug "Responding to '#{message}' (#{command}) from #{username}"
-        if command in ADMIN_COMMANDS
+        if context.listener.options.adminOnly
           if not isAdminUser username
             # Admin command, but user isn't in whitelist
             context.response.send strings.adminonly

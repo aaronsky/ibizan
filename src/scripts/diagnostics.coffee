@@ -25,7 +25,7 @@ module.exports = (robot) ->
               _(#{moment().preciseDiff(Organization.initTime)})_"
     Logger.addReaction 'dog2', res.message
 
-  robot.respond /users/i, id: 'diagnostics.users', (res) ->
+  robot.respond /users/i, id: 'diagnostics.users', userRequired: true, adminOnly: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     response = 'All users:'
     attachments = []
@@ -34,7 +34,24 @@ module.exports = (robot) ->
     user.directMessage response, Logger, attachments
     Logger.addReaction 'dog2', res.message
 
-  robot.respond /projects/i, id: 'diagnostics.projects', (res) ->
+  robot.respond /user$/i, id: 'diagnostics.userHelp', userRequired: true, adminOnly: true, (res) ->
+    res.send "Use `ibizan user [slack name]` to view a user's slack info!"
+    Logger.addReaction 'dog2', res.message
+
+  robot.respond /user (.*)/i, id: 'diagnostics.user', userRequired: true, adminOnly: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    u = Organization.getUserBySlackName res.match[1]
+    response = "User #{res.match[1]}"
+    if u
+      response += ":"
+      user.directMessage response, Logger, [u.slackAttachment()]
+      Logger.addReaction 'dog2', res.message
+    else
+      response += " could not be found. Make sure you're using their Slack name."
+      user.directMessage response, Logger
+      Logger.addReaction 'x', res.message
+
+  robot.respond /projects/i, id: 'diagnostics.projects', userRequired: true, adminOnly: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     response = ''
     for project in Organization.projects
@@ -42,7 +59,7 @@ module.exports = (robot) ->
     user.directMessage response, Logger
     Logger.addReaction 'dog2', res.message
 
-  robot.respond /calendar/i, id: 'diagnostics.calendar', (res) ->
+  robot.respond /calendar/i, id: 'diagnostics.calendar', userRequired: true, adminOnly: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     user.directMessage Organization.calendar.description(), Logger
     Logger.addReaction 'dog2', res.message
