@@ -122,17 +122,23 @@ strings =
                           https://github.com/ibizan/ibizan.github.io/wiki"
     userhelp:             "Use `@ibizan user [slack name]` to view a user's slack info!"
   hound:
+    annoying:             "\n\nIf you think I'm being an annoying dog, you can adjust your
+                           hounding settings with `@ibizan hound`, or your active hours
+                           with `@ibizan active`! Use `@ibizan status` to see when I think
+                           you are active."
     houndhelp:            "Change hounding settings using `hound (scope) (command)`!
                            Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`"
     punchin:              ["Punch in if you're on the clock~",
                            "Don't forget to punch in if you're working~",
                            "You should punch in if you're working~",
-                           "Make sure to punch in if you're doing work~"
+                           "Make sure to punch in if you're doing work~",
+                           "You may want to punch in~"
                           ]
     punchout:             ["Don't forget to punch out if you're not working~",
                            "Punch out if you're off the clock~",
                            "You should punch out if you're not working~",
-                           "Make sure to punch out when you're done working~"
+                           "Make sure to punch out when you're done working~",
+                           "You may want to punch out~"
                           ]
     tempout:              "You've been on the clock for more than 4 hours.
                            Don't forget to punch out if you're not working~"
