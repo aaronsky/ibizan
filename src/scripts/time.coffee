@@ -345,7 +345,7 @@ module.exports = (robot) ->
         else
           attachments.push punch.slackAttachment()
     else
-      earlyToday = moment.tz({hour: 0, minute: 0, second: 0}, tz)
+      earlyToday = now.clone().hour(0).minute(0).second(0)
       report = user.toRawPayroll(earlyToday, now)
       dateArticle = "today"
       for punch in user.punches
