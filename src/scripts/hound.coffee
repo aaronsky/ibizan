@@ -116,12 +116,6 @@ module.exports = (robot) ->
               endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours')
               if not now.isBetween(lastPunch.date, endOfBlock)
                 user.hound houndMessage('in'), Logger
-          else
-            Logger.debug "Considering hounding #{user.slack} because it's during their active period with no in punch"
-            if now.isAfter(start) and timeSinceStart >= 0.5 and not passive
-              user.hound houndMessage('in'), Logger
-            else if now.isAfter(end) and timeSinceEnd >= 0.5 and not passive
-              user.hound houndMessage('out'), Logger
         else # Part-timer-only hounding
           if lastPunch and lastPunch.mode is 'in' and timeSinceLastPunch > 4
             user.hound houndMessage('tempout'), Logger
