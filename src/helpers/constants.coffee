@@ -123,8 +123,8 @@ strings =
     userhelp:             "Use `@ibizan user [slack name]` to view a user's slack info!"
   hound:
     annoying:             "\n\nIf you think I'm being an annoying dog, you can adjust your
-                           hounding settings with `@ibizan hound`, or your active hours
-                           with `@ibizan active`! Use `@ibizan status` to see when I think
+                           hounding settings with `hound`, or your active hours
+                           with `active`! Use `status` to see when I think
                            you are active."
     houndhelp:            "Change hounding settings using `hound (scope) (command)`!
                            Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`"
