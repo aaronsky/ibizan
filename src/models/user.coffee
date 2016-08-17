@@ -335,8 +335,11 @@ class User
     logger.logToChannel msg, @slack, attachment, true
   hound: (msg, logger=Logger) ->
     now = moment.tz TIMEZONE
-    @directMessage msg, logger
     @settings?.lastPing = now
+    me = @
+    setTimeout ->
+      me.directMessage msg, logger
+    , 1000 * (Math.floor(Math.random() * 3) + 1)
     Logger.log "Hounded #{@slack} with '#{msg}'"
   hexColor: ->
     hash = 0
