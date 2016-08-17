@@ -93,6 +93,8 @@ module.exports = (robot) ->
       Logger.addReaction 'clock4', res.message
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
+      msg = msg.trim()
+      Logger.log "msg: #{msg}"
       tz = user.timetable.timezone.name
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
