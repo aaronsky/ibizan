@@ -91,6 +91,15 @@ strings =
                           "bark bark",
                           "bark bark bark"
                         ]
+    fetchsuffix:        [
+                          "",
+                          " while excitedly panting",
+                          " and awaits a cookie",
+                          " and sits obediently",
+                          " and barks loudly",
+                          " and stares expectantly",
+                          ", then runs a quick lap around the channel"
+                        ]
     goodboy:            ":ok_hand:"
     story:              [
                           "woof woof woof",

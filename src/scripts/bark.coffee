@@ -27,11 +27,17 @@ module.exports = (robot) ->
   robot.respond /fetch\s*(.*)?$/i, id: 'bark.fetch', (res) ->
     thing = res.match[1]
     if not thing
-      res.send "_perks up and fidgets impatiently, waiting for #{res.message.user.name} to `fetch [thing]`_"
+      res.send "_perks up and fidgets impatiently, waiting for @#{res.message.user.name} to `fetch [thing]`_"
     else
       res.send "_runs to fetch #{thing}!_"
       setTimeout ->
-        res.send "_drops #{thing} at #{res.message.user.name}'s feet while excitedly panting_"
+        if (Math.floor(Math.random() * 10) + 1) == 1
+          res.send "_returns to @#{res.message.user.name}, unable to find #{thing}#{res.random strings.fetchsuffix}_"
+        else
+          if thing.match(/:(.*?):/g)
+            for match in thing.match(/:(.*?):/g)
+              Logger.addReaction match.replace(/:/g, ""), res.message
+          res.send "_drops #{thing} at @#{res.message.user.name}'s feet#{res.random strings.fetchsuffix}_"
       , 2000 * (Math.floor(Math.random() * 5) + 1)
 
   robot.router.get '/', (req, res) ->
