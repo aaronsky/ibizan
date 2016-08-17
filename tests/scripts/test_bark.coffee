@@ -26,10 +26,8 @@ describe 'bark', ->
       @room.user.say 'briancoia', 'hubot tell me a story'
 
     it 'should tell a story to user', ->
-      expect(@room.messages).to.eql [
-        ['briancoia', 'hubot tell me a story']
-        ['hubot',     'woof woof woof']
-      ]
+      expect(@room.messages[0]).to.eql(['briancoia', 'hubot tell me a story'])
+      expect(@room.messages[1][1]).to.include('w')
 
   context 'user says: good (dog|boy|pup|puppy|ibizan|ibi)', ->
     beforeEach ->
@@ -40,6 +38,22 @@ describe 'bark', ->
         ['briancoia', 'good boy']
         ['hubot',     ':ok_hand:']
       ]
+
+  context 'user says: hubot fetch', ->
+    beforeEach ->
+      @room.user.say 'briancoia', 'hubot fetch'
+
+    it 'should get impatient', ->
+      expect(@room.messages[0]).to.eql(['briancoia', 'hubot fetch'])
+      expect(@room.messages[1][1]).to.include('impatient')
+
+  context 'user says: hubot fetch thing', ->
+    beforeEach ->
+      @room.user.say 'briancoia', 'hubot fetch thing'
+
+    it 'should fetch thing', ->
+      expect(@room.messages[0]).to.eql(['briancoia', 'hubot fetch thing'])
+      expect(@room.messages[1][1]).to.include('runs to fetch')
 
   context 'GET /', ->
     beforeEach (done) ->
