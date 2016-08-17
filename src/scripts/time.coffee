@@ -94,7 +94,6 @@ module.exports = (robot) ->
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
       msg = msg.trim()
-      Logger.log "msg: #{msg}"
       tz = user.timetable.timezone.name
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
@@ -347,7 +346,7 @@ module.exports = (robot) ->
         else
           attachments.push punch.slackAttachment()
     else
-      earlyToday = now.clone().hour(0).minute(0).second(0)
+      earlyToday = now.clone().hour(0).minute(0).second(0).subtract(1, 'minutes')
       report = user.toRawPayroll(earlyToday, now)
       dateArticle = "today"
       for punch in user.punches
