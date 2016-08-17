@@ -26,7 +26,10 @@ class Timetable
     @start = moment.tz(@start, 'hh:mm a', @timezone.name)
     @end = moment.tz(@end, 'hh:mm a', @timezone.name)
   activeHours: ->
-    [@start, @end]
+    now = moment.tz @timezone.name
+    start = @start.year(now.year()).dayOfYear(now.dayOfYear())
+    end = @end.year(now.year()).dayOfYear(now.dayOfYear())
+    [start, end]
   activeTime: ->
     rawTime = +(@end.diff(@start, 'hours', true).toFixed(2))
     return Math.min(8, rawTime)
@@ -135,9 +138,10 @@ class User
     return @timetable.toDays hours
   isInactive: (current) ->
     current = current || moment.tz(@timetable.timezone.name)
+    [start, end] = @activeHours()
     if current.holiday()?
       return true
-    else if current.isBetween(@timetable.start, @timetable.end)
+    else if current.isBetween(start, end)
       return false
     else
       return true
