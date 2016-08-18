@@ -31,7 +31,7 @@ module.exports = (robot) ->
         Logger.addReaction 'x', message
         done()
       else
-        Logger.debug "Responding to '#{message}' (#{command}) from #{username}"
+        Logger.log "Responding to '#{message}' (#{command}) from #{username}"
         if context.listener.options.adminOnly
           if not isAdminUser username
             # Admin command, but user isn't in whitelist
