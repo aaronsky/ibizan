@@ -100,7 +100,7 @@ module.exports = (robot) ->
               user.hound houndMessage('out'), Logger
           else if lastPunch.mode is 'in' and user.isInactive()
             Logger.debug "Considering hounding #{user.slack} because lastPunch is in and it's outside of their active period"
-            if timeSinceEnd >= 0.5
+            if now.isAfter(end) and timeSinceEnd >= 0.5
               user.hound houndMessage('out'), Logger
           else if lastPunch.mode is 'out' and not passive
             Logger.debug "Considering hounding #{user.slack} because lastPunch is out during active period"
