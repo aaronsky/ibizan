@@ -354,6 +354,8 @@ class User
     now = moment.tz TIMEZONE
     @settings?.lastPing = now
     me = @
+    if not @salary and @settings?.houndFrequency > 0
+      msg = "You have been on the clock for #{@settings.houndFrequency} hours.\n" + msg
     setTimeout ->
       me.directMessage msg, logger
     , 1000 * (Math.floor(Math.random() * 3) + 1)
@@ -367,7 +369,7 @@ class User
     return hexColor
   slackAttachment: () ->
     fields = []
-    statusString = "#{if @status then 'Salary' else 'Hourly'} -
+    statusString = "#{if @salary then 'Salary' else 'Hourly'} -
                     Active #{@timetable.start.format('h:mm a')} to
                     #{@timetable.end.format('h:mm a z')}"
     lastPunch = @lastPunch()

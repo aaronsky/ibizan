@@ -165,8 +165,6 @@ strings =
                            "Make sure to punch out when you're done working~",
                            "You may want to punch out~"
                           ]
-    tempout:              "You've been on the clock for more than 4 hours.
-                           Don't forget to punch out if you're not working~"
   logger:
     failedreaction:       "I just tried to react to a message, but
                            something went wrong. This is usually
