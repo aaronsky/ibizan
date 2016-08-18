@@ -129,8 +129,8 @@ module.exports = (robot) ->
   robot.adapter.client.on 'user_typing', (res) ->
     user = robot.adapter.client.rtm.dataStore.getUserById res.user
     channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById res.channel
-    if not channel.name
-      channel = { private: null, name: '' }
+    if not channel?.name
+      channel = { private: true, name: 'DM' }
     hound user, channel, false
 
   robot.adapter.client.on 'presence_change', (res) ->
