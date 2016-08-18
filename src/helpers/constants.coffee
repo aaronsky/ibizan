@@ -32,6 +32,8 @@ cellHeaders =
     start:               'activehoursbegin'
     end:                 'activehoursend'
     timezone:            'timezone'
+    shouldHound:         'shouldhound'
+    houndFrequency:      'houndfrequency'
     vacationAvailable:   'totalvacationdaysavailable'
     vacationLogged:      'totalvacationdayslogged'
     sickAvailable:       'totalsickdaysavailable'
@@ -148,7 +150,7 @@ strings =
     annoying:             "\n\nIf you think I'm being an annoying dog, you can adjust your
                            hounding settings with `hound`, or your active hours
                            with `active`! Use `status` to see when I think
-                           you are active."
+                           you are active. Use `hound pause` to shut me up for the day."
     houndhelp:            "Change hounding settings using `hound (scope) (command)`!
                            Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`"
     punchin:              ["Punch in if you're on the clock~",

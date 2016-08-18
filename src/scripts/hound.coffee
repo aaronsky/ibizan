@@ -188,35 +188,50 @@ module.exports = (robot) ->
         block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
         block = parseFloat block_str
         user.settings.fromSettings {
+          shouldHound: true,
+          shouldResetHound: true,
           houndFrequency: block
         }
+        user.updateRow()
         user.directMessage "Hounding frequency set to be every #{block} hours during your active time.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'start' or action is 'on' or action is 'enable'
         user.settings.fromSettings {
           shouldHound: true,
-          shouldResetHound: true
+          shouldResetHound: true,
+          houndFrequency: if user.settings?.houndFrequency > -1 then user.settings?.houndFrequency else Organization.houndFrequency
         }
+        user.updateRow()
         user.directMessage "Hounding is now *on*.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'stop' or action is 'off' or action is 'disable'
         user.settings.fromSettings {
           shouldHound: false,
-          shouldResetHound: false
+          shouldResetHound: false,
+          houndFrequency: -1
         }
+        user.updateRow()
         user.directMessage "Hounding is now *off*. You will not be hounded until you turn this setting back on.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'pause'
-        user.settings.fromSettings {
-          shouldHound: false,
-          shouldResetHound: true
-        }
-        user.directMessage "Hounding is now *paused*. Hounding will resume tomorrow.", Logger
-        Logger.addReaction 'dog2', res.message
+        if user.settings?.houndFrequency > -1 and user.settings?.shouldHound
+          user.settings.fromSettings {
+            shouldHound: false,
+            shouldResetHound: true
+          }
+          user.updateRow()
+          user.directMessage "Hounding is now *paused*. Hounding will resume tomorrow.", Logger
+          Logger.addReaction 'dog2', res.message
+        else
+          user.directMessage "Hounding is not enabled, so you cannot pause it.", Logger
+          Logger.addReaction 'x', res.message
       else if action is 'reset'
         user.settings.fromSettings {
+          shouldHound: true,
+          shouldResetHound: false,
           houndFrequency: Organization.houndFrequency
         }
+        user.updateRow()
         user.directMessage "Reset your hounding status to organization defaults *(#{Organization.houndFrequency} hours)*.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'status' or action is 'info'

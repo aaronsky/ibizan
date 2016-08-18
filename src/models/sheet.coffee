@@ -205,7 +205,6 @@ class Spreadsheet
           (err) ->
             deferred.reject "Could not add row: #{err}"
         ).done()
-      
     deferred.promise
 
   generateReport: (reports) ->
@@ -253,7 +252,7 @@ class Spreadsheet
         else
           Logger.fun "----------------------------------------"
           deferred.resolve {}
-    return deferred.promise
+    deferred.promise
 
   _loadVariables: (opts) ->
     deferred = Q.defer()
@@ -332,14 +331,6 @@ class Spreadsheet
         for row in rows
           user = User.parse row
           if user
-            freq = opts.houndFrequency || -1
-            user.settings = Settings.fromSettings {
-              shouldHound: true,
-              shouldResetHound: true,
-              houndFrequency: freq,
-              lastMessage: null,
-              lastPing: null
-            }
             users.push user
         opts.users = users
         Logger.fun "Loaded #{users.length} users"
@@ -365,8 +356,6 @@ class Spreadsheet
         Logger.fun "Loaded #{rows.length} punches for #{opts.users.length} users"
         Logger.fun "----------------------------------------"
         deferred.resolve opts
-
-
     deferred.promise
 
 module.exports = Spreadsheet

@@ -97,6 +97,14 @@ class User
           temp[key] = zone
         else
           temp[key] = row[header]
+      else if header is headers.shouldHound
+        temp[key] = row[header] is 'Y'
+      else if header is headers.houndFrequency
+        temp[key] = row[header] || -1
+        if temp[key] is -1
+          temp.shouldResetHound = false
+        else
+          temp.shouldResetHound = true
       else if header is headers.overtime
         continue
       else
@@ -111,6 +119,13 @@ class User
     timetable.setLogged(temp.totalLogged)
     timetable.setAverageLogged(temp.averageLogged)
     user = new User(temp.name, temp.slackname, temp.salary, timetable, row)
+    user.settings = Settings.fromSettings {
+      shouldHound: temp.shouldHound,
+      shouldResetHound: temp.shouldResetHound,
+      houndFrequency: temp.houndFrequency,
+      lastMessage: null,
+      lastPing: null
+    }
     return user
   activeHours: ->
     return @timetable.activeHours()
@@ -315,6 +330,8 @@ class User
       @row[headers.start] = @timetable.start.format('h:mm A')
       @row[headers.end] = @timetable.end.format('h:mm A')
       @row[headers.timezone] = @timetable.timezone.name
+      @row[headers.shouldHound] = if @settings?.shouldHound then 'Y' else 'N'
+      @row[headers.houndFrequency] = if @settings?.houndFrequency then @settings.houndFrequency else -1
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal
       @row[headers.sickAvailable] = @timetable.sickAvailable
