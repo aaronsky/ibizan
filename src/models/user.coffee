@@ -111,7 +111,11 @@ class User
         tz = TIMEZONE
         if temp.timezone
           tz = temp.timezone.name
-        temp[key] = moment.tz(row[header], 'MM/DD/YYYY hh:mm:ss A', tz)
+        lastPing = moment.tz(row[header], 'MM/DD/YYYY hh:mm:ss A', tz)
+        if lastPing.isValid()
+          temp[key] = lastPing
+        else
+          temp[key] = moment.tz(tz).subtract(1, 'days')
       else
         if isNaN row[header]
           temp[key] = row[header].trim()
