@@ -28,9 +28,11 @@ module.exports = (robot) ->
   houndMessage = (mode) ->
     message = ""
     if mode is 'in'
-      message += strings.punchin[Math.floor(Math.random() * strings.punchin.length)]
+      message += strings.punchin[Math.floor(Math.random() *
+                                 strings.punchin.length)]
     else if mode is 'out'
-      message += strings.punchout[Math.floor(Math.random() * strings.punchout.length)]
+      message += strings.punchout[Math.floor(Math.random() *
+                                  strings.punchout.length)]
     if (Math.floor(Math.random() * 6) + 1) == 1
       message += strings.annoying
     return message
@@ -45,7 +47,8 @@ module.exports = (robot) ->
 
     user = Organization.getUserBySlackName slackuser.name
     if not user
-      Logger.debug "#{slackuser.name} couldn't be found while attempting to hound"
+      Logger.debug "#{slackuser.name} couldn't be found while attempting
+                    to hound"
       return
 
     if user.settings.shouldHound and user.settings.houndFrequency > 0
@@ -70,7 +73,8 @@ module.exports = (robot) ->
       lastPing = user.settings?.lastPing || now
       timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2) || 0
       timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2) || 0
-      timeSinceLastPunch = now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
+      timeSinceLastPunch =
+        now.diff(lastPunch?.times.slice(-1)[0], 'hours', true) || 0
       timeSinceLastMessage = user
                              .settings?.lastMessage
                              .time.diff(last.time, 'hours', true) || 0
@@ -89,40 +93,50 @@ module.exports = (robot) ->
                     houndFrequency: #{user.settings.houndFrequency}"
 
       if user.salary and
-         (timeSinceLastPing == 0 or timeSinceLastPing >= user.settings.houndFrequency) and
+         (timeSinceLastPing == 0 or
+          timeSinceLastPing >= user.settings.houndFrequency) and
          timeSinceLastPunch > 0.25
         if not lastPunch and not user.isInactive() and not passive
-          Logger.debug "Considering hounding #{user.slack} because of missing lastPunch during active period"
+          Logger.debug "Considering hounding #{user.slack} because of missing
+                        lastPunch during active period"
           if now.isAfter(start) and timeSinceStart >= 0.5
             user.hound houndMessage('in'), Logger
           else if now.isAfter(end) and timeSinceEnd >= 0.5
             user.hound houndMessage('out'), Logger
         else if lastPunch.mode is 'in' and user.isInactive()
-          Logger.debug "Considering hounding #{user.slack} because lastPunch is in and it's outside of their active period"
+          Logger.debug "Considering hounding #{user.slack} because lastPunch is
+                        in and it's outside of their active period"
           if now.isAfter(end) and timeSinceEnd >= 0.5
             user.hound houndMessage('out'), Logger
         else if lastPunch.mode is 'out' and not passive
-          Logger.debug "Considering hounding #{user.slack} because lastPunch is out during active period"
+          Logger.debug "Considering hounding #{user.slack} because lastPunch is
+                        out during active period"
           if not user.isInactive() and timeSinceStart >= 0.5
             user.hound houndMessage('in'), Logger
         else if lastPunch.mode is 'vacation' or
                 lastPunch.mode is 'sick' or
                 lastPunch.mode is 'unpaid'
-          Logger.debug "Considering hounding #{user.slack} because lastPunch is special"
-          if lastPunch.times.length > 0 and not now.isBetween(lastPunch.times[0], lastPunch.times[1]) and not passive
+          Logger.debug "Considering hounding #{user.slack} because lastPunch is
+                        special"
+          if lastPunch.times.length > 0 and
+             not now.isBetween(lastPunch.times[0], lastPunch.times[1]) and
+             not passive
             user.hound houndMessage('in'), Logger
           else if lastPunch.times.block? and not passive
-            endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours')
+            endOfBlock =
+              moment(lastPunch.date).add(lastPunch.times.block, 'hours')
             if not now.isBetween(lastPunch.date, endOfBlock)
               user.hound houndMessage('in'), Logger
       else if user.salary and timeSinceLastPunch <= 0.25
         Logger.debug "#{user.slack} is safe from hounding as they punched
                       #{timeSinceLastPunch.toFixed(2)} hours ago"
       else if not user.salary and
-              (timeSinceLastPing == 0 or timeSinceLastPing >= user.settings.houndFrequency) and
+              (timeSinceLastPing == 0 or
+               timeSinceLastPing >= user.settings.houndFrequency) and
               timeSinceLastPunch > 0.25
         # Ping part-timers when their shift is longer than their houndFrequency
-        if lastPunch and lastPunch.mode is 'in' and timeSinceLastPunch > user.settings.houndFrequency
+        if lastPunch and lastPunch.mode is 'in' and
+           timeSinceLastPunch > user.settings.houndFrequency
           user.hound houndMessage('out'), Logger
       else
         Logger.debug "#{user.slack} is safe from hounding for another
@@ -130,7 +144,8 @@ module.exports = (robot) ->
 
   robot.adapter.client.on 'user_typing', (res) ->
     user = robot.adapter.client.rtm.dataStore.getUserById res.user
-    channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById res.channel
+    channel =
+      robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById res.channel
     if not channel?.name
       channel = { private: true, name: 'DM' }
     hound user, channel, false
@@ -195,7 +210,8 @@ module.exports = (robot) ->
           houndFrequency: block
         }
         user.updateRow()
-        user.directMessage "Hounding frequency set to be every #{block} hours during your active time.", Logger
+        user.directMessage "Hounding frequency set to be every #{block} hours
+                            during your active time.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'start' or action is 'on' or action is 'enable'
         user.settings.fromSettings {
@@ -213,7 +229,8 @@ module.exports = (robot) ->
           houndFrequency: -1
         }
         user.updateRow()
-        user.directMessage "Hounding is now *off*. You will not be hounded until you turn this setting back on.", Logger
+        user.directMessage "Hounding is now *off*. You will not be hounded until
+                            you turn this setting back on.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'pause'
         if user.settings?.houndFrequency > -1 and user.settings?.shouldHound
@@ -222,10 +239,12 @@ module.exports = (robot) ->
             shouldResetHound: true
           }
           user.updateRow()
-          user.directMessage "Hounding is now *paused*. Hounding will resume tomorrow.", Logger
+          user.directMessage "Hounding is now *paused*. Hounding will resume
+                              tomorrow.", Logger
           Logger.addReaction 'dog2', res.message
         else
-          user.directMessage "Hounding is not enabled, so you cannot pause it.", Logger
+          user.directMessage "Hounding is not enabled, so you cannot pause it.",
+                             Logger
           Logger.addReaction 'x', res.message
       else if action is 'reset'
         user.settings.fromSettings {
@@ -234,17 +253,21 @@ module.exports = (robot) ->
           houndFrequency: Organization.houndFrequency
         }
         user.updateRow()
-        user.directMessage "Reset your hounding status to organization defaults *(#{Organization.houndFrequency} hours)*.", Logger
+        user.directMessage "Reset your hounding status to organization defaults
+                            *(#{Organization.houndFrequency} hours)*.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'status' or action is 'info'
         status = if user.settings.shouldHound then 'on' else 'off'
         status = if user.settings.shouldResetHound then status else 'disabled'
         if status is 'on'
-          status += ", and is set to ping every *#{user.settings.houndFrequency} hours* while active"
+          status += ", and is set to ping every *#{user.settings.houndFrequency}
+                     hours* while active"
         user.directMessage "Hounding is #{status}.", Logger
         Logger.addReaction 'dog2', res.message
       else
-        user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+        user.directMessage "I couldn't understand you. Try something like
+                            `hound (self/org)
+                            (on/off/pause/reset/status/X hours)`", Logger
         Logger.addReaction 'x', res.message
     else if scope is 'org'
       if not Organization.ready()
@@ -254,7 +277,9 @@ module.exports = (robot) ->
         block_str = match[0].replace('hours', '').replace('hour', '').trimRight()
         block = parseFloat block_str
         Organization.setHoundFrequency(+block.toFixed(2))
-        user.directMessage "Hounding frequency set to every #{block} hours for #{Organization.name}, time until next hound reset.", Logger
+        user.directMessage "Hounding frequency set to every #{block} hours for
+                            #{Organization.name}, time until next hound reset.",
+                            Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'start' or action is 'enable' or action is 'on'
         Organization.shouldHound = true
@@ -267,29 +292,38 @@ module.exports = (robot) ->
         Organization.shouldHound = false
         Organization.shouldResetHound = false
         Organization.setShouldHound false
-        user.directMessage "Hounding is now *off* for the organization. Hounding status will not reset until it is reactivated.", Logger
+        user.directMessage "Hounding is now *off* for the organization. Hounding
+                            status will not reset until it is reactivated.",
+                            Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'pause'
         Organization.shouldHound = false
         Organization.shouldResetHound = true
         Organization.setShouldHound false
-        user.directMessage "Hounding is now *paused* for the organization. Hounding will resume tomorrow.", Logger
+        user.directMessage "Hounding is now *paused* for the organization.
+                            Hounding will resume tomorrow.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'reset'
         Organization.resetHounding()
-        user.directMessage "Reset hounding status for all #{Organization.name} employees.", Logger
+        user.directMessage "Reset hounding status for all #{Organization.name}
+                            employees.", Logger
         Logger.addReaction 'dog2', res.message
       else if action is 'status' or action is 'info'
         status = if Organization.shouldHound then 'on' else 'off'
         status = if Organization.shouldResetHound then status else 'disabled'
         if status is 'on'
-          status += ", and is set to ping every #{Organization.houndFrequency} hours while active"
+          status += ", and is set to ping every #{Organization.houndFrequency}
+                     hours while active"
         user.directMessage "Hounding is #{status}.", Logger
         Logger.addReaction 'dog2', res.message
       else
-        user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+        user.directMessage "I couldn't understand you. Try something like
+                            `hound (self/org)
+                            (on/off/pause/reset/status/X hours)`", Logger
         Logger.addReaction 'x', res.message
     else
       Logger.debug "Hound could not parse #{command}"
-      user.directMessage "I couldn't understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`", Logger
+      user.directMessage "I couldn't understand you. Try something like
+                          `hound (self/org)
+                          (on/off/pause/reset/status/X hours)`", Logger
       Logger.addReaction 'x', res.message
