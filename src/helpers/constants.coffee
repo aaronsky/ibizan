@@ -42,6 +42,7 @@ cellHeaders =
     overtime:            'totalovertime'
     totalLogged:         'totalloggedhours'
     averageLogged:       'averagehoursloggedweek'
+    lastPing:            'lastping'
   rawdata:
     id:                  'punchid'
     today:               'dateentered'
@@ -70,11 +71,13 @@ cellHeaders =
 
 Object.freeze cellHeaders
 
-strings = 
+strings =
   access:
     adminonly:           "You must be an admin in order to access this command."
-    badtoken:            "Bad token in Ibizan configuration. Please contact an admin."
-    notanemployee:       "You are not a recognized employee. Please contact an admin."
+    badtoken:            "Bad token in Ibizan configuration.
+                          Please contact an admin."
+    notanemployee:       "You are not a recognized employee.
+                          Please contact an admin."
     orgnotready:         "The organization isn't ready for
                           operations yet. It may be in the middle of
                           syncing or something has gone horribly wrong.
@@ -82,13 +85,14 @@ strings =
                           longer than five minutes, DM a maintainer as
                           soon as possible."
     unknowncommand:     [
-                          "_tilts their head confusedly. Maybe you should ask for help?_",
+                          "_tilts their head confusedly.
+                           Maybe you should ask for help?_",
                           "_stares blankly. Maybe you should ask for help?_",
-                          "_listens intently, but doesn't know what you meant. Maybe you should ask for help?_"
+                          "_listens intently, but doesn't know what you meant.
+                           Maybe you should ask for help?_"
                         ]
   bark:
-    bark:
-                        [
+    bark:               [
                           "bark",
                           "bark bark",
                           "bark bark bark"
@@ -111,9 +115,9 @@ strings =
   diagnostics:
     help:                "*Ibizan Help*\n
                           \n
-                          To clock in with Ibizan, either @mention him in a public
-                          channel, use the slash command, or DM him directly without
-                          the @mention. Your command should follow this format:\n
+                          To clock in with Ibizan, either mention @ibizan in a
+                          public channel, use the slash command, or DM Ibizan
+                          directly. Your command should follow this format:\n
                           \n
                           `@ibizan [mode] [time] [date] [project] [notes]`\n
                           \n
@@ -125,34 +129,40 @@ strings =
                           `@ibizan in #project-name`\n
                           `@ibizan 3.5 hours today`\n
                           \n
-                          Punches can be `in`, `out`, `vacation`, `sick` or `unpaid`
-                          punches. You can also clock in independent blocks of time.
-                          Projects must be registered in the worksheet labeled
-                          'Projects' in the Ibizan spreadsheet, and won't be recognized
-                          as projects in a command without a pound-sign
-                          (i.e. #fight-club).\n
+                          Punches can be `in`, `out`, `vacation`, `sick` or
+                          `unpaid` punches. You can also clock in independent
+                          blocks of time.\n
                           \n
-                          If something is wrong with your punch, you can undo it by
-                          doing `@ibizan undo`. You can also modify it manually using
-                          the Ibizan spreadsheet, in the worksheet labeled 'Raw Data'.
+                          Projects must be registered in the worksheet labeled
+                          'Projects' in the Ibizan spreadsheet, and won't be
+                          recognized as projects in a command without a
+                          pound-sign (i.e. #fight-club).\n
+                          \n
                           If you want to see how much time you've worked, use
                           `@ibizan today?` or `@ibizan week?`.\n
                           \n
-                          If you make any manual changes to the spreadsheet, you should
-                          use `@ibizan sync`. Running this resyncs Ibizan with
-                          the spreadsheet. Note that Ibizan syncs automatically after
-                          editing or deleting rows.\n
+                          If something is wrong with your punch, you can undo it
+                          by using `@ibizan undo`. You can also modify it
+                          manually using the Ibizan spreadsheet, in the
+                          worksheet labeled 'Raw Data'. If you make any manual
+                          changes to the spreadsheet, Ibizan should sync
+                          automatically, but if you think there is an issue,
+                          you can manually sync with `@ibizan sync`.\n
                           \n
                           For more documentation, please check out
                           https://github.com/ibizan/ibizan.github.io/wiki"
-    userhelp:             "Use `@ibizan user [slack name]` to view a user's slack info!"
+    userhelp:             "Use `@ibizan user [slack name]` to view a user's
+                           slack info!"
   hound:
-    annoying:             "\n\nIf you think I'm being an annoying dog, you can adjust your
-                           hounding settings with `hound`, or your active hours
-                           with `active`! Use `status` to see when I think
-                           you are active. Use `hound pause` to shut me up for the day."
-    houndhelp:            "Change hounding settings using `hound (scope) (command)`!
-                           Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`"
+    annoying:             "\n\nIf you think I'm being an annoying dog, you can
+                           adjust your hounding settings with `hound`,
+                           or your active hours with `active`! Use `status` to
+                           see when I think you are active. Use `hound pause` to
+                           shut me up for the day."
+    houndhelp:            "Change hounding settings using
+                           `hound (scope) (command)`!
+                           Try something like `hound (self/org)
+                           (on/off/pause/reset/status/X hours)`"
     punchin:              ["Punch in if you're on the clock~",
                            "Don't forget to punch in if you're working~",
                            "You should punch in if you're working~",
@@ -172,16 +182,19 @@ strings =
                            command probably worked."
     googleerror:          "Something went wrong on Google's end and the
                            operation couldn't be completed. Please try again
-                           in a minute. If this persists for longer than 5 minutes,
-                           DM a maintainer ASAP."
+                           in a minute. If this persists for longer than
+                           5 minutes, DM an admin ASAP."
   time:
-    activefail:           "I couldn't understand your request. Make sure you're using the
-                           correct syntax, for example: `@ibizan active start 10am`"
-    activehelp:           "Use `@ibizan active [start/end] [time]` to set your active hours!\n
+    activefail:           "I couldn't understand your request. Make sure you're
+                           using the correct syntax, for example:
+                           `@ibizan active start 10am`"
+    activehelp:           "Use `@ibizan active [start/end] [time]`
+                           to set your active hours!\n
                            Example: `@ibizan active start 10am`"
-    hourshelp:            "Use `@ibizan hours [date]` to view your punches on that date!\n
-                           Use `@ibizan hours?` (or today?/week?/month?/year?) to view
-                           your punches for the given time period!"
+    hourshelp:            "Use `@ibizan hours [date]` to view your punches
+                           on that date.\n
+                           Use `@ibizan hours?` (or today?/week?/month?/year?)
+                           to view your punches for the given time period."
     notpunchedin:         "I don't think you're punched in right now.
                            If this is in error, ask me to `sync` then try your
                            punch again, or contact an admin."
