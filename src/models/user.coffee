@@ -111,7 +111,7 @@ class User
         tz = TIMEZONE
         if temp.timezone
           tz = temp.timezone.name
-        temp[key] = moment.tz(row[header], 'MM/DD/YYYY hh:mm:ss a', tz)
+        temp[key] = moment.tz(row[header], 'MM/DD/YYYY hh:mm:ss A', tz)
       else
         if isNaN row[header]
           temp[key] = row[header].trim()
