@@ -20,7 +20,9 @@ if logLevelEnvString = process.env.LOG_LEVEL
       LOG_LEVEL = 2
     else if LOG_LEVEL is 'error'
       LOG_LEVEL = 1
-  else if typeof logLevelEnvString is 'integer' and logLevelEnvString >= 0 and logLevelEnvString <= 4
+  else if typeof logLevelEnvString is 'integer' and
+          logLevelEnvString >= 0 and
+          logLevelEnvString <= 4
     LOG_LEVEL = logLevelEnvString
   else
     LOG_LEVEL = 0
@@ -37,13 +39,6 @@ errHeader = chalk.bold.red
 err = chalk.red
 funHeader = chalk.bold.magenta
 fun = chalk.magenta
-
-class UserID
-  constructor: (@id) ->
-  setID: (id) ->
-    @id = id
-  getID: () ->
-    return @id
 
 module.exports = (robot) ->
   class Logger
@@ -74,26 +69,67 @@ module.exports = (robot) ->
       response
     @debug: (msg) ->
       if msg and LOG_LEVEL >= 4
-        console.log(debugHeader("[Ibizan] (#{new Date()}) DEBUG: ") + debug("#{msg}"))
+        console.log(debugHeader("[Ibizan] (#{new Date()}) DEBUG: ") +
+                    debug("#{msg}"))
     @log: (msg) ->
       if msg and LOG_LEVEL >= 3
-        console.log(logHeader("[Ibizan] (#{new Date()}) INFO: ") + log("#{msg}"))
+        console.log(logHeader("[Ibizan] (#{new Date()}) INFO: ") +
+                    log("#{msg}"))
     @warn: (msg) ->
       if msg and LOG_LEVEL >= 2
-        console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") + warn("#{msg}"))
+        console.warn(warnHeader("[Ibizan] (#{new Date()}) WARN: ") +
+                     warn("#{msg}"))
     @error: (msg, error) ->
       if msg and LOG_LEVEL >= 1
-        console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") + err("#{msg}"), error || '')
+        console.error(errHeader("[Ibizan] (#{new Date()}) ERROR: ") +
+                      err("#{msg}"), error || '')
         if error and error.stack
-          console.error(errHeader("[Ibizan] (#{new Date()}) STACK: ") + err("#{error.stack}"))
+          console.error(errHeader("[Ibizan] (#{new Date()}) STACK: ") +
+                        err("#{error.stack}"))
     @fun: (msg) ->
       if msg and not TEST
         console.log(funHeader("[Ibizan] (#{new Date()}) > ") + fun("#{msg}"))
+    @initRTM: () ->
+      if robot and
+         robot.adapter and
+         robot.adapter.client and
+         robot.adapter.client.rtm
+        return robot.adapter.client.rtm
+      else
+        @warn "Unable to initialize Slack RTM client"
+        return false
+    @initWeb: () ->
+      if robot and
+         robot.adapter and
+         robot.adapter.client and
+         robot.adapter.client.web
+        return robot.adapter.client.web
+      else
+        @warn "Unable to initialize Slack web client"
+        return false
     @getSlackDM: (username) ->
-      dm = robot.adapter.client.rtm.dataStore.getDMByName username
-      return dm.id
+      rtm = @initRTM()
+      web = @initWeb()
+
+      dm = rtm.dataStore.getDMByName username
+      if dm
+        return dm.id
+      else
+        user = rtm.dataStore.getUserByName username
+        web.im.open user.id
+        .then(
+          (response) ->
+            if response and response.channel
+              return response.channel.id
+            else
+              Logger.error "Unable to open DM with #{username}"
+        )
+        .catch(
+          (err) ->
+            Logger.error "Error opening DM: #{err}"
+        )
     @getChannelName: (channel) ->
-      channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
+      channel = @rtm.dataStore.getChannelGroupOrDMById channel
       return channel.name
     @logToChannel: (msg, channel, attachment, isUser) ->
       if msg
@@ -118,15 +154,13 @@ module.exports = (robot) ->
         else
           @error "No robot available to send message: #{msg}"
     @errorToSlack: (msg, error) ->
+      rtm = @initRTM()
       if msg
-        if robot and
-           robot.send? and
-           robot.adapter and
-           robot.adapter.client and
-           robot.adapter.client.rtm and
-           robot.adapter.client.rtm.dataStore and
-           robot.adapter.client.rtm.dataStore.getChannelOrGroupByName?
-          diagnosticsRoom = robot.adapter.client.rtm.dataStore.getChannelOrGroupByName 'ibizan-diagnostics'
+        if rtm and
+           rtm.dataStore and
+           rtm.dataStore.getChannelOrGroupByName?
+          diagnosticsRoom =
+            rtm.dataStore.getChannelOrGroupByName 'ibizan-diagnostics'
           diagnosticsID = diagnosticsRoom.id
           robot.send {room: diagnosticsID},
             "(#{new Date()}) ERROR: #{msg}\n#{error || ''}"
@@ -135,17 +169,14 @@ module.exports = (robot) ->
       else
         @error "errorToSlack called with no msg"
     @addReaction: (reaction, message, attempt=0) ->
+      web = @initWeb()
       if attempt > 0 and attempt <= 2
         @debug "Retrying adding #{reaction}, attempt #{attempt}..."
       if attempt >= 3
-        @error "Failed to add #{reaction} to #{message} after #{attempt} attempts"
+        @error "Failed to add #{reaction} to #{message} after
+                #{attempt} attempts"
         @logToChannel strings.failedreaction, message.user.name
-      else if message and
-              robot and
-              robot.adapter and
-              robot.adapter.client and
-              robot.adapter.client.web and
-              web = robot.adapter.client.web
+      else if message and web
         params =
           channel: message.room,
           timestamp: message.id
@@ -154,7 +185,8 @@ module.exports = (robot) ->
           .then(
             (response) ->
               if attempt >= 1
-                Logger.debug "Added #{reaction} to #{message} after #{attempt} attempts"
+                Logger.debug "Added #{reaction} to #{message} after
+                              #{attempt} attempts"
           )
           .catch(
             (err) ->
@@ -165,17 +197,14 @@ module.exports = (robot) ->
       else
         @error "Slack web client unavailable"
     @removeReaction: (reaction, message, attempt=0) ->
+      web = @initWeb()
       if attempt > 0 and attempt <= 2
         @debug "Retrying removal of #{reaction}, attempt #{attempt}..."
       if attempt >= 3
-        @error "Failed to remove #{reaction} from #{message} after #{attempt} attempts"
+        @error "Failed to remove #{reaction} from #{message}
+                after #{attempt} attempts"
         @logToChannel strings.failedreaction, message.user.name
-      else if message and
-              robot and
-              robot.adapter and
-              robot.adapter.client and
-              robot.adapter.client.web and
-              web = robot.adapter.client.web
+      else if message and web
         params =
           channel: message.room,
           timestamp: message.id
@@ -184,7 +213,8 @@ module.exports = (robot) ->
           .then(
             (response) ->
               if attempt >= 1
-                Logger.debug "Removed #{reaction} from #{message} after #{attempt} attempts"
+                Logger.debug "Removed #{reaction} from #{message}
+                              after #{attempt} attempts"
           )
           .catch(
             (err) ->
