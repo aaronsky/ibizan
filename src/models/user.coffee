@@ -109,7 +109,10 @@ class User
         continue
       else
         if isNaN(row[header])
-          temp[key] = row[header].trim()
+          if row[header] is not undefined
+            temp[key] = row[header].trim()
+          else
+            temp[key] = row[header]
         else
           temp[key] = parseInt row[header]
     timetable = new Timetable(temp.start, temp.end, temp.timezone)
