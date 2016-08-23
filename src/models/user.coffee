@@ -107,12 +107,14 @@ class User
           temp.shouldResetHound = true
       else if header is headers.overtime
         continue
+      else if header is headers.lastPing
+        tz = TIMEZONE
+        if temp.timezone
+          tz = temp.timezone.name
+        temp[key] = moment.tz(row[header], 'MM/DD/YYYY hh:mm:ss a', tz)
       else
-        if isNaN(row[header])
-          if row[header] is not undefined
-            temp[key] = row[header].trim()
-          else
-            temp[key] = row[header]
+        if isNaN row[header]
+          temp[key] = row[header].trim()
         else
           temp[key] = parseInt row[header]
     timetable = new Timetable(temp.start, temp.end, temp.timezone)
@@ -127,7 +129,7 @@ class User
       shouldResetHound: temp.shouldResetHound,
       houndFrequency: temp.houndFrequency,
       lastMessage: null,
-      lastPing: null
+      lastPing: temp.lastPing
     }
     return user
   activeHours: ->
@@ -358,7 +360,8 @@ class User
     @settings?.lastPing = now
     me = @
     if not @salary and @settings?.houndFrequency > 0
-      msg = "You have been on the clock for #{@settings.houndFrequency} hours.\n" + msg
+      msg = "You have been on the clock for
+             #{@settings.houndFrequency} hours.\n" + msg
     setTimeout ->
       me.directMessage msg, logger
     , 1000 * (Math.floor(Math.random() * 3) + 1)
@@ -393,12 +396,14 @@ class User
     if @salary
       vacationDaysField =
         title: "Vacation Days"
-        value: "#{@timetable.vacationAvailable} available, #{@timetable.vacationTotal} used"
+        value: "#{@timetable.vacationAvailable} available,
+                #{@timetable.vacationTotal} used"
         short: true
       fields.push vacationDaysField
       sickDaysField =
         title: "Sick Days"
-        value: "#{@timetable.sickAvailable} available, #{@timetable.sickTotal} used"
+        value: "#{@timetable.sickAvailable} available,
+                #{@timetable.sickTotal} used"
         short: true
       fields.push sickDaysField
     if @unpaidTotal > 0
@@ -418,9 +423,11 @@ class User
     return "User: #{@name} (#{@slack})\n
             They have #{(@punches || []).length} punches on record\n
             Last punch was #{@lastPunchTime()}\n
-            Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
+            Their active hours are from #{@timetable.start.format('h:mm a')} to
+            #{@timetable.end.format('h:mm a')}\n
             They are in #{@timetable.timezone.name}\n
-            The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
+            The last time they sent a message was
+            #{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
 
 module.exports.User = User
 module.exports.Settings = Settings
