@@ -129,7 +129,7 @@ module.exports = (robot) ->
             Logger.error "Error opening DM: #{err}"
         )
     @getChannelName: (channel) ->
-      channel = @rtm.dataStore.getChannelGroupOrDMById channel
+      channel = @initRTM().dataStore.getChannelGroupOrDMById channel
       return channel.name
     @logToChannel: (msg, channel, attachment, isUser) ->
       if msg
