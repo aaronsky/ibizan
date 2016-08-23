@@ -141,7 +141,10 @@ module.exports = (robot) ->
                     into the spreadsheet."
         punchEnglish = "Punched you *#{punch.description(user)}*."
 
-        user.directMessage punchEnglish, Logger
+        if punch.mode is 'in'
+          user.directMessage punchEnglish, Logger
+        else
+          user.directMessage punchEnglish, Logger, [punch.slackAttachment()]
         Logger.addReaction 'dog2', res.message
         Logger.removeReaction 'clock4', res.message
     )
@@ -151,8 +154,7 @@ module.exports = (robot) ->
         Logger.error errorMsg
         Logger.errorToSlack "\"#{errorMsg}\" was returned for
                              #{user.slack}. Punch:\n", res.match.input
-        user.directMessage "\n#{errorMsg}\nYou can see more details on 
-                            <#{Organization.spreadsheet.url}|the spreadsheet>.",
+        user.directMessage "\n#{errorMsg}",
                            Logger
         Logger.addReaction 'x', res.message
         Logger.removeReaction 'clock4', res.message

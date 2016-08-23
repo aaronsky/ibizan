@@ -93,7 +93,8 @@ class Punch
 
     # UUID sanity check
     if row[headers.id].length != 36
-      Logger.debug "#{row[headers.id]} is not a valid UUID, changing to valid UUID"
+      Logger.debug "#{row[headers.id]} is not a valid UUID,
+                    changing to valid UUID"
       row[headers.id] = uuid.v1()
       Organization.spreadsheet.saveRow(row)
 
@@ -143,10 +144,13 @@ class Punch
         datetimes[1].add(1, 'days')
       elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
       if elapsed < 0
-        Logger.error 'Invalid punch row: elapsed time is less than 0', new Error(datetimes)
+        Logger.error 'Invalid punch row: elapsed time is less than 0',
+                     new Error(datetimes)
         return
-      else if elapsed isnt rawElapsed and (rawElapsed is undefined or Math.abs(elapsed - rawElapsed) > 0.02)
-        Logger.debug "#{row[headers.id]} - Updating totalTime because #{elapsed} is not #{rawElapsed} - #{Math.abs(elapsed - rawElapsed)}"
+      else if elapsed isnt rawElapsed and
+              (rawElapsed is undefined or Math.abs(elapsed - rawElapsed) > 0.02)
+        Logger.debug "#{row[headers.id]} - Updating totalTime because #{elapsed}
+                      is not #{rawElapsed} - #{Math.abs(elapsed - rawElapsed)}"
         hours = Math.floor elapsed
         minutes = Math.round((elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
@@ -207,7 +211,7 @@ class Punch
 
   appendNotes: (notes = '') ->
     if @notes and @notes.length > 0
-      @notes += '\n'
+      @notes += ', '
     @notes += notes
 
   out: (punch) ->
@@ -217,7 +221,8 @@ class Punch
        @mode is 'in' and
        @times.length is 1
       if punch.times.block?
-        newTime = moment.tz(@times[0], @timezone).add(punch.times.block, 'hours')
+        newTime = moment.tz(@times[0], @timezone)
+                        .add(punch.times.block, 'hours')
       else
         newTime = moment.tz(punch.times[0], punch.timezone)
         if newTime.isBefore @times[0]
@@ -246,7 +251,8 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          row[headers[MODES[i]]] = time.tz(TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
+          row[headers[MODES[i]]] =
+            time.tz(TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -287,7 +293,7 @@ class Punch
       date = @times[0]
     if @mode is 'none' and not elapsed
       return 'This punch is malformed and could not be properly interpreted.
-              If you believe this is a legitimate error, please DM a maintainer.'
+              If you believe this is a legitimate error, please DM an admin.'
     else if @mode is 'in'
       # if mode is 'in' and user has not punched out
       if last = user.lastPunch 'in'
@@ -305,7 +311,15 @@ class Punch
                     a block-time punch.'
     else if @mode is 'out'
       if lastIn = user.lastPunch 'in'
-        return true
+        if not lastIn.notes and
+           not lastIn.projects.length > 0 and
+           not @notes and
+           not @projects.length > 0
+          return "You must add either a project or some notes to your punch.
+                  You can do this along with your out-punch using this format:\n
+                  `ibizan out [either notes or #projects]`"
+        else
+          return true
       last = user.lastPunch 'out', 'vacation', 'unpaid', 'sick'
       time = last.times[0].tz(user.timetable.timezone.name)
       return "You cannot punch out before punching in. Your last
@@ -351,40 +365,63 @@ class Punch
     else if date and moment().diff(date, 'days') >= 7
       return 'You cannot punch for a date older than 7 days. If you want to
               enter a punch this old, you\'re going to have to enter it manually
-              on the Ibizan spreadsheet and run `/sync`.' 
+              on the Ibizan spreadsheet and run `/sync`.'
     return true
 
   slackAttachment: () ->
     fields = []
+    color = "#33BB33"
     elapsed =
-     punchTitle = ''
+     punchDate = ''
     if @times.block?
-      elapsed = "#{@times.block} hours"
+      elapsed = "#{@times.block}"
     else if @elapsed?
-      elapsed = "#{@elapsed} hours"
+      elapsed = "#{@elapsed}"
+    if @mode is 'vacation' or
+       @mode is 'sick' or
+       @mode is 'unpaid'
+      elapsed += " #{@mode}"
+    elapsed += " hours"
 
     headers = HEADERS.rawdata
     if @row and @row[headers.today]
-      punchTitle = moment(@row[headers.today], "MM/DD/YYYY").format("dddd, MMMM Do YYYY")
+      punchDate =
+        moment(@row[headers.today], "MM/DD/YYYY").format("dddd, MMMM Do YYYY")
 
-    if @times[0]
-      inField =
-        title: "In"
-        value: @times[0].format("h:mm:ss A")
-        short: true
-      punchTitle = @times[0].format("dddd, MMMM Do YYYY")
-      fields.push inField
-    if @times[1]
-      outField =
-        title: "Out"
-        value: @times[1].format("h:mm:ss A")
-        short: true
-      fields.push outField
+    notes = @notes || ''
+    if @projects and @projects.length > 0
+      projects = @projects.map((el) ->
+        return "##{el.name}"
+      ).join(', ')
+      if notes is ''
+        notes = projects
+      else
+        notes = projects + "\n" + notes
+    if @mode is 'vacation' or
+       @mode is 'sick'
+      color = "#3333BB"
+    else if @mode is 'unpaid'
+      color = "#BB3333"
+    else
+      if @times[0]
+        inField =
+          title: "In"
+          value: @times[0].format("h:mm:ss A")
+          short: true
+        punchDate = @times[0].format("dddd, MMMM Do YYYY")
+        fields.push inField
+      if @times[1]
+        outField =
+          title: "Out"
+          value: @times[1].format("h:mm:ss A")
+          short: true
+        fields.push outField
 
     attachment =
-      title: punchTitle
-      text: elapsed
+      title: elapsed + " on " + punchDate
+      text: notes
       fields: fields
+      color: color
     return attachment
 
   description: (user) ->
@@ -448,10 +485,13 @@ class Punch
        @mode is 'unpaid'
       if blockTimeQualifier?
         modeQualifier = "for #{article} #{blockTimeQualifier} #{@mode} block"
+      else
+        modeQualifier = "for #{@mode}"
     else if @mode is 'none' and blockTimeQualifier?
       modeQualifier = "for #{article} #{blockTimeQualifier} block"
     else
       modeQualifier = @mode
+    Logger.debug "mode: #{modeQualifier}"
     if @projects and @projects.length > 0
       projectsQualifier = " ("
       projectsQualifier += @projects.map((el) ->
@@ -474,9 +514,12 @@ class Punch
         notesQualifier = ')'
     if warnings
       for warning in warnings.projects
-        warningQualifier += " (Warning: #{warning} isn't a registered project. It is stored in this punch's notes rather than as a project.)"
+        warningQualifier += " (Warning: #{warning} isn't a registered project.
+                             It is stored in this punch's notes rather
+                             than as a project.)"
       for warning in warnings.other
-        warningQualifier += " (Warning: #{warning} isn't a recognized input. This is stored this punch's notes.)"
+        warningQualifier += " (Warning: #{warning} isn't a recognized input.
+                            This is stored this punch's notes.)"
     description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}#{warningQualifier}"
 
     return description

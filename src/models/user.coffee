@@ -345,6 +345,7 @@ class User
       @row[headers.overtime] = Math.max(0, @timetable.loggedTotal - 80)
       @row[headers.totalLogged] = @timetable.loggedTotal
       @row[headers.averageLogged] = @timetable.averageLoggedTotal
+      @row[headers.lastPing] = if @settings?.lastPing then moment.tz(@settings.lastPing, @timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A') else moment.tz(@timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A')
       @row.save (err) ->
         if err
           deferred.reject err
@@ -366,6 +367,7 @@ class User
       me.directMessage msg, logger
     , 1000 * (Math.floor(Math.random() * 3) + 1)
     Logger.log "Hounded #{@slack} with '#{msg}'"
+    @updateRow()
   hexColor: ->
     hash = 0
     for i in [0...@slack.length]
