@@ -179,13 +179,9 @@ module.exports = (robot) ->
     parse res, res.match.input, 'none'
 
   # Append to lastPunch
-  robot.respond /(append|add)/i, id: 'time.append', (res) ->
+  robot.respond /(append|add)/i, id: 'time.append', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    punch = user.lastPunch 'in'
-    if not punch
-      user.directMessage strings.notpunchedin,
-                         Logger
-      return
+
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
     msg = msg.replace /(append|add)/i, ''
@@ -195,30 +191,57 @@ module.exports = (robot) ->
     op = words[0]
     words.shift()
     msg = words.join(' ').trim()
+    results = ''
     
     if op is 'project' or
-       op is 'projects'
-      projects = msg.split ' '
-      if projects.length is 0 and
-         isProjectChannel res.message.user.room
-        projects.push Organization.getProjectByName(res.message.user.room)
-      punch.appendProjects projects
-    else if op is 'note' or
-            op is 'notes'
-      punch.appendNotes msg
-    row = punch.toRawRow user.name
-    Organization.spreadsheet.saveRow(row)
-    .catch(
-      (err) ->
-        user.directMessage err, Logger
-        Logger.error 'Unable to append row', new Error(err)
-    ).done(
-      projectsQualifier = projects?.join(', ') ? ''
-      notesQualifier = "'#{msg}'"
-      user.directMessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
+       op is 'projects' or
+       op is 'note' or
+       op is 'notes'
+      punch = user.lastPunch 'in'
+      if not punch
+        user.directMessage strings.notpunchedin,
+                           Logger
+        return
+      if op is 'project' or
+         op is 'projects'
+        projects = msg.split ' '
+        if projects.length is 0 and
+           isProjectChannel res.message.user.room
+          projects.push Organization.getProjectByName(res.message.user.room)
+        punch.appendProjects projects
+        results = projects?.join(', ') ? ''
+      else if op is 'note' or
+              op is 'notes'
+        punch.appendNotes msg
+        results = "'#{msg}'"
+      row = punch.toRawRow user.name
+      Organization.spreadsheet.saveRow(row)
+      .catch(
+        (err) ->
+          user.directMessage err, Logger
+          Logger.error 'Unable to append row', new Error(err)
+      ).done(
+        user.directMessage "Added #{op} #{results}",
+                           Logger
+        Logger.addReaction 'dog2', res.message
+      )
+    else if op is 'event' or
+            op is 'calendar' or
+            op is 'upcoming'
+      # Calendar.addEvent msg
+      # user.directMessage "Added calendar event: #{results}",
+      user.directMessage "I can't add events just yet~",
                          Logger
-      Logger.addReaction 'dog2', res.message
-    )
+    else
+      user.directMessage "I could not understand what you are trying to add.
+                          Things you could `add` include:\n
+                          `add note [note]` - Append a note to your current
+                          punch\n
+                          `add project [#project]` - Append a project to your
+                          current punch\n
+                          `add event [date] [name]` - Add a new event to the
+                          calendar",
+                         Logger
 
   robot.respond /\bundo$/i, id: 'time.undo', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
