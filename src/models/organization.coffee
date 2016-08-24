@@ -4,6 +4,7 @@ Q = require 'q'
 
 { HEADERS } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
+Calendar = require './calendar'
 Spreadsheet = require './sheet'
 { Settings } = require './user'
 
@@ -14,17 +15,6 @@ CONFIG =
     private_key: process.env.PRIVATE_KEY
 
 NAME = process.env.ORG_NAME
-
-class Calendar
-  constructor: (@vacation, @sick, @holidays, @referencePayWeek) ->
-  isPayWeek: () ->
-    return (moment().diff(@referencePayWeek, 'weeks') % 2) is 0
-  description: () ->
-    str = "Organization calendar:\n"
-    for holiday in @holidays
-      str += "This year's #{holiday.name} is on
-              #{holiday.date.format('MM/DD/YYYY')}\n"
-    return str
 
 # Singleton
 class Organization
