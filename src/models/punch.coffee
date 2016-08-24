@@ -374,14 +374,13 @@ class Punch
     elapsed =
      punchDate = ''
     if @times.block?
-      elapsed = "#{@times.block}"
+      elapsed = "#{@times.block} hours on "
     else if @elapsed?
-      elapsed = "#{@elapsed}"
+      elapsed = "#{@elapsed} hours on "
     if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
-      elapsed += " #{@mode}"
-    elapsed += " hours"
+      elapsed += " #{@mode} hours on "
 
     headers = HEADERS.rawdata
     if @row and @row[headers.today]
@@ -418,7 +417,7 @@ class Punch
         fields.push outField
 
     attachment =
-      title: elapsed + " on " + punchDate
+      title: elapsed + punchDate
       text: notes
       fields: fields
       color: color
