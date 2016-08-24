@@ -353,9 +353,15 @@ module.exports = (robot) ->
       if Organization.calendar.isPayWeek()
         periodStart = periodStart.subtract(1, 'weeks')
       periodEnd = periodStart.clone().add(2, 'weeks')
+      if res.match[0].match(/(last|previous)/)
+        periodStart = periodStart.subtract(2, 'weeks')
+        periodEnd = periodEnd.subtract(2, 'weeks')
+        dateArticle = "last pay period (#{periodStart.format('M/DD')} to
+                       #{periodEnd.format('M/DD')})"
+      else
+        dateArticle = "this pay period (#{periodStart.format('M/DD')} to
+                       #{periodEnd.format('M/DD')})"
       report = user.toRawPayroll(periodStart, periodEnd)
-      dateArticle = "this pay period (#{periodStart.format('M/DD')} to
-                     #{periodEnd.format('M/DD')})"
       for punch in user.punches
         if punch.date.isBefore(periodStart) or punch.date.isAfter(periodEnd)
           continue
