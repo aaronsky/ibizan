@@ -447,33 +447,36 @@ module.exports = (robot) ->
   robot.respond /timezone (.*)/i, id: 'time.time', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     input = res.match[1]
+    tzset = false
 
     tz = user.setTimezone(input)
     if tz
-      userTime = moment.tz(user.timetable.timezone.name)
-      user.directMessage "Your timezone is now *#{user.timetable.timezone.name}*
-                          (#{userTime.format('z, Z')}).",
-                         Logger
-      Logger.addReaction 'dog2', res.message
+      tzset = true
     else
       # Try adding 'America/' if a region is not specified
       if input.indexOf("/") < 0
         input = "America/" + input
-
-      tz = user.setTimezone(input)
-      if tz
-        userTime = moment.tz(user.timetable.timezone.name)
-        user.directMessage "Your timezone is now
-                            *#{user.timetable.timezone.name}*
-                            (#{userTime.format('z, Z')}).",
-                           Logger
-        Logger.addReaction 'dog2', res.message
+      if tz = user.setTimezone(input)
+        tzset = true
       else
-        user.directMessage "I do not recognize that timezone.
-                            Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list>
-                            for a valid time zone name.",
-                           Logger
-        Logger.addReaction 'x', res.message
+        # Try changing spaces to underscores
+        input = input.replace ' ', '_'
+        if tz = user.setTimezone(input)
+          tzset = true
+
+    if tzset
+      userTime = moment.tz(user.timetable.timezone.name)
+      user.directMessage "Your timezone is now
+                          *#{user.timetable.timezone.name}*
+                          (#{userTime.format('z, Z')}).",
+                         Logger
+      Logger.addReaction 'dog2', res.message
+    else
+      user.directMessage "I do not recognize that timezone.
+                          Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list>
+                          for a valid time zone name.",
+                         Logger
+      Logger.addReaction 'x', res.message
 
   # Sets the user's active times
   robot.respond /active\s*(.*)?$/i, id: 'time.active', userRequired: true, (res) ->
