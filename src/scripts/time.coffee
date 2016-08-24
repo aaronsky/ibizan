@@ -4,20 +4,27 @@
 # Commands:
 #   ibizan in - Punch in at the current time and date
 #   ibizan out - Punch out at the current time and date
-#   ibizan in #project1 - Punch in at the current time and assigns the current project to #project1
-#   ibizan out #project1 #project2 - Punch out at the current time and splits the worked time since last in-punch between #project1 and #project2
+#   ibizan in #project1 - Punch in at the current time and assigns the current
+#                         project to #project1
+#   ibizan out #project1 #project2 - Punch out at the current time and splits
+#                                    the worked time since last in-punch between
+#                                    #project1 and #project2
 #   ibizan in 9:15 - Punch in at 9:15am today
 #   ibizan out 7pm yesterday - Punch out yesterday at 7pm
-#   ibizan in 17:00 #project3 - Punch in at 5pm and assigns the time until next out-punch to #project3
+#   ibizan in 17:00 #project3 - Punch in at 5pm and assigns the time until next
+#                               out-punch to #project3
 #   ibizan 1.5 hours - Append 1.5 hours to today's total time
 #   ibizan 2 hours yesterday - Append 2 hours on to yesterday's total time
-#   ibizan 3.25 hours tuesday #project1 - Append 3.25 hours on to Tuesday's total time and assigns it to #project1
+#   ibizan 3.25 hours tuesday #project1 - Append 3.25 hours on to Tuesday's
+#                                         total time and assigns it to #project1
 #   ibizan vacation today - Flags the user’s entire day as vacation time
 #   ibizan sick half-day - Flags half the user’s day as sick time
-#   ibizan vacation half-day yesterday - Flags half the user’s previous day (4 hours) as vacation time
+#   ibizan vacation half-day yesterday - Flags half the user’s previous day
+#                                        (4 hours) as vacation time
 #   ibizan sick Jul 6-8 - Flags July 6-8 of this year as sick time
-#   ibizan vacation 1/28 - 2/4 - Flags January 28th to February 4th of this year as vacation time.
-#   
+#   ibizan vacation 1/28 - 2/4 - Flags January 28th to February 4th of this year
+#                                as vacation time.
+#
 #   ibizan hours - Replies with helpful info for hours? and hours [date]
 #   ibizan hours 8/4 - Replies with punches recorded on a given date
 #   ibizan hours? - Replies with the user's total time for today, with punches
@@ -26,12 +33,15 @@
 #   ibizan month? - Replies with the user's total time for the month
 #   ibizan year? - Replies with the user's total time for the year
 #   ibizan status - Replies with the user's Employee sheet info
-#   ibizan time - Replies with the current time in both Ibizan's default timezone and the user's timezone
+#   ibizan time - Replies with the current time in both Ibizan's default
+#                 timezone and the user's timezone
 #   ibizan timezone - Replies with the user's timezone
 #   ibizan timezone america/chicago - Sets the user's timezone
 #
 # Notes:
-#   All dates are formatted in MM/DD notation with no support for overriding year. Ibizan will extrapolate year from your ranges, even if it stretches over multiple years.
+#   All dates are formatted in MM/DD notation with no support for overriding
+#   year. Ibizan will extrapolate year from your ranges, even if it stretches
+#   over multiple years.
 #
 # Author:
 #   aaronsky
@@ -225,7 +235,8 @@ module.exports = (robot) ->
           Logger.removeReaction 'clock4', res.message
           user.directMessage "Undid your last punch, which was:
                               *#{lastPunchDescription}*\n\nYour most current
-                              punch is now: *#{user.lastPunch().description(user)}*",
+                              punch is now:
+                              *#{user.lastPunch().description(user)}*",
                              Logger
       )
       .catch(
@@ -283,7 +294,8 @@ module.exports = (robot) ->
       if not report[headers.logged]
         msg = "You haven't recorded any paid work time"
       else
-        msg = "You have *#{toTimeStr(report[headers.logged])} of paid work time*"
+        msg = "You have *#{toTimeStr(report[headers.logged])} of
+               paid work time*"
         loggedAny = true
       for kind in ['vacation', 'sick', 'unpaid']
         header = headers[kind]
@@ -291,7 +303,8 @@ module.exports = (robot) ->
           kind = 'unpaid work'
         if report[header]
           if not loggedAny
-            msg += ", but you have *#{toTimeStr(report[header])} of #{kind} time*"
+            msg += ", but you have *#{toTimeStr(report[header])} of
+                    #{kind} time*"
             loggedAny = true
           else
             msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
@@ -326,11 +339,13 @@ module.exports = (robot) ->
         else
           attachments.push punch.slackAttachment()
     else if mode is 'month'
-      startOfMonth = moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("month")
+      startOfMonth =
+        moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("month")
       report = user.toRawPayroll(startOfMonth, now)
       dateArticle = "this month"
     else if mode is 'year'
-      startOfYear = moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("year")
+      startOfYear =
+        moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("year")
       report = user.toRawPayroll(startOfYear, now)
       dateArticle = "this year"
     else if mode is 'period'
@@ -339,7 +354,8 @@ module.exports = (robot) ->
         periodStart = periodStart.subtract(1, 'weeks')
       periodEnd = periodStart.clone().add(2, 'weeks')
       report = user.toRawPayroll(periodStart, periodEnd)
-      dateArticle = "this pay period (#{periodStart.format('M/DD')} to #{periodEnd.format('M/DD')})"
+      dateArticle = "this pay period (#{periodStart.format('M/DD')} to
+                     #{periodEnd.format('M/DD')})"
       for punch in user.punches
         if punch.date.isBefore(periodStart) or punch.date.isAfter(periodEnd)
           continue
@@ -348,7 +364,8 @@ module.exports = (robot) ->
         else
           attachments.push punch.slackAttachment()
     else
-      earlyToday = now.clone().hour(0).minute(0).second(0).subtract(1, 'minutes')
+      earlyToday =
+        now.clone().hour(0).minute(0).second(0).subtract(1, 'minutes')
       report = user.toRawPayroll(earlyToday, now)
       dateArticle = "today"
       for punch in user.punches
@@ -367,7 +384,8 @@ module.exports = (robot) ->
       if not report[headers.logged]
         msg = "You haven't recorded any paid work time"
       else
-        msg = "You have *#{toTimeStr(report[headers.logged])} of paid work time*"
+        msg = "You have *#{toTimeStr(report[headers.logged])} of
+               paid work time*"
         loggedAny = true
       for kind in ['vacation', 'sick', 'unpaid']
         header = headers[kind]
@@ -375,7 +393,8 @@ module.exports = (robot) ->
           kind = 'unpaid work'
         if report[header]
           if not loggedAny
-            msg += ", but you have *#{toTimeStr(report[header])} of #{kind} time*"
+            msg += ", but you have *#{toTimeStr(report[header])} of
+                    #{kind} time*"
             loggedAny = true
           else
             msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
@@ -400,9 +419,11 @@ module.exports = (robot) ->
     user = Organization.getUserBySlackName res.message.user.name
     userTime = moment.tz(user.timetable.timezone.name)
     ibizanTime = moment.tz(TIMEZONE)
-    msg = "It's currently *#{userTime.format('h:mm A')}* in your timezone (#{userTime.format('z, Z')})."
+    msg = "It's currently *#{userTime.format('h:mm A')}* in your timezone
+           (#{userTime.format('z, Z')})."
     if userTime.format('z') != ibizanTime.format('z')
-      msg += "\n\nIt's #{ibizanTime.format('h:mm A')} in the default timezone (#{ibizanTime.format('z, Z')})."
+      msg += "\n\nIt's #{ibizanTime.format('h:mm A')} in the default timezone
+              (#{ibizanTime.format('z, Z')})."
     user.directMessage msg, Logger
     Logger.addReaction 'dog2', res.message
 
@@ -436,7 +457,8 @@ module.exports = (robot) ->
       tz = user.setTimezone(input)
       if tz
         userTime = moment.tz(user.timetable.timezone.name)
-        user.directMessage "Your timezone is now *#{user.timetable.timezone.name}*
+        user.directMessage "Your timezone is now
+                            *#{user.timetable.timezone.name}*
                             (#{userTime.format('z, Z')}).",
                            Logger
         Logger.addReaction 'dog2', res.message
@@ -467,7 +489,8 @@ module.exports = (robot) ->
       if scope is 'start'
         if not newtime.isBefore(user.timetable.end)
           user.directMessage "#{newtime.format('h:mm A')} is not before your
-                              current end time of #{user.timetable.start.format('h:mm A')}.",
+                              current end time of
+                              #{user.timetable.start.format('h:mm A')}.",
                              Logger
           Logger.addReaction 'x', res.message
           return
@@ -476,13 +499,15 @@ module.exports = (robot) ->
       else if scope is 'end'
         if not newtime.isAfter(user.timetable.start)
           user.directMessage "#{newtime.format('h:mm A')} is not after your
-                              current start time of #{user.timetable.start.format('h:mm A')}.",
+                              current start time of
+                              #{user.timetable.start.format('h:mm A')}.",
                              Logger
           Logger.addReaction 'x', res.message
           return
         else
           user.setEnd newtime
-      user.directMessage "Your active *#{scope}* time is now *#{newtime.format('h:mm A')}*.",
+      user.directMessage "Your active *#{scope}* time is now
+                          *#{newtime.format('h:mm A')}*.",
                          Logger
       Logger.addReaction 'dog2', res.message
     else
