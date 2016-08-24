@@ -491,7 +491,6 @@ class Punch
       modeQualifier = "for #{article} #{blockTimeQualifier} block"
     else
       modeQualifier = @mode
-    Logger.debug "mode: #{modeQualifier}"
     if @projects and @projects.length > 0
       projectsQualifier = " ("
       projectsQualifier += @projects.map((el) ->
@@ -675,12 +674,9 @@ _parseProjects = (command) ->
   command_copy = command.split(' ').slice()
 
   for word in command_copy
-    if word.charAt(0) is '#'
-      if project = Organization.getProjectByName word
-        projects.push project
-        command = command.replace ///#{word} ?///i, ''
-    else
-      break
+    if project = Organization.getProjectByName word
+      projects.push project
+      command = command.replace ///#{word} ?///i, ''
   [projects, command]
 
 module.exports = Punch
