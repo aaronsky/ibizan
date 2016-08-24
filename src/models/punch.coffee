@@ -405,14 +405,14 @@ class Punch
       if @times[0]
         inField =
           title: "In"
-          value: @times[0].format("h:mm:ss A")
+          value: moment.tz(@times[0], @timezone).format("h:mm:ss A")
           short: true
         punchDate = @times[0].format("dddd, MMMM Do YYYY")
         fields.push inField
       if @times[1]
         outField =
           title: "Out"
-          value: @times[1].format("h:mm:ss A")
+          value: moment.tz(@times[1], @timezone).format("h:mm:ss A")
           short: true
         fields.push outField
 

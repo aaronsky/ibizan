@@ -104,14 +104,13 @@ module.exports = (robot) ->
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
       msg = msg.trim()
-      tz = user.timetable.timezone.name
+      tz = user.timetable.timezone.name or TIMEZONE
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
          isProjectChannel res.message.room
         project = Organization.getProjectByName res.message.room
         if project?
           punch.projects.push project
-      moment.tz.setDefault TIMEZONE
 
       if punch.mode is 'none'
         modeQualifier = 'block'
