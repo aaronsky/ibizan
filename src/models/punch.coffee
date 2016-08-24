@@ -27,7 +27,7 @@ class Punch
     original = command.slice 0
 
     [start, end] = user.activeHours()
-    tz = timezone || user.timetable.timezone.name
+    tz = timezone or user.timetable.timezone.name
     [times, command] = _parseTime command, start, end, timezone
     [dates, command] = _parseDate command
 
@@ -75,7 +75,7 @@ class Punch
     notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
-    punch.date = datetimes[0] || date || moment.tz(tz)
+    punch.date = datetimes[0] or date or moment.tz(tz)
     punch.timezone = tz
     if elapsed
       punch.elapsed = elapsed
@@ -238,10 +238,10 @@ class Punch
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     today = moment.tz(TIMEZONE)
-    row = @row || {}
-    row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
-    row[headers.name] = row[headers.name] || name
+    row = @row or {}
+    row[headers.id] = row[headers.id] or uuid.v1()
+    row[headers.today] = row[headers.today] or @date.format('MM/DD/YYYY')
+    row[headers.name] = row[headers.name] or name
     if @times.block?
       block = @times.block
       hours = Math.floor block
@@ -388,7 +388,7 @@ class Punch
       punchDate =
         moment(@row[headers.today], "MM/DD/YYYY").format("dddd, MMMM Do YYYY")
 
-    notes = @notes || ''
+    notes = @notes or ''
     if @projects and @projects.length > 0
       projects = @projects.map((el) ->
         return "##{el.name}"
@@ -536,8 +536,8 @@ _mergeDateTime = (date, time, tz=TIMEZONE) ->
 _parseMode = (command) ->
   comps = command.split ' '
   [mode, command] = [comps.shift(), comps.join ' ']
-  mode = (mode || '').toLowerCase().trim()
-  command = (command || '').trim()
+  mode = (mode or '').toLowerCase().trim()
+  command = (command or '').trim()
   if mode in MODES
     [mode, command]
   else
@@ -545,7 +545,7 @@ _parseMode = (command) ->
 
 _parseTime = (command, activeStart, activeEnd, tz) ->
   # parse time component
-  command = command.trimLeft() || ''
+  command = command.trimLeft() or ''
   if command.indexOf('at') is 0
     command = command.replace 'at', ''
     command = command.trimLeft()
@@ -590,7 +590,7 @@ _parseTime = (command, activeStart, activeEnd, tz) ->
   [time, command]
 
 _parseDate = (command) ->
-  command = command.trimLeft() || ''
+  command = command.trimLeft() or ''
   if command.indexOf('on') is 0
     command = command.replace 'on', ''
     command = command.trimLeft()
@@ -667,7 +667,7 @@ _calculateElapsed = (start, end, mode, user) ->
 
 _parseProjects = (command) ->
   projects = []
-  command = command.trimLeft() || ''
+  command = command.trimLeft() or ''
   if command.indexOf('in') is 0
     command = command.replace 'in', ''
     command = command.trimLeft()
