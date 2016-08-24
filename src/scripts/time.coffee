@@ -471,7 +471,8 @@ module.exports = (robot) ->
       else
         user.directMessage "I do not recognize that timezone.
                             Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list>
-                            for a valid time zone name."
+                            for a valid time zone name.",
+                           Logger
         Logger.addReaction 'x', res.message
 
   # Sets the user's active times
