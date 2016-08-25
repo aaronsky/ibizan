@@ -68,6 +68,9 @@ cellHeaders =
     sick:                'sickhours'
     overtime:            'overtimehours'
     holiday:             'holidayhours'
+  events:
+    date:                'eventdate'
+    name:                'eventname'
 
 Object.freeze cellHeaders
 

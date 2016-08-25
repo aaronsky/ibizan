@@ -228,10 +228,39 @@ module.exports = (robot) ->
     else if op is 'event' or
             op is 'calendar' or
             op is 'upcoming'
-      # Calendar.addEvent msg
-      # user.directMessage "Added calendar event: #{results}",
-      user.directMessage "I can't add events just yet~",
-                         Logger
+      Logger.addReaction 'clock4', res.message
+      date = moment(words[0], 'MM/DD/YYYY')
+      if not date.isValid()
+        Logger.addReaction 'x', res.message
+        Logger.removeReaction 'clock4', res.message
+        res.reply "Your event has an invalid date. Make sure you're using the
+                   proper syntax, e.g. `ibizan add event 3/21 Dog Time`"
+        return
+      words.shift()
+      name = words.join(' ').trim()
+      if not name or not name.length > 0
+        Logger.addReaction 'x', res.message
+        Logger.removeReaction 'clock4', res.message
+        res.reply "Your event needs a name. Make sure you're using the
+                   proper syntax, e.g. `ibizan add event 3/21 Dog Time`"
+        return
+      Logger.debug "Adding event on #{date} named #{name}"
+      Organization.addEvent(date, name)
+      .then(
+        (calendarevent) ->
+          Logger.addReaction 'dog2', res.message
+          Logger.removeReaction 'clock4', res.message
+          res.reply "Added new event: *#{calendarevent.name}* on
+                     *#{calendarevent.date.format('M/DD/YYYY')}"
+      )
+      .catch(
+        (err) ->
+          Logger.error err
+          Logger.addReaction 'x', res.message
+          Logger.removeReaction 'clock4', res.message
+          res.reply "Something went wrong when adding your event."
+      )
+      .done()
     else
       user.directMessage "I could not understand what you are trying to add.
                           Things you could `add` include:\n
@@ -272,6 +301,17 @@ module.exports = (robot) ->
       .done()
     else
       user.directMessage 'There\'s nothing for me to undo.', Logger
+
+  robot.respond /events/i, id: 'time.events', (res) ->
+    response = ""
+    if Organization.calendar.events.length > 0
+      response += "Upcoming events:\n"
+      for calendarevent in Organization.calendar.events
+        response += "*#{calendarevent.date.format('M/DD/YYYY')}* - #{calendarevent.name}\n"
+    else
+      response = "There are no upcoming events on the calendar."
+    res.send response
+    Logger.addReaction 'dog2', res.message
 
 
   ## User feedback ##

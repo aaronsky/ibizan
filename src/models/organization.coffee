@@ -4,7 +4,7 @@ Q = require 'q'
 
 { HEADERS } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
-Calendar = require './calendar'
+{ Calendar, CalendarEvent } = require './calendar'
 Spreadsheet = require './sheet'
 { Settings } = require './user'
 
@@ -52,7 +52,7 @@ class Organization
                 if newUser = @getUserBySlackName user.slack
                   newUser.settings = Settings.fromSettings user.settings
             @projects = opts.projects
-            @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek)
+            @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek, opts.events)
             @clockChannel = opts.clockChannel
             @exemptChannels = opts.exemptChannels
         )
@@ -84,6 +84,28 @@ class Organization
           if name is project.name
             return project
       Logger.debug "Project #{name} could not be found"
+    addEvent: (date, name) ->
+      deferred = Q.defer()
+      date = moment(date, 'MM/DD/YYYY')
+      if not date.isValid()
+        deferred.reject "Invalid date given to addEvent"
+      else if not name? or not name.length > 0
+        deferred.reject "Invalid name given to addEvent"
+
+      calendarevent = new CalendarEvent(date, name)
+      that = @
+      @spreadsheet.events.addRow(calendarevent.toEventRow())
+      .then(
+        () ->
+          that.events.push calendarevent
+          deferred.resolve calendarevent
+      )
+      .catch(
+        (err) ->
+          deferred.reject "Could not update user row: #{err}"
+      )
+      .done()
+      deferred.promise
     generateReport: (start, end, send=false) ->
       deferred = Q.defer()
       if not @spreadsheet
