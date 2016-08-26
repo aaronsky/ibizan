@@ -321,7 +321,8 @@ class Punch
         else
           return true
       last = user.lastPunch 'out', 'vacation', 'unpaid', 'sick'
-      time = last.times[0].tz(user.timetable.timezone.name)
+      time = last.times[1].tz(user.timetable.timezone.name) or
+             last.times[0].tz(user.timetable.timezone.name)
       return "You cannot punch out before punching in. Your last
               out-punch was at *#{time.format('h:mma')} on
               #{time.format('dddd, MMMM Do')}*."
