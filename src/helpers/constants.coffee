@@ -194,13 +194,23 @@ strings =
     activehelp:           "Use `@ibizan active [start/end] [time]`
                            to set your active hours!\n
                            Example: `@ibizan active start 10am`"
+    addfail:              "I could not understand what you are trying to add.
+                           Things you could `add` include:\n
+                           `add note [note]` - Append a note to your current
+                           punch\n
+                           `add project [#project]` - Append a project to your
+                           current punch\n
+                           `add event [date] [name]` - Add a new event to the
+                           calendar"
     hourshelp:            "Use `@ibizan hours [date]` to view your punches
                            on that date.\n
                            Use `@ibizan hours?` (or today?/week?/month?/year?)
                            to view your punches for the given time period."
+    noevents:             "There are no upcoming events on the calendar."
     notpunchedin:         "I don't think you're punched in right now.
                            If this is in error, ask me to `sync` then try your
                            punch again, or contact an admin."
+    undofail:             "There is nothing for me to undo."
 Object.freeze strings
 
 modes = ['in', 'out', 'vacation', 'unpaid', 'sick']

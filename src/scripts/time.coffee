@@ -47,6 +47,7 @@
 #   aaronsky
 
 moment = require 'moment-timezone'
+require 'moment-precise-range-plugin'
 
 { REGEX, HEADERS, STRINGS, TIMEZONE } = require '../helpers/constants'
 Organization = require('../models/organization').get()
@@ -262,15 +263,7 @@ module.exports = (robot) ->
       )
       .done()
     else
-      user.directMessage "I could not understand what you are trying to add.
-                          Things you could `add` include:\n
-                          `add note [note]` - Append a note to your current
-                          punch\n
-                          `add project [#project]` - Append a project to your
-                          current punch\n
-                          `add event [date] [name]` - Add a new event to the
-                          calendar",
-                         Logger
+      user.directMessage strings.addfail, Logger
 
   robot.respond /\bundo$/i, id: 'time.undo', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
@@ -300,7 +293,7 @@ module.exports = (robot) ->
       )
       .done()
     else
-      user.directMessage 'There\'s nothing for me to undo.', Logger
+      user.directMessage strings.undofail, Logger
 
   robot.respond /\b(events|upcoming)$/i, id: 'time.events', (res) ->
     response = ""
@@ -308,9 +301,10 @@ module.exports = (robot) ->
     if upcomingEvents.length > 0
       response += "Upcoming events:\n"
       for calendarevent in upcomingEvents
-        response += "*#{calendarevent.date.format('M/DD/YY')}* - #{calendarevent.name}\n"
+        response += "*#{calendarevent.date.format('M/DD/YY')}* -
+                     #{calendarevent.name}\n"
     else
-      response = "There are no upcoming events on the calendar."
+      response = strings.noevents
     res.send response
     Logger.addReaction 'dog2', res.message
 
