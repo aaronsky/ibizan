@@ -86,7 +86,7 @@ module.exports = (robot) ->
 
     return response
 
-  generateDailyReportJob = schedule.scheduleJob '* * * * *', ->
+  generateDailyReportJob = schedule.scheduleJob '0 9 * * *', ->
     if not Organization.ready()
       Logger.warn "Don't make scheduled daily report,
                    Organization isn't ready yet"
