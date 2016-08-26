@@ -1,6 +1,6 @@
 
 regex =
-  ibizan:          /(?:@)?ibizan(?::)? ?/i
+  ibizan:          /^(?:@)?ibizan(?::)? ?/i
   modes:           /\b(in|out|vacation|sick|unpaid)\b/i
   days:            /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i
   rel_time:        /(half-day|(half day)|noon|midnight|((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours))/i
@@ -77,6 +77,11 @@ Object.freeze cellHeaders
 strings =
   access:
     adminonly:           "You must be an admin in order to access this command."
+    askforhelp:         [
+                          "Maybe you should ask for `help`?",
+                          "Perhaps you should ask for `help`?",
+                          "You could ask for `help`, if you'd like."
+                        ]
     badtoken:            "Bad token in Ibizan configuration.
                           Please contact an admin."
     notanemployee:       "You are not a recognized employee.
@@ -88,11 +93,12 @@ strings =
                           longer than five minutes, DM a maintainer as
                           soon as possible."
     unknowncommand:     [
-                          "_tilts their head confusedly.
-                           Maybe you should ask for help?_",
-                          "_stares blankly. Maybe you should ask for help?_",
-                          "_listens intently, but doesn't know what you meant.
-                           Maybe you should ask for help?_"
+                          "tilts their head confusedly.",
+                          "stares blankly.",
+                          "listens intently, but doesn't know what you meant.",
+                          "barks with no clear intention.",
+                          "extends its paw, unsure of what you actually
+                           wanted it to do."
                         ]
   bark:
     bark:               [

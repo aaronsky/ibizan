@@ -21,7 +21,10 @@ module.exports = (robot) ->
     command = context.listener.options.id
     message = context.response.message
     username = context.response.message.user.name
-    if username is 'hubot' or username is 'ibizan' or command is null
+    if command is null
+      # Ignore unknown commands or catch-alls
+      next()
+    else if username is 'hubot' or username is 'ibizan'
       # Ignore myself and messages overheard
       done()
     else
@@ -52,5 +55,7 @@ module.exports = (robot) ->
   robot.catchAll (res) ->
     Logger.debug "Trying to catchAll, test1: #{res.message.text.match(REGEX.ibizan)}  test2: #{res.message.room.substring(0,1)}"
     if res.message.text.match(REGEX.ibizan) or res.message.room.substring(0,1) is 'D'
-      res.send res.random strings.unknowncommand
+      res.send "#{res.random strings.unknowncommand}
+                #{res.random strings.askforhelp}"
       Logger.addReaction 'question', res.message
+    res.finish()
