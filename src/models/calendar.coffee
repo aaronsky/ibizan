@@ -9,6 +9,14 @@ class Calendar
   constructor: (@vacation, @sick, @holidays, @referencePayWeek, @events) ->
   isPayWeek: () ->
     return (moment().diff(@referencePayWeek, 'weeks') % 2) is 0
+  upcomingEvents: (date = moment()) ->
+    @events.sort (a, b) ->
+      return moment.utc(a.date).diff(moment.utc(b.date))
+    upcomingEvents = []
+    for calendarevent in @events
+      if calendarevent.date.isAfter(date)
+        upcomingEvents.push calendarevent
+    return upcomingEvents
   description: () ->
     str = "Organization calendar:\n"
     for holiday in @holidays

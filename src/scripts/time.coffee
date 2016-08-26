@@ -251,7 +251,7 @@ module.exports = (robot) ->
           Logger.addReaction 'dog2', res.message
           Logger.removeReaction 'clock4', res.message
           res.reply "Added new event: *#{calendarevent.name}* on
-                     *#{calendarevent.date.format('M/DD/YYYY')}"
+                     *#{calendarevent.date.format('M/DD/YYYY')}*"
       )
       .catch(
         (err) ->
@@ -302,12 +302,13 @@ module.exports = (robot) ->
     else
       user.directMessage 'There\'s nothing for me to undo.', Logger
 
-  robot.respond /events/i, id: 'time.events', (res) ->
+  robot.respond /\b(events|upcoming)$/i, id: 'time.events', (res) ->
     response = ""
-    if Organization.calendar.events.length > 0
+    upcomingEvents = Organization.calendar.upcomingEvents()
+    if upcomingEvents.length > 0
       response += "Upcoming events:\n"
-      for calendarevent in Organization.calendar.events
-        response += "*#{calendarevent.date.format('M/DD/YYYY')}* - #{calendarevent.name}\n"
+      for calendarevent in upcomingEvents
+        response += "*#{calendarevent.date.format('M/DD/YY')}* - #{calendarevent.name}\n"
     else
       response = "There are no upcoming events on the calendar."
     res.send response
