@@ -93,16 +93,16 @@ class Organization
         deferred.reject "Invalid name given to addEvent"
 
       calendarevent = new CalendarEvent(date, name)
-      that = @
-      @spreadsheet.events.addRow(calendarevent.toEventRow())
+      calendar = @calendar
+      @spreadsheet.addEventRow(calendarevent.toEventRow())
       .then(
         () ->
-          that.events.push calendarevent
+          calendar.events.push calendarevent
           deferred.resolve calendarevent
       )
       .catch(
         (err) ->
-          deferred.reject "Could not update user row: #{err}"
+          deferred.reject "Could not add event row: #{err}"
       )
       .done()
       deferred.promise

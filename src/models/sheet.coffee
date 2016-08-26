@@ -5,6 +5,7 @@ moment = require 'moment'
 
 require '../../lib/moment-holidays.js'
 { HEADERS } = require '../helpers/constants'
+{ Calendar, CalendarEvent } = require './calendar'
 Logger = require('../helpers/logger')()
 Project = require './project'
 { User, Settings, Timetable } = require './user'
@@ -229,7 +230,7 @@ class Spreadsheet
       if err
         deferred.reject err
       else
-        deferred.resolve "Added event"
+        deferred.resolve row
     deferred.promise
 
   _loadWorksheets: () ->
