@@ -21,12 +21,12 @@ module.exports = (robot) ->
     command = context.listener.options.id
     message = context.response.message
     username = context.response.message.user.name
-    if command is null
-      # Ignore unknown commands or catch-alls
-      next()
-    else if username is 'hubot' or username is 'ibizan'
+    if username is 'hubot' or username is 'ibizan'
       # Ignore myself and messages overheard
       done()
+    else if command is null
+      # Ignore unknown commands or catch-alls
+      next()
     else
       if not Organization.ready()
         # Organization is not ready, ignore command
