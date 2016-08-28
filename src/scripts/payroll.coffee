@@ -25,47 +25,45 @@ module.exports = (robot) ->
     logBuffer = ''
     offBuffer = ''
 
-    if reports.length > 0
-      for report in reports
-        recorded = false
-        if report[PAYROLL.logged] > 0
-          status = "#{report.extra.slack}:\t\t\t#{report[PAYROLL.logged]} hours"
-          notes = report.extra.notes?.replace('\n', '; ')
-          if notes
-            status += " \"#{notes}\""
-          projectStr = ''
-          if report.extra.projects? and report.extra.projects?.length > 0
-            for project in report.extra.projects
-              projectStr += "##{project.name} "
-          if projectStr
-            projectStr = projectStr.trim()
-            status += " #{projectStr}"
-          status += "\n"
-          logBuffer += "#{status}"
-          recorded = true
-        if report[PAYROLL.vacation] > 0
-          offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]}
-                        hours vacation\n"
-          recorded = true
-        if report[PAYROLL.sick] > 0
-          offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]}
-                        hours sick\n"
-          recorded = true
-        if report[PAYROLL.unpaid] > 0
-          offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]}
-                        hours unpaid\n"
-          recorded = true
-        if not recorded
-          offBuffer += "#{report.extra.slack}:\t0 hours\n"
-      if logBuffer is not ''
-        response += "```" + logBuffer + "```\n"
+    for report in reports
+      recorded = false
+      if report[PAYROLL.logged] > 0
+        status = "#{report.extra.slack}:\t\t\t#{report[PAYROLL.logged]} hours"
+        notes = report.extra.notes?.replace('\n', '; ')
+        if notes
+          status += " \"#{notes}\""
+        projectStr = ''
+        if report.extra.projects? and report.extra.projects?.length > 0
+          for project in report.extra.projects
+            projectStr += "##{project.name} "
+        if projectStr
+          projectStr = projectStr.trim()
+          status += " #{projectStr}"
+        status += "\n"
+        logBuffer += "#{status}"
+        recorded = true
+      if report[PAYROLL.vacation] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]}
+                      hours vacation\n"
+        recorded = true
+      if report[PAYROLL.sick] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]}
+                      hours sick\n"
+        recorded = true
+      if report[PAYROLL.unpaid] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]}
+                      hours unpaid\n"
+        recorded = true
+      if not recorded
+        offBuffer += "#{report.extra.slack}:\t0 hours\n"
+    response += "```" + logBuffer + "```\n"
     if offBuffer.length > 0
       response += "DAILY OFF-TIME LOG:
                    *#{yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n"
       response += "```" + offBuffer + "```\n"
     upcomingEvents = Organization.calendar.upcomingEvents()
     if upcomingEvents.length > 0
-      now = moment()
+      now = moment().add(1, 'days')
       response += "\nUPCOMING EVENTS:\n"
       for upcomingEvent in upcomingEvents
         days = upcomingEvent.date.diff(now, 'days')
