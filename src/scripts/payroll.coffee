@@ -63,7 +63,7 @@ module.exports = (robot) ->
       response += "```" + offBuffer + "```\n"
     upcomingEvents = Organization.calendar.upcomingEvents()
     if upcomingEvents.length > 0
-      now = moment().add(1, 'days')
+      now = moment().subtract(1, 'days')
       response += "\nUPCOMING EVENTS:\n"
       for upcomingEvent in upcomingEvents
         days = upcomingEvent.date.diff(now, 'days')
