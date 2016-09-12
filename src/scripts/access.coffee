@@ -58,4 +58,4 @@ module.exports = (robot) ->
       res.send "_#{res.random strings.unknowncommand}
                 #{res.random strings.askforhelp}_"
       Logger.addReaction 'question', res.message
-    res.finish()
+      res.finish()
