@@ -47,7 +47,6 @@
 #   aaronsky
 
 moment = require 'moment-timezone'
-require 'moment-precise-range-plugin'
 
 { REGEX, HEADERS, STRINGS, TIMEZONE } = require '../helpers/constants'
 Organization = require('../models/organization').get()
@@ -178,6 +177,8 @@ module.exports = (robot) ->
   # Punch for a block of time
   robot.respond REGEX.rel_time, id: 'time.punchByTime', userRequired: true, (res) ->
     parse res, res.match.input, 'none'
+
+  # Switch projects during an 'in' punch
 
   # Append to lastPunch
   robot.respond /(append|add)/i, id: 'time.append', userRequired: true, (res) ->

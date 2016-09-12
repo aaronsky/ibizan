@@ -9,7 +9,6 @@
 #   aaronsky
 
 moment = require 'moment'
-require 'moment-precise-range-plugin'
 
 { HEADERS, STRINGS } = require '../helpers/constants'
 strings = STRINGS.diagnostics
@@ -22,7 +21,10 @@ module.exports = (robot) ->
   robot.respond /uptime/i, id: 'diagnostics.uptime', (res) ->
     res.send "#{Organization.name}'s Ibizan has been up since
               #{Organization.initTime.toDate()}
-              _(#{moment().preciseDiff(Organization.initTime)})_"
+              _(#{+moment()
+                .diff(Organization.initTime, 'minutes', true)
+                .toFixed(2)}
+              minutes)_"
     Logger.addReaction 'dog2', res.message
 
   robot.respond /users/i, id: 'diagnostics.users', userRequired: true, adminOnly: true, (res) ->
