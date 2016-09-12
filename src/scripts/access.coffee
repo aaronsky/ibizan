@@ -53,8 +53,8 @@ module.exports = (robot) ->
 
   # Catchall for unrecognized commands
   robot.catchAll (res) ->
-    Logger.debug "Trying to catchAll, test1: #{res.message.text.match(REGEX.ibizan)}  test2: #{res.message.room.substring(0,1)}"
-    if res.message.text.match(REGEX.ibizan) or (res.message.room and res.message.room.substring(0,1) is 'D')
+    if res.message.text.match(REGEX.ibizan) or
+       (res.message.room and res.message.room.substring(0,1) is 'D')
       res.send "_#{res.random strings.unknowncommand}
                 #{res.random strings.askforhelp}_"
       Logger.addReaction 'question', res.message
