@@ -24,7 +24,7 @@
     "hubot": "^2.19.0",
     "hubot-conversation": "^1.1.0",
     "hubot-history": "^1.0.0",
-    "hubot-slack": "^4.0.2",
+    "hubot-slack": "^4.0.4",
     "moment": "^2.15.0",
     "moment-timezone": "^0.5.5",
     "moment-weekend": "^1.0.1",
