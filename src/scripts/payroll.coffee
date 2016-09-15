@@ -76,7 +76,7 @@ module.exports = (robot) ->
           weeksArticle += "s"
 
         if weeks > 0
-          daysRemainder = days % 7
+          daysRemainder = days % 7 or 0
           daysArticle = if daysRemainder > 1 then 'days' else 'day'
           response += "#{upcomingEvent.name} in #{weeks} #{if weeks > 1 then 'weeks' else 'week'}#{if daysRemainder > 0 then ', ' + daysRemainder + ' ' + daysArticle}\n"
         else
