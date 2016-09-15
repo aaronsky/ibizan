@@ -56,11 +56,11 @@ module.exports = (robot) ->
         recorded = true
       if not recorded
         offBuffer += "#{report.extra.slack}:\t0 hours\n"
-    response += "```" + logBuffer + "```\n"
+    response += logBuffer + "\n"
     if offBuffer.length > 0
       response += "DAILY OFF-TIME LOG:
                    *#{yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n"
-      response += "```" + offBuffer + "```\n"
+      response += offBuffer + "\n"
     upcomingEvents = Organization.calendar.upcomingEvents()
     if upcomingEvents.length > 0
       now = moment().subtract(1, 'days')
