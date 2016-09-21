@@ -18,6 +18,72 @@ Organization = require('../models/organization').get()
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
+  dailyReport = (reports, today, yesterday) ->
+    PAYROLL = HEADERS.payrollreports
+    response = "DAILY WORK LOG:
+                *#{yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n"
+    logBuffer = ''
+    offBuffer = ''
+
+    for report in reports
+      recorded = false
+      if report[PAYROLL.logged] > 0
+        status = "#{report.extra.slack}:\t\t\t#{report[PAYROLL.logged]} hours"
+        notes = report.extra.notes?.replace('\n', '; ')
+        if notes
+          status += " \"#{notes}\""
+        projectStr = ''
+        if report.extra.projects? and report.extra.projects?.length > 0
+          for project in report.extra.projects
+            projectStr += "##{project.name} "
+        if projectStr
+          projectStr = projectStr.trim()
+          status += " #{projectStr}"
+        status += "\n"
+        logBuffer += "#{status}"
+        recorded = true
+      if report[PAYROLL.vacation] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]}
+                      hours vacation\n"
+        recorded = true
+      if report[PAYROLL.sick] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]}
+                      hours sick\n"
+        recorded = true
+      if report[PAYROLL.unpaid] > 0
+        offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]}
+                      hours unpaid\n"
+        recorded = true
+      if not recorded
+        offBuffer += "#{report.extra.slack}:\t0 hours\n"
+    response += logBuffer + "\n"
+    if offBuffer.length > 0
+      response += "DAILY OFF-TIME LOG:
+                   *#{yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n"
+      response += offBuffer + "\n"
+    upcomingEvents = Organization.calendar.upcomingEvents()
+    if upcomingEvents.length > 0
+      now = moment().subtract(1, 'days')
+      response += "\nUPCOMING EVENTS:\n"
+      for upcomingEvent in upcomingEvents
+        days = upcomingEvent.date.diff(now, 'days')
+        weeks = upcomingEvent.date.diff(now, 'weeks')
+        daysArticle = "day"
+        if days > 1
+          daysArticle += "s"
+        weeksArticle = "week"
+        if weeks > 1
+          weeksArticle += "s"
+
+        if weeks > 0
+          daysRemainder = days % 7 or 0
+          daysArticle = if daysRemainder > 1 then 'days' else 'day'
+          response += "#{upcomingEvent.name} in #{weeks} #{if weeks > 1 then 'weeks' else 'week'}#{if daysRemainder > 0 then ', ' + daysRemainder + ' ' + daysArticle}\n"
+        else
+          response += "*#{upcomingEvent.name}* in *#{days} #{if days > 1 then 'days' else 'day'}*\n"
+
+    return response
+
   generateDailyReportJob = schedule.scheduleJob '0 9 * * *', ->
     if not Organization.ready()
       Logger.warn "Don't make scheduled daily report,
@@ -33,7 +99,7 @@ module.exports = (robot) ->
       .done(
         (reports) ->
           numberDone = reports.length
-          report = Organization.dailyReport reports, today, yesterday
+          report = dailyReport reports, today, yesterday
           Logger.logToChannel report,
                               'bizness-time'
           Logger.logToChannel "Daily report generated for
