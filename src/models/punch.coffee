@@ -643,8 +643,7 @@ _calculateElapsed = (start, end, mode, user) ->
   if mode is 'vacation' or
      mode is 'sick'
     [activeStart, activeEnd] = user.activeHours()
-    activeEnd = activeStart.clone().add(8, 'hours')
-    activeTime = Math.max(8, user.activeTime())
+    activeTime = user.activeTime()
     inactiveTime = +moment(activeStart)
                     .add(1, 'days')
                     .diff(activeEnd, 'hours', true)
