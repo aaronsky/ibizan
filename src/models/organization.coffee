@@ -204,7 +204,7 @@ class Organization
             daysArticle = if daysRemainder > 1 then 'days' else 'day'
             response += "#{upcomingEvent.name} in #{weeks} #{if weeks > 1 then 'weeks' else 'week'}#{if daysRemainder > 0 then ', ' + daysRemainder + ' ' + daysArticle}\n"
           else
-            response += "*#{upcomingEvent.name}* *#{if days > 1 then 'in *' + days + ' days*' else '*tomorrow*'}\n"
+            response += "*#{upcomingEvent.name}* #{if days > 1 then 'in *' + days + ' days*' else '*tomorrow*'}\n"
 
       return response
     resetHounding: () ->
