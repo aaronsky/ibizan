@@ -23,7 +23,7 @@ You must set up your configuration before running Ibizan or else it will not sta
 
 In its current form, Ibizan punch functionality is tightly coupled to the layout of the spreadsheet it pulls from.
 
-1. Make a copy of [this spreadsheet](https://docs.google.com/spreadsheets/d/1dGmUzvCyA7gIVcHxcYumKh8jy9EeFKeH71wUwTocTHQ/edit?usp=sharing). 
+1. Make a copy of [this spreadsheet](https://docs.google.com/spreadsheets/d/11onOdyDh0FqLom80ii5olx_5l_2pAyly3VTZ5BattVw/edit?usp=sharing). 
 2. Fill in all the relevant values in the "Variables" worksheet
 3. Add rows for each of your employees in "Users"
 4. Add a row for each name you want Ibizan to consider a project in "Projects". These are designed to correlate to channel names in Slack, but they don't have to.
