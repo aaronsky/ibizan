@@ -266,7 +266,7 @@ module.exports = (robot) ->
     else
       user.directMessage strings.addfail, Logger
 
-  robot.respond /\bundo$/i, id: 'time.undo', userRequired: true, (res) ->
+  robot.respond /undo/i, id: 'time.undo', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
     if user.punches and user.punches.length > 0
       Logger.addReaction 'clock4', res.message
