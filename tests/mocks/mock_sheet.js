@@ -65,6 +65,7 @@ var createPayrollReportSheet = function () { return createDataSheet('Payroll Rep
 var createEmployeeSheet = function () { return createDataSheet('Employees', 'employees', headers.users); };
 var createVariableSheet = function () { return createDataSheet('Variables', 'variables', headers.variables); };
 var createProjectsSheet = function () { return createDataSheet('Projects', 'projects', headers.projects); };
+var createEventsSheet = function () { return createDataSheet('Events', 'events', headers.events); };
 
 var mockSpreadsheet = {
   title: '',
@@ -74,7 +75,8 @@ var mockSpreadsheet = {
     createPayrollReportSheet(),
     createEmployeeSheet(),
     createVariableSheet(),
-    createProjectsSheet()
+    createProjectsSheet(),
+    createEventsSheet()
   ]
 };
 

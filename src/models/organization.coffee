@@ -4,6 +4,7 @@ Q = require 'q'
 
 { HEADERS } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
+{ Calendar, CalendarEvent } = require './calendar'
 Spreadsheet = require './sheet'
 { Settings } = require './user'
 
@@ -15,24 +16,13 @@ CONFIG =
 
 NAME = process.env.ORG_NAME
 
-class Calendar
-  constructor: (@vacation, @sick, @holidays, @referencePayWeek) ->
-  isPayWeek: () ->
-    return (moment().diff(@referencePayWeek, 'weeks') % 2) is 0
-  description: () ->
-    str = "Organization calendar:\n"
-    for holiday in @holidays
-      str += "This year's #{holiday.name} is on
-              #{holiday.date.format('MM/DD/YYYY')}\n"
-    return str
-
 # Singleton
 class Organization
   instance = null
 
   class OrganizationPrivate
     constructor: (id) ->
-      @name = NAME || 'Bad user'
+      @name = NAME || 'Bad organization name'
       sheet_id = id || CONFIG.sheet_id
       if sheet_id
         @spreadsheet = new Spreadsheet(sheet_id)
@@ -61,8 +51,7 @@ class Organization
               for user in old
                 if newUser = @getUserBySlackName user.slack
                   newUser.settings = Settings.fromSettings user.settings
-            @projects = opts.projects
-            @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek)
+            @calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek, opts.events)
             @clockChannel = opts.clockChannel
             @exemptChannels = opts.exemptChannels
         )
@@ -76,7 +65,7 @@ class Organization
         for user in users
           if name is user.slack
             return user
-      Logger.warn "User #{name} could not be found"
+      Logger.debug "User #{name} could not be found"
     getUserByRealName: (name, users) ->
       if not users
         users = @users
@@ -84,7 +73,7 @@ class Organization
         for user in users
           if name is user.name
             return user
-      Logger.warn "User #{name} could not be found"
+      Logger.debug "Person #{name} could not be found"
     getProjectByName: (name, projects) ->
       if not projects
         projects = @projects
@@ -93,7 +82,29 @@ class Organization
         for project in @projects
           if name is project.name
             return project
-      Logger.warn "Project #{name} could not be found"
+      Logger.debug "Project #{name} could not be found"
+    addEvent: (date, name) ->
+      deferred = Q.defer()
+      date = moment(date, 'MM/DD/YYYY')
+      if not date.isValid()
+        deferred.reject "Invalid date given to addEvent"
+      else if not name? or not name.length > 0
+        deferred.reject "Invalid name given to addEvent"
+
+      calendarevent = new CalendarEvent(date, name)
+      calendar = @calendar
+      @spreadsheet.addEventRow(calendarevent.toEventRow())
+      .then(
+        () ->
+          calendar.events.push calendarevent
+          deferred.resolve calendarevent
+      )
+      .catch(
+        (err) ->
+          deferred.reject "Could not add event row: #{err}"
+      )
+      .done()
+      deferred.promise
     generateReport: (start, end, send=false) ->
       deferred = Q.defer()
       if not @spreadsheet
@@ -130,6 +141,71 @@ class Organization
       else
         deferred.resolve reports
       deferred.promise
+    dailyReport: (reports, today, yesterday) ->
+      PAYROLL = HEADERS.payrollreports
+      response = "DAILY WORK LOG:
+                  *#{yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n"
+      logBuffer = ''
+      offBuffer = ''
+
+      for report in reports
+        recorded = false
+        if report[PAYROLL.logged] > 0
+          status = "#{report.extra.slack}:\t\t\t#{report[PAYROLL.logged]} hours"
+          notes = report.extra.notes?.replace('\n', '; ')
+          if notes
+            status += " \"#{notes}\""
+          projectStr = ''
+          if report.extra.projects? and report.extra.projects?.length > 0
+            for project in report.extra.projects
+              projectStr += "##{project.name} "
+          if projectStr
+            projectStr = projectStr.trim()
+            status += " #{projectStr}"
+          status += "\n"
+          logBuffer += "#{status}"
+          recorded = true
+        if report[PAYROLL.vacation] > 0
+          offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.vacation]}
+                        hours vacation\n"
+          recorded = true
+        if report[PAYROLL.sick] > 0
+          offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.sick]}
+                        hours sick\n"
+          recorded = true
+        if report[PAYROLL.unpaid] > 0
+          offBuffer += "#{report.extra.slack}:\t#{report[PAYROLL.unpaid]}
+                        hours unpaid\n"
+          recorded = true
+        if not recorded
+          offBuffer += "#{report.extra.slack}:\t0 hours\n"
+      response += logBuffer + "\n"
+      if offBuffer.length > 0
+        response += "DAILY OFF-TIME LOG:
+                     *#{yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n"
+        response += offBuffer + "\n"
+      upcomingEvents = @calendar.upcomingEvents()
+      if upcomingEvents.length > 0
+        now = moment().subtract(1, 'days')
+        response += "\nUPCOMING EVENTS:\n"
+        for upcomingEvent in upcomingEvents
+          days = upcomingEvent.date.diff(now, 'days')
+          weeks = upcomingEvent.date.diff(now, 'weeks')
+          daysArticle = "day"
+          if days > 1
+            daysArticle += "s"
+          weeksArticle = "week"
+          if weeks > 1
+            weeksArticle += "s"
+
+          if weeks > 0
+            daysRemainder = days % 7 or 0
+            daysArticle = if daysRemainder > 1 then 'days' else 'day'
+            response += "#{upcomingEvent.name} in #{weeks} #{if weeks > 1 then 'weeks' else 'week'}#{if daysRemainder > 0 then ', ' + daysRemainder + ' ' + daysArticle}\n"
+          else
+            response += "*#{upcomingEvent.name}* #{if days > 1 then 'in *' + days + ' days*' else '*tomorrow*'}\n"
+
+      return response
     resetHounding: () ->
       i = 0
       for user in @users
@@ -144,6 +220,14 @@ class Organization
       for user in @users
         user.settings.fromSettings {
           houndFrequency: frequency
+        }
+        i += 1
+      i
+    setShouldHound: (should) ->
+      i = 0
+      for user in @users
+        user.settings.fromSettings {
+          shouldHound: should
         }
         i += 1
       i

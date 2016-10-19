@@ -10,115 +10,124 @@
 
 moment = require 'moment'
 
-constants = require '../helpers/constants'
-HEADERS = constants.HEADERS
-# TODO: FIX THIS FOR WIDE RELEASE
-ADMINS = ['aaronsky', 'reid', 'ryan']
+{ HEADERS, STRINGS, TIMEZONE } = require '../helpers/constants'
+strings = STRINGS.diagnostics
 
 Organization = require('../models/organization').get()
 
 module.exports = (robot) ->
-
   Logger = require('../helpers/logger')(robot)
 
-  isAdminUser = (user) ->
-    return user? and user in ADMINS
+  robot.respond /uptime/i, id: 'diagnostics.uptime', (res) ->
+    res.send "#{Organization.name}'s Ibizan has been up since
+              #{Organization.initTime.toDate()}
+              _(#{+moment()
+                .diff(Organization.initTime, 'minutes', true)
+                .toFixed(2)}
+              minutes)_"
+    Logger.addReaction 'dog2', res.message
 
-  # Org statistics
-  robot.router.post '/ibizan/diagnostics/info', (req, res) ->
+  robot.respond /users/i, id: 'diagnostics.users', userRequired: true, adminOnly: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    response = 'All users:'
+    attachments = []
+    for u in Organization.users
+      attachments.push u.slackAttachment()
+    user.directMessage response, Logger, attachments
+    Logger.addReaction 'dog2', res.message
+
+  robot.respond /user$/i, id: 'diagnostics.userHelp', adminOnly: true, (res) ->
+    res.send strings.userhelp
+    Logger.addReaction 'dog2', res.message
+
+  robot.respond /user (.*)/i, id: 'diagnostics.user', userRequired: true, adminOnly: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    u = Organization.getUserBySlackName res.match[1]
+    response = "User #{res.match[1]}"
+    if u
+      response += ":"
+      user.directMessage response, Logger, [u.slackAttachment()]
+      Logger.addReaction 'dog2', res.message
+    else
+      response += " could not be found. Make sure you're using their Slack name."
+      user.directMessage response, Logger
+      Logger.addReaction 'x', res.message
+
+  robot.respond /daily report/i, id: 'diagnostics.dailyReport', adminOnly: true, (res) ->
+    yesterday =
+      moment.tz({hour: 0, minute: 0, second: 0}, TIMEZONE).subtract(1, 'days')
+    today = moment.tz({hour: 0, minute: 0, second: 0}, TIMEZONE)
+    Organization.generateReport(yesterday, today)
+      .catch((err) ->
+        Logger.errorToSlack "Failed to produce a daily report", err
+      )
+      .done(
+        (reports) ->
+          numberDone = reports.length
+          report = Organization.dailyReport reports, today, yesterday
+          res.send report
+      )
+    Logger.addReaction 'dog2', res.message
+
+  robot.respond /projects/i, id: 'diagnostics.projects', userRequired: true, adminOnly: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    response = ''
+    for project in Organization.projects
+      response += project.description() + '\n\n'
+    user.directMessage response, Logger
+    Logger.addReaction 'dog2', res.message
+
+  robot.respond /calendar/i, id: 'diagnostics.calendar', userRequired: true, adminOnly: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    user.directMessage Organization.calendar.description(), Logger
+    Logger.addReaction 'dog2', res.message
+
+  robot.respond /sync/i, id: 'diagnostics.sync', (res) ->
+    Logger.addReaction 'clock4', res.message
+    Organization.sync()
+    .catch(
+      (err) ->
+        Logger.errorToSlack "Failed to resync", err
+        Logger.removeReaction 'clock4', res.message
+        Logger.addReaction 'x', res.message
+    )
+    .done(
+      (status) ->
+        res.send "Resynced with spreadsheet"
+        Logger.removeReaction 'clock4', res.message
+        Logger.addReaction 'dog2', res.message
+    )
+
+  robot.router.post '/diagnostics/sync', (req, res) ->
     body = req.body
-    if body.token is process.env.SLASH_INFO_TOKEN
-      res.status 200
-      response = {
-        "text": "#{Organization.name}'s Ibizan has been up since
-                  #{Organization.initTime.toDate()}
-                  (#{+moment()
-                    .diff(Organization.initTime, 'minutes', true)
-                    .toFixed(2)}
-                  minutes)",
-        "response_type": "in_channel"
+    if not Organization.ready()
+      res.status 401
+      res.json {
+        "text": "Organization is not ready to resync"
       }
     else
-      res.status 401
-      response =  {
-        "text": "Bad token in Ibizan configuration"
-      }
-    res.json response
-
-  robot.router.post '/ibizan/diagnostics/users', (req, res) ->
-    body = req.body
-    if body.token is process.env.SLASH_USERS_TOKEN
-      if not isAdminUser body.user_name
-        res.status 403
-        response = 'You must be an admin in order to access this command.'
-      else
-        res.status 200
-        response = ''
-        for user in Organization.users
-          response += user.description() + '\n\n'
-    else
-      res.status 401
-      response = "Bad token in Ibizan configuration"
-    res.json {
-      "text": response
-    }
-    
-  robot.router.post '/ibizan/diagnostics/projects', (req, res) ->
-    body = req.body
-    if body.token is process.env.SLASH_PROJECTS_TOKEN
-      if not isAdminUser body.user_name
-        res.status 403
-        response = 'You must be an admin in order to access this command.'
-      else
-        res.status 200
-        response = ''
-        for project in Organization.projects
-          response += project.description() + '\n\n'
-    else
-      res.status 401
-      response = "Bad token in Ibizan configuration"
-    res.json {
-      "text": response
-    }
-    
-  robot.router.post '/ibizan/diagnostics/calendar', (req, res) ->
-    body = req.body
-    if body.token is process.env.SLASH_CALENDAR_TOKEN
-      if not isAdminUser body.user_name
-        res.status 403
-        response = 'You must be an admin in order to access this command.'
-      else
-        res.status 200
-        response = Organization.calendar.description()
-    else
-      res.status 401
-      response = "Bad token in Ibizan configuration"
-    res.json {
-      "text": response
-    }
-    
-  robot.router.post '/ibizan/diagnostics/sync', (req, res) ->
-    body = req.body
-    if body.token is process.env.SLASH_SYNC_TOKEN
-      response_url = body.response_url
+      response_url = body.response_url || null
       if response_url
-        Organization.sync()
-        .catch(
-          (err) ->
-            Logger.errorToSlack "Failed to resync", err
-            Logger.log "POSTing to #{response_url}"
-            payload =
-              text: 'Failed to resync'
+        Logger.log "POSTing to #{response_url}"
+      Organization.sync()
+      .catch(
+        (err) ->
+          message = "Failed to resync"
+          Logger.errorToSlack message, err
+          payload =
+            text: message
+          if response_url
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post(JSON.stringify(payload))
-        )
-        .done(
-          (status) ->
-            Logger.log "Options have been re-loaded"
-            Logger.log "POSTing to #{response_url}"
-            payload =
-              text: 'Re-synced with spreadsheet'
+      )
+      .done(
+        (status) ->
+          message = "Resynced with spreadsheet"
+          Logger.log message
+          payload =
+            text: message
+          if response_url
             robot.http(response_url)
             .header('Content-Type', 'application/json')
             .post(JSON.stringify(payload)) (err, response, body) ->
@@ -129,66 +138,14 @@ module.exports = (robot) ->
                 response.send "Request didn't come back HTTP 200 :("
                 return
               Logger.log body
-        )
-        res.status 200
-        res.json {
-          "text": "Beginning to resync..."
-        }
-      else
-        res.status 500
-        res.json {
-          "text": "No return url provided by Slack"
-        }
-    else
-      res.status 401
+      )
+      res.status 200
       res.json {
-        "text": "Bad token in Ibizan configuration"
+        "text": "Beginning to resync..."
       }
 
-  robot.router.post '/ibizan/diagnostics/help', (req, res) ->
-    body = req.body
-    if body.token is process.env.SLASH_HELP_TOKEN
-      res.status 200
-      response = "Ibizan Help\n
-                  \n
-                  To clock in with Ibizan, either @mention him in a public
-                  channel, use the slash command, or DM him directly without
-                  the @mention. Your command should follow this format:\n
-                  \n
-                  `@ibizan [mode] [time] [date] [project] [notes]`\n
-                  \n
-                  Examples:\n
-                  @ibizan in\n
-                  @ibizan out\n
-                  @ibizan in at 9:15\n
-                  @ibizan out 4:30p yesterday\n
-                  @ibizan in #project-name\n
-                  @ibizan 3.5 hours today\n
-                  \n
-                  Punches can be `in`, `out`, `vacation`, `sick` or `unpaid`
-                  punches. You can also clock in independent blocks of time.
-                  Projects must be registered in the worksheet labeled
-                  'Projects' in the Ibizan spreadsheet, and won't be recognized
-                  as projects in a command without a pound-sign
-                  (i.e. #fight-club).\n
-                  \n
-                  If something is wrong with your punch, you can undo it by
-                  doing `@ibizan undo`. You can also modify it manually using
-                  the Ibizan spreadsheet, in the worksheet labeled 'Raw Data'.
-                  If you want to see how much time you've worked today, do
-                  `@ibizan today?`.\n
-                  \n
-                  If you make any manual changes to the spreadsheet, you should
-                  run `/sync`. Running this resyncs Ibizan with the spreadsheet.
-                  Do to some existing limitations in Google Sheets, changes
-                  made directly to the spreadsheet are not immediately
-                  reflected by Ibizan and must be followed up with a resync.\n
-                  \n
-                  For more documentation, please check out
-                  https://github.com/ibizan/ibizan.github.io/wiki"
-    else
-      res.status 401
-      response = "Bad token in Ibizan configuration"
-    res.json {
-      "text": response
-    }
+  # Ibizan responds to cries for help
+  robot.respond /.*(help|docs|documentation|commands).*/i, id: 'diagnostics.help', (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    user.directMessage strings.help, Logger
+    Logger.addReaction 'dog2', res.message

@@ -2,9 +2,7 @@
 moment = require 'moment-timezone'
 Q = require 'q'
 
-constants = require '../helpers/constants'
-HEADERS = constants.HEADERS
-TIMEZONE = constants.TIMEZONE
+{ HEADERS, TIMEZONE } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
 
 getPositiveNumber = (input, current) ->
@@ -23,10 +21,15 @@ class Timetable
   constructor: (@start, @end, @timezone) ->
     if typeof @timezone is 'string'
       @timezone = moment.tz.zone(@timezone)
-    @start = @start.tz(@timezone.name)
-    @end = @end.tz(@timezone.name)
+    @startRaw = @start
+    @endRaw = @end
+    @start = moment.tz(@start, 'hh:mm a', @timezone.name)
+    @end = moment.tz(@end, 'hh:mm a', @timezone.name)
   activeHours: ->
-    [@start, @end]
+    now = moment.tz @timezone.name
+    start = @start.year(now.year()).dayOfYear(now.dayOfYear())
+    end = @end.year(now.year()).dayOfYear(now.dayOfYear())
+    [start, end]
   activeTime: ->
     rawTime = +(@end.diff(@start, 'hours', true).toFixed(2))
     return Math.min(8, rawTime)
@@ -44,6 +47,16 @@ class Timetable
     @loggedTotal = getPositiveNumber(total, @loggedTotal)
   setAverageLogged: (average) ->
     @averageLoggedTotal = getPositiveNumber(average, @averageLoggedTotal)
+  setTimezone: (timezone) ->
+    @timezone = timezone
+    @start = moment.tz(@startRaw, 'hh:mm a', @timezone.name)
+    @end = moment.tz(@endRaw, 'hh:mm a', @timezone.name)
+  setStart: (start) ->
+    @startRaw = start
+    @start = moment.tz(@startRaw, 'hh:mm a', @timezone.name)
+  setEnd: (end) ->
+    @endRaw = end
+    @end = moment.tz(@endRaw, 'hh:mm a', @timezone.name)
 
 class Settings
   constructor: () ->
@@ -76,7 +89,7 @@ class User
           row[header] = '12:00 am'
         else if row[header] is 'noon'
           row[header] = '12:00 pm'
-        temp[key] = moment.tz(row[header], 'hh:mm a', constants.TIMEZONE)
+        temp[key] = row[header]
       else if header is headers.salary
         temp[key] = row[header] is 'Y'
       else if header is headers.timezone
@@ -84,10 +97,27 @@ class User
           temp[key] = zone
         else
           temp[key] = row[header]
+      else if header is headers.shouldHound
+        temp[key] = row[header] is 'Y'
+      else if header is headers.houndFrequency
+        temp[key] = row[header] || -1
+        if temp[key] is -1
+          temp.shouldResetHound = false
+        else
+          temp.shouldResetHound = true
       else if header is headers.overtime
         continue
+      else if header is headers.lastPing
+        tz = TIMEZONE
+        if temp.timezone
+          tz = temp.timezone.name
+        lastPing = moment.tz(row[header], 'MM/DD/YYYY hh:mm:ss A', tz)
+        if lastPing.isValid()
+          temp[key] = lastPing
+        else
+          temp[key] = moment.tz(tz).subtract(1, 'days')
       else
-        if isNaN(row[header])
+        if isNaN row[header]
           temp[key] = row[header].trim()
         else
           temp[key] = parseInt row[header]
@@ -98,18 +128,44 @@ class User
     timetable.setLogged(temp.totalLogged)
     timetable.setAverageLogged(temp.averageLogged)
     user = new User(temp.name, temp.slackname, temp.salary, timetable, row)
+    user.settings = Settings.fromSettings {
+      shouldHound: temp.shouldHound,
+      shouldResetHound: temp.shouldResetHound,
+      houndFrequency: temp.houndFrequency,
+      lastMessage: null,
+      lastPing: temp.lastPing
+    }
     return user
   activeHours: ->
     return @timetable.activeHours()
   activeTime: ->
     return @timetable.activeTime()
+  setTimezone: (timezone) ->
+    tz = moment.tz.zone(timezone)
+    if tz
+      @timetable.setTimezone(tz)
+      @updateRow()
+    return tz
+  setStart: (start) ->
+    time = moment(start, 'h:mm A')
+    if time
+      @timetable.setStart(time)
+      @updateRow()
+    return time
+  setEnd: (end) ->
+    time = moment(end, 'h:mm A')
+    if time
+      @timetable.setEnd(time)
+      @updateRow()
+    return time
   toDays: (hours) ->
     return @timetable.toDays hours
   isInactive: (current) ->
-    current = current || moment()
+    current = current || moment.tz(@timetable.timezone.name)
+    [start, end] = @activeHours()
     if current.holiday()?
       return true
-    else if current.isBetween(@timetable.start, @timetable.end)
+    else if current.isBetween(start, end)
       return false
     else
       return true
@@ -127,9 +183,32 @@ class User
         else if last.mode in modes
           return last
     return
+  lastPunchTime: ->
+    if @punches.length > 0
+      punch = @lastPunch()
+      if punch.times.length > 0
+        time = punch.times.slice(-1)[0]
+        if time.isSame(moment(), 'day')
+          date = 'today'
+        else if time.isSame(moment().subtract(1, 'days'), 'day')
+          date = 'yesterday'
+        else
+          date = 'on ' + time.format('MMM Do')
+        return "#{date}, #{time.format('h:mm a')}"
+      else if punch.times.block
+        if punch.mode is 'none'
+          type = ' '
+        else if punch.mode is 'vacation' or
+                punch.mode is 'sick' or
+                punch.mode is 'unpaid'
+          type = punch.mode + ' '
+        return "a #{punch.times.block} hour #{type}block punch"
+    return "never"
   undoPunch: () ->
     deferred = Q.defer()
     lastPunch = @lastPunch()
+    that = @
+    Logger.log "Undoing #{that.slack}'s punch: #{lastPunch.description(that)}"
     if lastPunch.times.block
       elapsed = lastPunch.times.block
     else
@@ -192,7 +271,7 @@ class User
   toRawPayroll: (start, end) ->
     headers = HEADERS.payrollreports
     row = {}
-    row[headers.date] = moment.tz(constants.TIMEZONE).format('M/DD/YYYY')
+    row[headers.date] = moment.tz(TIMEZONE).format('M/DD/YYYY')
     row[headers.name] = @name
     loggedTime = unpaidTime = vacationTime = sickTime = 0
     projectsForPeriod = []
@@ -258,6 +337,11 @@ class User
     deferred = Q.defer()
     if @row?
       headers = HEADERS.users
+      @row[headers.start] = @timetable.start.format('h:mm A')
+      @row[headers.end] = @timetable.end.format('h:mm A')
+      @row[headers.timezone] = @timetable.timezone.name
+      @row[headers.shouldHound] = if @settings?.shouldHound then 'Y' else 'N'
+      @row[headers.houndFrequency] = if @settings?.houndFrequency then @settings.houndFrequency else -1
       @row[headers.vacationAvailable] = @timetable.vacationAvailable
       @row[headers.vacationLogged] = @timetable.vacationTotal
       @row[headers.sickAvailable] = @timetable.sickAvailable
@@ -266,6 +350,7 @@ class User
       @row[headers.overtime] = Math.max(0, @timetable.loggedTotal - 80)
       @row[headers.totalLogged] = @timetable.loggedTotal
       @row[headers.averageLogged] = @timetable.averageLoggedTotal
+      @row[headers.lastPing] = if @settings?.lastPing then moment.tz(@settings.lastPing, @timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A') else moment.tz(@timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A')
       @row.save (err) ->
         if err
           deferred.reject err
@@ -274,34 +359,82 @@ class User
     else
       deferred.reject 'Row is null'
     deferred.promise
-  directMessage: (msg, logger=Logger) ->
-    logger.logToChannel msg, @slack
+  directMessage: (msg, logger=Logger, attachment) ->
+    logger.logToChannel msg, @slack, attachment, true
+  hound: (msg, logger=Logger) ->
+    now = moment.tz TIMEZONE
+    @settings?.lastPing = now
+    me = @
+    if not @salary and @settings?.houndFrequency > 0
+      msg = "You have been on the clock for
+             #{@settings.houndFrequency} hours.\n" + msg
+    setTimeout ->
+      me.directMessage msg, logger
+    , 1000 * (Math.floor(Math.random() * 3) + 1)
+    Logger.log "Hounded #{@slack} with '#{msg}'"
+    @updateRow()
+  hexColor: ->
+    hash = 0
+    for i in [0...@slack.length]
+      hash = @slack.charCodeAt(i) + ((hash << 3) - hash)
+    color = Math.abs(hash).toString(16).substring(0, 6)
+    hexColor = "#" + '000000'.substring(0, 6 - color.length) + color
+    return hexColor
+  slackAttachment: () ->
+    fields = []
+    statusString = "#{if @salary then 'Salary' else 'Hourly'} -
+                    Active #{@timetable.start.format('h:mm a')} to
+                    #{@timetable.end.format('h:mm a z')}"
+    lastPunch = @lastPunch()
+    if lastPunch
+      lastPunchField =
+        title: "Last Punch"
+        value: "#{lastPunch.description(@)}"
+        short: true
+      fields.push lastPunchField
+    houndString = "#{if @settings?.shouldHound then 'On' else 'Off'}"
+    if @settings?.shouldHound
+      houndString += " (#{@settings?.houndFrequency} hours)"
+    houndField =
+      title: "Hounding"
+      value: houndString
+      short: true
+    fields.push houndField
+    if @salary
+      vacationDaysField =
+        title: "Vacation Days"
+        value: "#{@timetable.vacationAvailable} available,
+                #{@timetable.vacationTotal} used"
+        short: true
+      fields.push vacationDaysField
+      sickDaysField =
+        title: "Sick Days"
+        value: "#{@timetable.sickAvailable} available,
+                #{@timetable.sickTotal} used"
+        short: true
+      fields.push sickDaysField
+    if @unpaidTotal > 0
+      unpaidField =
+        title: "Unpaid Days"
+        value: "#{@timetable.unpaidTotal} used"
+        short: true
+      fields.push unpaidField
+    attachment =
+      title: @name + " (@" + @slack + ")",
+      text: statusString,
+      fallback: @name.replace(/\W/g, '') + " @" + @slack.replace(/\W/g, '')
+      color: @hexColor()
+      fields: fields
+    return attachment
   description: () ->
-    if @punches.length > 0
-      punch = @lastPunch()
-      if punch.times.length > 0
-        time = punch.times.slice(-1)[0]
-        if time.isSame(moment(), 'day')
-          date = 'today'
-        else if time.isSame(moment().subtract(1, 'days'), 'day')
-          date = 'yesterday'
-        else
-          date = 'on ' + time.format('MMM Do')
-        punchTime = "#{date}, #{time.format('h:mm a')}"
-      else if punch.times.block
-        if punch.mode is 'none'
-          type = ' '
-        else if punch.mode is 'vacation' or
-                punch.mode is 'sick' or
-                punch.mode is 'unpaid'
-          type = punch.mode + ' '
-        punchTime = "a #{punch.times.block} hour #{type}block punch"
     return "User: #{@name} (#{@slack})\n
             They have #{(@punches || []).length} punches on record\n
-            Last punch was #{punchTime}\n
-            Their active hours are from #{@timetable.start.format('h:mm a')} to #{@timetable.end.format('h:mm a')}\n
+            Last punch was #{@lastPunchTime()}\n
+            Their active hours are from #{@timetable.start.format('h:mm a')} to
+            #{@timetable.end.format('h:mm a')}\n
             They are in #{@timetable.timezone.name}\n
-            The last time they sent a message was #{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
+            The last time they sent a message was
+            #{+(moment.tz(TIMEZONE).diff(@settings?.lastMessage?.time, 'hours', true).toFixed(2))} hours ago"
 
 module.exports.User = User
 module.exports.Settings = Settings

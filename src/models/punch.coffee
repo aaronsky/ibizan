@@ -3,9 +3,8 @@ moment = require 'moment-timezone'
 weekend = require 'moment-weekend'
 uuid = require 'node-uuid'
 
-{ HEADERS, REGEX, TIMEZONE } = require '../helpers/constants'
+{ HEADERS, MODES, REGEX, TIMEZONE } = require '../helpers/constants'
 Logger = require('../helpers/logger')()
-MODES = ['in', 'out', 'vacation', 'unpaid', 'sick']
 Organization = require('./organization').get()
 
 class Punch
@@ -28,10 +27,10 @@ class Punch
     original = command.slice 0
 
     [start, end] = user.activeHours()
-    [times, command] = _parseTime command, start, end
+    tz = timezone or user.timetable.timezone.name
+    [times, command] = _parseTime command, start, end, timezone
     [dates, command] = _parseDate command
 
-    tz = timezone || user.timetable.timezone.name
     datetimes = []
     if dates.length is 0 and times.length is 0
       datetimes.push(moment.tz(tz))
@@ -76,12 +75,12 @@ class Punch
     notes = command.trim()
 
     punch = new Punch(mode, datetimes, projects, notes)
-    punch.date = datetimes[0] || date || moment.tz(tz)
+    punch.date = datetimes[0] or date or moment.tz(tz)
     punch.timezone = tz
     if elapsed
       punch.elapsed = elapsed
     punch
-  
+
   @parseRaw: (user, row, projects = []) ->
     if not user
       return
@@ -91,6 +90,14 @@ class Punch
       return
     headers = HEADERS.rawdata
     date = moment.tz(row[headers.today], 'MM/DD/YYYY', TIMEZONE)
+
+    # UUID sanity check
+    if row[headers.id].length != 36
+      Logger.debug "#{row[headers.id]} is not a valid UUID,
+                    changing to valid UUID"
+      row[headers.id] = uuid.v1()
+      Organization.spreadsheet.saveRow(row)
+
     if row[headers.project1] is 'vacation' or
        row[headers.project1] is 'sick' or
        row[headers.project1] is 'unpaid'
@@ -126,6 +133,8 @@ class Punch
         else
           comp = parseInt comp
           rawElapsed += +(comp / Math.pow 60, i).toFixed(2)
+      if isNaN rawElapsed
+        rawElapsed = 0
     if row[headers.blockTime]
       comps = row[headers.blockTime].split ':'
       block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60)
@@ -135,17 +144,23 @@ class Punch
         datetimes[1].add(1, 'days')
       elapsed = _calculateElapsed datetimes[0], datetimes[1], mode, user
       if elapsed < 0
-        Logger.error 'Invalid punch row: elapsed time is less than 0', new Error(datetimes)
+        Logger.error 'Invalid punch row: elapsed time is less than 0',
+                     new Error(datetimes)
         return
-      else if elapsed isnt rawElapsed
+      else if elapsed isnt rawElapsed and
+              (rawElapsed is undefined or Math.abs(elapsed - rawElapsed) > 0.02)
+        Logger.debug "#{row[headers.id]} - Updating totalTime because #{elapsed}
+                      is not #{rawElapsed} - #{Math.abs(elapsed - rawElapsed)}"
         hours = Math.floor elapsed
         minutes = Math.round((elapsed - hours) * 60)
         minute_str = if minutes < 10 then "0#{minutes}" else minutes
         row[headers.totalTime] = "#{hours}:#{minute_str}:00.000"
-        row.save (err) ->
-          if err
-            Logger.error err
-    
+        Organization.spreadsheet.saveRow(row)
+        .catch(
+          (err) ->
+            Logger.error 'Unable to save row', new Error(err)
+        ).done()
+
     foundProjects = []
     for i in [1..6]
       projectStr = row[headers['project'+i]]
@@ -196,7 +211,7 @@ class Punch
 
   appendNotes: (notes = '') ->
     if @notes and @notes.length > 0
-      @notes += '\n'
+      @notes += ', '
     @notes += notes
 
   out: (punch) ->
@@ -206,7 +221,8 @@ class Punch
        @mode is 'in' and
        @times.length is 1
       if punch.times.block?
-        newTime = moment.tz(@times[0], @timezone).add(punch.times.block, 'hours')
+        newTime = moment.tz(@times[0], @timezone)
+                        .add(punch.times.block, 'hours')
       else
         newTime = moment.tz(punch.times[0], punch.timezone)
         if newTime.isBefore @times[0]
@@ -222,10 +238,10 @@ class Punch
   toRawRow: (name) ->
     headers = HEADERS.rawdata
     today = moment.tz(TIMEZONE)
-    row = @row || {}
-    row[headers.id] = row[headers.id] || uuid.v1()
-    row[headers.today] = row[headers.today] || @date.format('MM/DD/YYYY')
-    row[headers.name] = row[headers.name] || name
+    row = @row or {}
+    row[headers.id] = row[headers.id] or uuid.v1()
+    row[headers.today] = row[headers.today] or @date.format('MM/DD/YYYY')
+    row[headers.name] = row[headers.name] or name
     if @times.block?
       block = @times.block
       hours = Math.floor block
@@ -235,7 +251,8 @@ class Punch
     else
       for i in [0..1]
         if time = @times[i]
-          row[headers[MODES[i]]] = time.tz(TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
+          row[headers[MODES[i]]] =
+            time.tz(TIMEZONE).format('MM/DD/YYYY hh:mm:ss A')
         else
           row[headers[MODES[i]]] = ''
       if @elapsed
@@ -276,13 +293,13 @@ class Punch
       date = @times[0]
     if @mode is 'none' and not elapsed
       return 'This punch is malformed and could not be properly interpreted.
-              If you believe this is a legitimate error, please DM a maintainer.'
+              If you believe this is a legitimate error, please DM an admin.'
     else if @mode is 'in'
       # if mode is 'in' and user has not punched out
       if last = user.lastPunch 'in'
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at
-                #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
+                *#{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}*."
       else if @times
         yesterday = moment().subtract(1, 'days').startOf('day')
         for time in @times
@@ -294,12 +311,21 @@ class Punch
                     a block-time punch.'
     else if @mode is 'out'
       if lastIn = user.lastPunch 'in'
-        return true
+        if not lastIn.notes and
+           not lastIn.projects.length > 0 and
+           not @notes and
+           not @projects.length > 0
+          return "You must add either a project or some notes to your punch.
+                  You can do this along with your out-punch using this format:\n
+                  `ibizan out [either notes or #projects]`"
+        else
+          return true
       last = user.lastPunch 'out', 'vacation', 'unpaid', 'sick'
-      time = last.times[0].tz(user.timetable.timezone.name)
+      time = last.times[1].tz(user.timetable.timezone.name) or
+             last.times[0].tz(user.timetable.timezone.name)
       return "You cannot punch out before punching in. Your last
-              out-punch was at #{time.format('h:mma')} on
-              #{time.format('dddd, MMMM Do')}."
+              out-punch was at *#{time.format('h:mma')} on
+              #{time.format('dddd, MMMM Do')}*."
     # if mode is 'unpaid' and user is non-salary
     else if @mode is 'unpaid' and not user.salary
       return 'You aren\'t eligible to punch for unpaid time because you\'re
@@ -311,22 +337,22 @@ class Punch
       if last and not @times.block?
         time = last.times[0].tz(user.timetable.timezone.name)
         return "You haven't punched out yet. Your last in-punch was at
-                #{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}."
+                *#{time.format('h:mma')} on #{time.format('dddd, MMMM Do')}*."
       if elapsed
         # if mode is 'vacation' and user doesn't have enough vacation time
         elapsedDays = user.toDays(elapsed)
         if @mode is 'vacation' and
            user.timetable.vacationAvailable < elapsedDays
           return "This punch exceeds your remaining vacation time. You\'re
-                  trying to add #{elapsedDays} days worth of vacation time
-                  but you only have #{user.timetable.vacationAvailable} days
+                  trying to add *#{elapsedDays} days* worth of vacation time
+                  but you only have *#{user.timetable.vacationAvailable} days*
                   left."
         # if mode is 'sick' and user doesn't have enough sick time
         else if @mode is 'sick' and
                 user.timetable.sickAvailable < elapsedDays
           return "This punch exceeds your remaining sick time. You\'re
-                  trying to add #{elapsedDays} days worth of sick time
-                  but you only have #{user.timetable.sickAvailable} days
+                  trying to add *#{elapsedDays} days* worth of sick time
+                  but you only have *#{user.timetable.sickAvailable} days*
                   left."
         # if mode is 'vacation' and time isn't divisible by 4
         # if mode is 'sick' and time isn't divisible by 4
@@ -343,7 +369,62 @@ class Punch
               on the Ibizan spreadsheet and run `/sync`.'
     return true
 
-  description: (user) ->
+  slackAttachment: () ->
+    fields = []
+    color = "#33BB33"
+    elapsed =
+     punchDate = ''
+    if @times.block?
+      elapsed = "#{@times.block} hours on "
+    else if @elapsed?
+      elapsed = "#{@elapsed} hours on "
+    if @mode is 'vacation' or
+       @mode is 'sick' or
+       @mode is 'unpaid'
+      elapsed += " #{@mode} hours on "
+
+    headers = HEADERS.rawdata
+    if @row and @row[headers.today]
+      punchDate =
+        moment(@row[headers.today], "MM/DD/YYYY").format("dddd, MMMM Do YYYY")
+
+    notes = @notes or ''
+    if @projects and @projects.length > 0
+      projects = @projects.map((el) ->
+        return "##{el.name}"
+      ).join(', ')
+      if notes is ''
+        notes = projects
+      else
+        notes = projects + "\n" + notes
+    if @mode is 'vacation' or
+       @mode is 'sick'
+      color = "#3333BB"
+    else if @mode is 'unpaid'
+      color = "#BB3333"
+    else
+      if @times[0]
+        inField =
+          title: "In"
+          value: moment.tz(@times[0], @timezone).format("h:mm:ss A")
+          short: true
+        punchDate = @times[0].format("dddd, MMMM Do YYYY")
+        fields.push inField
+      if @times[1]
+        outField =
+          title: "Out"
+          value: moment.tz(@times[1], @timezone).format("h:mm:ss A")
+          short: true
+        fields.push outField
+
+    attachment =
+      title: elapsed + punchDate
+      text: notes
+      fields: fields
+      color: color
+    return attachment
+
+  description: (user, full=false) ->
     modeQualifier =
      timeQualifier =
      elapsedQualifier =
@@ -399,11 +480,14 @@ class Punch
       else
         minutesStr = "#{minutes} minutes"
       elapsedQualifier = " (#{hoursStr}#{if hours > 0 and minutes > 0 then ', ' else ''}#{minutesStr})"
+
     if @mode is 'vacation' or
        @mode is 'sick' or
        @mode is 'unpaid'
       if blockTimeQualifier?
-        modeQualifier = "for #{article} #{blockTimeQualifier} #{@mode}-block"
+        modeQualifier = "for #{article} #{blockTimeQualifier} #{@mode} block"
+      else
+        modeQualifier = "for #{@mode}"
     else if @mode is 'none' and blockTimeQualifier?
       modeQualifier = "for #{article} #{blockTimeQualifier} block"
     else
@@ -430,11 +514,16 @@ class Punch
         notesQualifier = ')'
     if warnings
       for warning in warnings.projects
-        warningQualifier += "Warning: #{warning} isn't a registered project. It is stored in this punch's notes rather than as a project.\n"
+        warningQualifier += " (Warning: #{warning} isn't a registered project.
+                             It is stored in this punch's notes rather
+                             than as a project.)"
       for warning in warnings.other
-        warningQualifier += "Warning: #{warning} isn't a recognized input. This is stored this punch's notes.\n"
-    description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}.\n#{warningQualifier}"
-
+        warningQualifier += " (Warning: #{warning} isn't a recognized input.
+                            This is stored this punch's notes.)"
+    if full
+      description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}#{projectsQualifier}#{notesQualifier}#{warningQualifier}"
+    else
+      description = "#{modeQualifier}#{timeQualifier}#{elapsedQualifier}"
     return description
 
 _mergeDateTime = (date, time, tz=TIMEZONE) ->
@@ -450,16 +539,16 @@ _mergeDateTime = (date, time, tz=TIMEZONE) ->
 _parseMode = (command) ->
   comps = command.split ' '
   [mode, command] = [comps.shift(), comps.join ' ']
-  mode = (mode || '').toLowerCase().trim()
-  command = (command || '').trim()
+  mode = (mode or '').toLowerCase().trim()
+  command = (command or '').trim()
   if mode in MODES
     [mode, command]
   else
     ['none', command]
 
-_parseTime = (command, activeStart, activeEnd) ->
+_parseTime = (command, activeStart, activeEnd, tz) ->
   # parse time component
-  command = command.trimLeft() || ''
+  command = command.trimLeft() or ''
   if command.indexOf('at') is 0
     command = command.replace 'at', ''
     command = command.trimLeft()
@@ -487,7 +576,7 @@ _parseTime = (command, activeStart, activeEnd) ->
     command = command.replace ///#{match[0]} ?///i, ''
   else if match = command.match REGEX.time
     timeMatch = match[0]
-    now = moment()
+    now = moment.tz(tz)
     if hourStr = timeMatch.match /\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i
       hour = parseInt(hourStr[0].replace(':', ''))
       if hour <= 12
@@ -504,7 +593,7 @@ _parseTime = (command, activeStart, activeEnd) ->
   [time, command]
 
 _parseDate = (command) ->
-  command = command.trimLeft() || ''
+  command = command.trimLeft() or ''
   if command.indexOf('on') is 0
     command = command.replace 'on', ''
     command = command.trimLeft()
@@ -581,19 +670,16 @@ _calculateElapsed = (start, end, mode, user) ->
 
 _parseProjects = (command) ->
   projects = []
-  command = command.trimLeft() || ''
+  command = command.trimLeft() or ''
   if command.indexOf('in') is 0
     command = command.replace 'in', ''
     command = command.trimLeft()
   command_copy = command.split(' ').slice()
 
   for word in command_copy
-    if word.charAt(0) is '#'
-      if project = Organization.getProjectByName word
-        projects.push project
-        command = command.replace ///#{word} ?///i, ''
-    else
-      break
+    if project = Organization.getProjectByName word
+      projects.push project
+      command = command.replace ///#{word} ?///i, ''
   [projects, command]
 
 module.exports = Punch

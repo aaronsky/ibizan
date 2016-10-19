@@ -102,16 +102,15 @@ describe 'User', ->
       expect(elapsed).to.equal 8
   describe '#isInactive()', ->
     it 'should be true when it is earlier than the start time', ->
-      start = @user.timetable.start
+      [start, end] = @user.activeHours()
       time = moment(start).subtract(2, 'hours')
       expect(@user.isInactive(time)).to.be.true
     it 'should be true when it is later than the end time', ->
-      end = @user.timetable.end
+      [start, end] = @user.activeHours()
       time = moment(end).add(2, 'hours')
       expect(@user.isInactive(time)).to.be.true
     it 'should be false when it is in between the start and end time', ->
-      start = @user.timetable.start
-      end = @user.timetable.end
+      [start, end] = @user.activeHours()
       time = moment(start).add(end.diff(start, 'hours') / 2, 'hours')
       expect(@user.isInactive(time)).to.be.false
   describe '#undoPunch()', ->
