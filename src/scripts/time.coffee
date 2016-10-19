@@ -4,49 +4,76 @@
 # Commands:
 #   ibizan in - Punch in at the current time and date
 #   ibizan out - Punch out at the current time and date
-#   ibizan in #project1 - Punch in at the current time and assigns the current project to #project1
-#   ibizan out #project1 #project2 - Punch out at the current time and splits the worked time since last in-punch between #project1 and #project2
+#   ibizan in #project1 - Punch in at the current time and assigns the current
+#                         project to #project1
+#   ibizan out #project1 #project2 - Punch out at the current time and splits
+#                                    the worked time since last in-punch between
+#                                    #project1 and #project2
 #   ibizan in 9:15 - Punch in at 9:15am today
 #   ibizan out 7pm yesterday - Punch out yesterday at 7pm
-#   ibizan in 17:00 #project3 - Punch in at 5pm and assigns the time until next out-punch to #project3
+#   ibizan in 17:00 #project3 - Punch in at 5pm and assigns the time until next
+#                               out-punch to #project3
 #   ibizan 1.5 hours - Append 1.5 hours to today's total time
 #   ibizan 2 hours yesterday - Append 2 hours on to yesterday's total time
-#   ibizan 3.25 hours tuesday #project1 - Append 3.25 hours on to Tuesday's total time and assigns it to #project1
-#   ibizan vacation today - flags the user’s entire day as vacation time
-#   ibizan sick half-day - flags half the user’s day as sick time
-#   ibizan vacation half-day yesterday - flags half the user’s previous day (4 hours) as vacation time
-#   ibizan sick Jul 6-8 - flags July 6-8 of this year as sick time
-#   ibizan vacation 1/28 - 2/4 - flags January 28th to February 4th of this year as vacation time.
+#   ibizan 3.25 hours tuesday #project1 - Append 3.25 hours on to Tuesday's
+#                                         total time and assigns it to #project1
+#   ibizan vacation today - Flags the user’s entire day as vacation time
+#   ibizan sick half-day - Flags half the user’s day as sick time
+#   ibizan vacation half-day yesterday - Flags half the user’s previous day
+#                                        (4 hours) as vacation time
+#   ibizan sick Jul 6-8 - Flags July 6-8 of this year as sick time
+#   ibizan vacation 1/28 - 2/4 - Flags January 28th to February 4th of this year
+#                                as vacation time.
+#
+#   ibizan hours - Replies with helpful info for hours? and hours [date]
+#   ibizan hours 8/4 - Replies with punches recorded on a given date
+#   ibizan hours? - Replies with the user's total time for today, with punches
+#   ibizan today? - Replies with the user's total time for today, with punches
+#   ibizan week? - Replies with the user's total time for the week, with punches
+#   ibizan month? - Replies with the user's total time for the month
+#   ibizan year? - Replies with the user's total time for the year
+#   ibizan status - Replies with the user's Employee sheet info
+#   ibizan time - Replies with the current time in both Ibizan's default
+#                 timezone and the user's timezone
+#   ibizan timezone - Replies with the user's timezone
+#   ibizan timezone america/chicago - Sets the user's timezone
 #
 # Notes:
-#   All dates are formatted in MM/DD notation with no support for overriding year. Ibizan will extrapolate year from your ranges, even if it stretches over multiple years.
+#   All dates are formatted in MM/DD notation with no support for overriding
+#   year. Ibizan will extrapolate year from your ranges, even if it stretches
+#   over multiple years.
 #
 # Author:
 #   aaronsky
 
 moment = require 'moment-timezone'
 
-{ REGEX, HEADERS, TIMEZONE } = require '../helpers/constants'
+{ REGEX, HEADERS, STRINGS, TIMEZONE } = require '../helpers/constants'
 Organization = require('../models/organization').get()
 Punch = require '../models/punch'
+Q = require 'q'
 User = require '../models/user'
+strings = STRINGS.time
 
 module.exports = (robot) ->
   Logger = require('../helpers/logger')(robot)
 
-  isDM = (name, channel) ->
-    name is channel
+  isDM = (channel) ->
+    channelname = channel.toString()
+    channelname.substring(0,1) is 'D'
 
   isClockChannel = (channel) ->
-    channel is Organization.clockChannel
+    chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
+    return chan.name is Organization.clockChannel
 
   isProjectChannel = (channel) ->
-    return not isClockChannel(channel.room) and
-           not isDM(channel.name, channel.room) and
-           Organization.getProjectByName(channel.room)?
+    chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById channel
+    return not isClockChannel(channel) and
+           not isDM(channel) and
+           Organization.getProjectByName(chan.name)?
 
-  canPunchHere = (name, channel) ->
-    isDM(name, channel) or
+  canPunchHere = (channel) ->
+    isDM(channel) or
     isClockChannel(channel) or
     isProjectChannel(channel)
 
@@ -67,29 +94,23 @@ module.exports = (robot) ->
       minutesStr = "#{minutes} minutes"
     return "#{hoursStr}#{if hours > 0 and minutes > 0 then ', ' else ''}#{minutesStr}"
 
+  # Parse a textual punch and product a new Punch object
   parse = (res, msg, mode) ->
     mode = mode.toLowerCase()
     user = Organization.getUserBySlackName res.message.user.name
     Logger.log "Parsing '#{msg}' for @#{user.slack}."
-    if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
-      return
-    if canPunchHere res.message.user.name, res.message.user.room
+    if canPunchHere res.message.room
+      Logger.addReaction 'clock4', res.message
       msg = res.match.input
       msg = msg.replace REGEX.ibizan, ''
-      tz = res.message.user.slack.tz
+      msg = msg.trim()
+      tz = user.timetable.timezone.name or TIMEZONE
       punch = Punch.parse user, msg, mode, tz
       if not punch.projects.length and
-         isProjectChannel res.message.user
-        project = Organization.getProjectByName res.message.user.room
+         isProjectChannel res.message.room
+        project = Organization.getProjectByName res.message.room
         if project?
           punch.projects.push project
-      moment.tz.setDefault TIMEZONE
 
       if punch.mode is 'none'
         modeQualifier = 'block'
@@ -101,184 +122,68 @@ module.exports = (robot) ->
         article = 'a'
       else
         article = 'an'
-      Logger.log "Successfully generated #{article} #{modeQualifier}-punch for @#{user.slack}."
+      Logger.log "Successfully generated #{article} #{modeQualifier}-punch
+                  for @#{user.slack}: #{punch.description(user)}"
 
       sendPunch punch, user, res
     else
-      if res.router_res
-        res.router_res.status 500
-        res.router_res.json {
-          "text": "You cannot punch in ##{res.message.user.room}.
-                    Try punching in ##{Organization.clockChannel},
-                    a designated project channel, or here."
-        }
-      else
-        user.directMessage "You cannot punch in ##{res.message.user.room}.
-                             Try punching in ##{Organization.clockChannel},
-                             a designated project channel, or here.",
-                           Logger
+      channelName = Logger.getChannelName res.message.user.room
+      Logger.addReaction 'x', res.message
+      user.directMessage "You cannot punch in ##{channelName}.
+                          Try punching in ##{Organization.clockChannel},
+                          a designated project channel, or here.",
+                         Logger
 
+  # Send the punch to the Organization's Spreadsheet
   sendPunch = (punch, user, res) ->
     if not punch
-      if res.router_res
-        res.router_res.status 500
-        res.router_res.json {
-          "text": "An unexpected error occured while
-                    generating your punch."
-        }
-      else
-        Logger.errorToSlack "Somehow, a punch was not generated
-                             for \"#{user.slack}\". Punch:\n", res.match.input
-        user.directMessage "An unexpected error occured while
-                             generating your punch.",
-                           Logger
+      Logger.errorToSlack "Somehow, a punch was not generated
+                           for \"#{user.slack}\". Punch:\n", res.match.input
+      user.directMessage "An unexpected error occured while
+                          generating your punch.",
+                         Logger
       return
     Organization.spreadsheet.enterPunch(punch, user)
     .then(
       (punch) ->
         Logger.log "@#{user.slack}'s punch was successfully entered
                     into the spreadsheet."
-        punchEnglish = "Punched you #{punch.description(user)}"
-        if res.router_res
-          res.router_res.status 200
-          res.router_res.json {
-            "text": punchEnglish
-          }
+        punchEnglish = "Punched you *#{punch.description(user)}*."
+
+        if punch.mode is 'in'
+          user.directMessage punchEnglish, Logger
         else
-          Logger.reactToMessage 'dog2',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id
-          user.directMessage punchEnglish,
-                             Logger
+          user.directMessage punchEnglish, Logger, [punch.slackAttachment()]
+        Logger.addReaction 'dog2', res.message
+        Logger.removeReaction 'clock4', res.message
     )
     .catch(
       (err) ->
-        if res.router_res
-          res.router_res.status 500
-          res.router_res.json {
-            "text": "#{err} You can see more details on the spreadsheet
-                      at #{Organization.spreadsheet.url}"
-          }
-        else
-          errorMsg = Logger.clean err
-          Logger.error errorMsg
-          Logger.errorToSlack "\"#{errorMsg}\" was returned for
-                               #{user.slack}. Punch:\n", res.match.input
-          user.directMessage "#{errorMsg} You can see more details on the spreadsheet
-                               at #{Organization.spreadsheet.url}",
-                             Logger
+        errorMsg = Logger.clean err
+        Logger.error errorMsg
+        Logger.errorToSlack "\"#{errorMsg}\" was returned for
+                             #{user.slack}. Punch:\n", res.match.input
+        user.directMessage "\n#{errorMsg}",
+                           Logger
+        Logger.addReaction 'x', res.message
+        Logger.removeReaction 'clock4', res.message
     )
     .done()
-      
 
-  # respond to mode
-  robot.respond REGEX.modes, (res) ->
-    if not Organization.ready()
-      Logger.log "Don\'t punch #{res.match[1]}, Organization isn\'t ready yet"
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
-                          res.message.user.name
-      return
+  # Punch for a given mode
+  robot.respond REGEX.modes, id: 'time.punchByMode', userRequired: true, (res) ->
     parse res, res.match.input, res.match[1]
 
-  # respond to simple time block
-  robot.respond REGEX.rel_time, (res) ->
-    if not Organization.ready()
-      Logger.log 'Don\'t punch a block, Organization isn\'t ready yet'
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
-                          res.message.user.name
-      return
+  # Punch for a block of time
+  robot.respond REGEX.rel_time, id: 'time.punchByTime', userRequired: true, (res) ->
     parse res, res.match.input, 'none'
 
-  robot.router.post '/ibizan/punch', (req, res) ->
-    if not Organization.ready()
-      Logger.log 'Don\'t punch via slash command, Organization isn\'t ready yet'
-      res.json {
-        "text": "The #{Organization.name} isn't ready for
-                 operations yet. It may be in the middle of
-                 syncing or something has gone horribly wrong.
-                 Please try again later, and if this persists
-                 longer than five minutes, DM a maintainer as
-                 soon as possible."
-      }
-      return
-    body = req.body
-    if body.token is process.env.SLASH_PUNCH_TOKEN
-      msg = body.text
-      channel_name = body.channel_name?.replace('#', '')
-      if channel_name and channel_name is 'directmessage'
-        channel_name = body.user_name
-      response = {
-        match: {
-          input: msg
-        },
-        message: {
-          user: {
-            name: body.user_name,
-            room: channel_name,
-            slack: {
-              tz: TIMEZONE
-            }
-          }
-        },
-        router_res: res
-      }
-      if match = msg.match REGEX.rel_time
-        mode = 'none'
-      else if match = msg.match REGEX.modes
-        mode = msg.split(' ')[0]
-      else
-        res.status 500
-        response = 'No mode could be extrapolated from your punch.'
-        res.json {
-          "text": response
-        }
-        return
-      parse response, msg, mode
-    else
-      res.status 401
-      res.json  {
-        "text": "Bad token in Ibizan configuration"
-      }
+  # Switch projects during an 'in' punch
 
-  robot.respond /(append|add)/i, (res) ->
-    if not Organization.ready()
-      Logger.log 'Don\'t append to punch, Organization isn\'t ready yet'
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
-                          res.message.user.name
-      return
+  # Append to lastPunch
+  robot.respond /(append|add)/i, id: 'time.append', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
-      return
-    punch = user.lastPunch 'in'
-    if not punch
-      Logger.logToChannel "Based on my records, I don't think you're
-                           punched in right now. If this is in error, run
-                           `/sync` and try your punch again, or DM a
-                           maintainer as soon as possible.",
-                          res.message.user.name
-      return
+
     msg = res.match.input
     msg = msg.replace REGEX.ibizan, ''
     msg = msg.replace /(append|add)/i, ''
@@ -289,54 +194,87 @@ module.exports = (robot) ->
     words.shift()
     msg = words.join(' ').trim()
 
-    if op is 'project' or
-       op is 'projects'
-      projects = msg.split ' '
-      if projects.length is 0 and
-         isProjectChannel res.message.user.room
-        projects.push Organization.getProjectByName(res.message.user.room)
-      punch.appendProjects projects
-    else if op is 'note' or
-            op is 'notes'
-      punch.appendNotes msg
-    row = punch.toRawRow user.name
-    row.save (err) ->
-      if err
-        user.directMessage err,
-                           Logger
-      else
-        projectsQualifier = projects?.join(', ') ? ''
-        notesQualifier = "'#{msg}'"
-        user.directMessage "Added #{op}: #{projectsQualifier}#{notesQualifier}",
-                           Logger
-        Logger.reactToMessage 'dog2',
-                              res.message.user.name,
-                              res.message.rawMessage.channel,
-                              res.message.id
+    results = ''
 
-  robot.respond /undo/i, (res) ->
-    if not Organization.ready()
-      Logger.warn 'Don\'t undo, Organization isn\'t ready yet'
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
-                          res.message.user.name
-      return
+    if op is 'project' or
+       op is 'projects' or
+       op is 'note' or
+       op is 'notes'
+      punch = user.lastPunch 'in'
+      if not punch
+        user.directMessage strings.notpunchedin,
+                           Logger
+        return
+      if op is 'project' or
+         op is 'projects'
+        projects = msg.split ' '
+        if projects.length is 0 and
+           isProjectChannel res.message.user.room
+          projects.push Organization.getProjectByName(res.message.user.room)
+        punch.appendProjects projects
+        results = projects?.join(', ') ? ''
+      else if op is 'note' or
+              op is 'notes'
+        punch.appendNotes msg
+        results = "'#{msg}'"
+      row = punch.toRawRow user.name
+      Organization.spreadsheet.saveRow(row)
+      .catch(
+        (err) ->
+          user.directMessage err, Logger
+          Logger.error 'Unable to append row', new Error(err)
+      ).done(
+        user.directMessage "Added #{op} #{results}",
+                           Logger
+        Logger.addReaction 'dog2', res.message
+      )
+    else if op is 'event' or
+            op is 'calendar' or
+            op is 'upcoming'
+      Logger.addReaction 'clock4', res.message
+      date = moment(words[0], 'MM/DD/YYYY')
+      if not date.isValid()
+        Logger.addReaction 'x', res.message
+        Logger.removeReaction 'clock4', res.message
+        res.reply "Your event has an invalid date. Make sure you're using the
+                   proper syntax, e.g. `ibizan add event 3/21 Dog Time`"
+        return
+      words.shift()
+      name = words.join(' ').trim()
+      if not name or not name.length > 0
+        Logger.addReaction 'x', res.message
+        Logger.removeReaction 'clock4', res.message
+        res.reply "Your event needs a name. Make sure you're using the
+                   proper syntax, e.g. `ibizan add event 3/21 Dog Time`"
+        return
+      Logger.debug "Adding event on #{date} named #{name}"
+      Organization.addEvent(date, name)
+      .then(
+        (calendarevent) ->
+          Logger.addReaction 'dog2', res.message
+          Logger.removeReaction 'clock4', res.message
+          res.reply "Added new event: *#{calendarevent.name}* on
+                     *#{calendarevent.date.format('M/DD/YYYY')}*"
+      )
+      .catch(
+        (err) ->
+          Logger.error err
+          Logger.addReaction 'x', res.message
+          Logger.removeReaction 'clock4', res.message
+          res.reply "Something went wrong when adding your event."
+      )
+      .done()
+    else
+      user.directMessage strings.addfail, Logger
+
+  robot.respond /undo/i, id: 'time.undo', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
-      return
     if user.punches and user.punches.length > 0
+      Logger.addReaction 'clock4', res.message
       punch = null
+      lastPunchDescription = user.lastPunch().description(user)
       user.undoPunch()
+      .then(user.updateRow.bind(user))
       .then(
         (lastPunch) ->
           punch = lastPunch
@@ -344,11 +282,12 @@ module.exports = (robot) ->
       .then(user.updateRow.bind(user))
       .then(
         () ->
-          Logger.reactToMessage 'dog2',
-                                res.message.user.name,
-                                res.message.rawMessage.channel,
-                                res.message.id
-          user.directMessage "Undid your last punch action, which was #{punch.description(user)}",
+          Logger.addReaction 'dog2', res.message
+          Logger.removeReaction 'clock4', res.message
+          user.directMessage "Undid your last punch, which was:
+                              *#{lastPunchDescription}*\n\nYour most current
+                              punch is now:
+                              *#{user.lastPunch().description(user)}*",
                              Logger
       )
       .catch(
@@ -361,47 +300,66 @@ module.exports = (robot) ->
       )
       .done()
     else
-      user.directMessage 'There\'s nothing for me to undo.',
-                         Logger
+      user.directMessage strings.undofail, Logger
 
-  # User feedback
-  robot.respond /(hours|today)+[\?\!\.¿¡]/i, (res) ->
-    if not Organization.ready()
-      Logger.log "Don\'t output diagnostics, Organization isn\'t ready yet"
-      Logger.logToChannel "The #{Organization.name} isn't ready for
-                           operations yet. It may be in the middle of
-                           syncing or something has gone horribly wrong.
-                           Please try again later, and if this persists
-                           longer than five minutes, DM a maintainer as
-                           soon as possible.",
-                          res.message.user.name
-      return
+  robot.respond /\b(events|upcoming)$/i, id: 'time.events', (res) ->
+    response = ""
+    upcomingEvents = Organization.calendar.upcomingEvents()
+    if upcomingEvents.length > 0
+      response += "Upcoming events:\n"
+      for calendarevent in upcomingEvents
+        response += "*#{calendarevent.date.format('M/DD/YY')}* -
+                     #{calendarevent.name}\n"
+    else
+      response = strings.noevents
+    res.send response
+    Logger.addReaction 'dog2', res.message
+
+
+  ## User feedback ##
+
+  # Gives helpful info if a user types 'hours' with no question mark or date
+  robot.respond /\bhours$/i, id: 'time.hoursHelp', (res) ->
+    res.send strings.hourshelp
+    Logger.addReaction 'dog2', res.message
+
+  # Returns the hours worked on a given date
+  robot.respond /hours (.*)/i, id: 'time.hoursOnDate', userRequired: true, (res) ->
     user = Organization.getUserBySlackName res.message.user.name
-    if not user
-      Logger.logToChannel "#{res.message.user.name} isn't a recognized
-                           username. Either you aren't part of the
-                           Employee worksheet, something has gone
-                           horribly wrong, or you aren\'t an employee
-                           at #{Organization.name}.",
-                          res.message.user.name
+    tz = user.timetable.timezone.name
+    date = moment(res.match[1], "MM/DD/YYYY")
+    if not date.isValid()
+      Logger.log "hours: #{res.match[1]} is an invalid date"
+      user.directMessage "#{res.match[1]} is not a valid date", Logger
+      Logger.addReaction 'x', res.message
       return
+    formattedDate = date.format('dddd, MMMM D, YYYY')
 
-    earlyToday = moment({hour: 0, minute: 0, second: 0})
-    now = moment({hour: 0, minute: 0, second: 0}).add(1, 'days')
-    report = user.toRawPayroll(earlyToday, now)
+    attachments = []
+    report = null
     headers = HEADERS.payrollreports
+
+    startOfDay = moment.tz(date, tz).startOf('day')
+    endOfDay = moment.tz(date, tz).endOf('day')
+    report = user.toRawPayroll(startOfDay, endOfDay)
+    for punch in user.punches
+      if punch.date.isBefore(startOfDay) or punch.date.isAfter(endOfDay)
+        continue
+      else
+        attachments.push punch.slackAttachment()
 
     loggedAny = false
     if not report[headers.logged] and
        not report[headers.vacation] and
        not report[headers.sick] and
        not report[headers.unpaid]
-      msg = 'You haven\'t recorded any hours today.'
+      msg = "You haven't recorded any hours on #{formattedDate}."
     else
       if not report[headers.logged]
-        msg = 'You haven\'t recorded any paid work time'
+        msg = "You haven't recorded any paid work time"
       else
-        msg = "You have #{toTimeStr(report[headers.logged])} of paid work time"
+        msg = "You have *#{toTimeStr(report[headers.logged])} of
+               paid work time*"
         loggedAny = true
       for kind in ['vacation', 'sick', 'unpaid']
         header = headers[kind]
@@ -409,18 +367,223 @@ module.exports = (robot) ->
           kind = 'unpaid work'
         if report[header]
           if not loggedAny
-            msg += ", but you have #{toTimeStr(report[header])} of #{kind} time"
+            msg += ", but you have *#{toTimeStr(report[header])} of
+                    #{kind} time*"
             loggedAny = true
           else
-            msg += " and #{toTimeStr(report[header])} of #{kind} time"
-      msg += ' recorded for today.'
+            msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
+      msg += " recorded for #{formattedDate}."
     if report.extra?.projects and report.extra?.projects?.length > 0
       msg += ' ('
       for project in report.extra.projects
         msg += "##{project.name}"
       msg += ')'
-    Logger.reactToMessage 'dog2',
-                          res.message.user.name,
-                          res.message.rawMessage.channel,
-                          res.message.id
+
+    Logger.addReaction 'dog2', res.message
+    user.directMessage msg, Logger, attachments
+
+  # Returns the hours worked for the given time period
+  robot.respond /.*(hours|today|week|month|year|period)+[\?\!\.¿¡]/i, id: 'time.hours', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    tz = user.timetable.timezone.name
+    now = moment.tz(tz)
+    attachments = []
+    mode = res.match[1].toLowerCase()
+    report = dateArticle = null
+    headers = HEADERS.payrollreports
+    if mode is 'week'
+      sunday = moment({hour: 0, minute: 0, second: 0}).day("Sunday")
+      report = user.toRawPayroll(sunday, now)
+      dateArticle = "this week"
+      for punch in user.punches
+        if punch.date.isBefore(sunday) or punch.date.isAfter(now)
+          continue
+        else if not punch.elapsed and not punch.times.block
+          continue
+        else
+          attachments.push punch.slackAttachment()
+    else if mode is 'month'
+      startOfMonth =
+        moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("month")
+      report = user.toRawPayroll(startOfMonth, now)
+      dateArticle = "this month"
+    else if mode is 'year'
+      startOfYear =
+        moment.tz({hour: 0, minute: 0, second: 0}, tz).startOf("year")
+      report = user.toRawPayroll(startOfYear, now)
+      dateArticle = "this year"
+    else if mode is 'period'
+      periodStart = moment({hour: 0, minute: 0, second: 0}).day("Sunday")
+      if Organization.calendar.isPayWeek()
+        periodStart = periodStart.subtract(1, 'weeks')
+      periodEnd = periodStart.clone().add(2, 'weeks')
+      if res.match[0].match(/(last|previous)/)
+        periodStart = periodStart.subtract(2, 'weeks')
+        periodEnd = periodEnd.subtract(2, 'weeks')
+        dateArticle = "last pay period (#{periodStart.format('M/DD')} to
+                       #{periodEnd.format('M/DD')})"
+      else
+        dateArticle = "this pay period (#{periodStart.format('M/DD')} to
+                       #{periodEnd.format('M/DD')})"
+      report = user.toRawPayroll(periodStart, periodEnd)
+      for punch in user.punches
+        if punch.date.isBefore(periodStart) or punch.date.isAfter(periodEnd)
+          continue
+        else if not punch.elapsed and not punch.times.block
+          continue
+        else
+          attachments.push punch.slackAttachment()
+    else
+      earlyToday =
+        now.clone().hour(0).minute(0).second(0).subtract(1, 'minutes')
+      report = user.toRawPayroll(earlyToday, now)
+      dateArticle = "today"
+      for punch in user.punches
+        if punch.date.isBefore(earlyToday) or punch.date.isAfter(now)
+          continue
+        else
+          attachments.push punch.slackAttachment()
+
+    loggedAny = false
+    if not report[headers.logged] and
+       not report[headers.vacation] and
+       not report[headers.sick] and
+       not report[headers.unpaid]
+      msg = "You haven't recorded any hours #{dateArticle}."
+    else
+      if not report[headers.logged]
+        msg = "You haven't recorded any paid work time"
+      else
+        msg = "You have *#{toTimeStr(report[headers.logged])} of
+               paid work time*"
+        loggedAny = true
+      for kind in ['vacation', 'sick', 'unpaid']
+        header = headers[kind]
+        if kind is 'unpaid'
+          kind = 'unpaid work'
+        if report[header]
+          if not loggedAny
+            msg += ", but you have *#{toTimeStr(report[header])} of
+                    #{kind} time*"
+            loggedAny = true
+          else
+            msg += " and *#{toTimeStr(report[header])} of #{kind} time*"
+      msg += " recorded for #{dateArticle}."
+    if report.extra?.projects and report.extra?.projects?.length > 0
+      msg += ' ('
+      for project in report.extra.projects
+        msg += "##{project.name}"
+      msg += ')'
+
+    Logger.addReaction 'dog2', res.message
+    user.directMessage msg, Logger, attachments
+
+  # Returns the user's info as a slackAttachment
+  robot.respond /\b(status|info)$/i, id: 'time.status', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    user.directMessage "Your status:", Logger, [user.slackAttachment()]
+    Logger.addReaction 'dog2', res.message
+
+  # Returns the user's time in their timezone, as well as Ibizan's default time
+  robot.respond /\btime$/i, id: 'time.time', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    userTime = moment.tz(user.timetable.timezone.name)
+    ibizanTime = moment.tz(TIMEZONE)
+    msg = "It's currently *#{userTime.format('h:mm A')}* in your timezone
+           (#{userTime.format('z, Z')})."
+    if userTime.format('z') != ibizanTime.format('z')
+      msg += "\n\nIt's #{ibizanTime.format('h:mm A')} in the default timezone
+              (#{ibizanTime.format('z, Z')})."
     user.directMessage msg, Logger
+    Logger.addReaction 'dog2', res.message
+
+  # Returns the user's timezone
+  robot.respond /\btimezone$/i, id: 'time.time', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    userTime = moment.tz(user.timetable.timezone.name)
+    user.directMessage "Your timezone is set to
+                        *#{user.timetable.timezone.name}*
+                        (#{userTime.format('z, Z')}).",
+                       Logger
+    Logger.addReaction 'dog2', res.message
+
+  # Sets the user's timezone
+  robot.respond /timezone (.*)/i, id: 'time.time', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    input = res.match[1]
+    tzset = false
+
+    tz = user.setTimezone(input)
+    if tz
+      tzset = true
+    else
+      # Try adding 'America/' if a region is not specified
+      if input.indexOf("/") < 0
+        input = "America/" + input
+      if tz = user.setTimezone(input)
+        tzset = true
+      else
+        # Try changing spaces to underscores
+        input = input.replace ' ', '_'
+        if tz = user.setTimezone(input)
+          tzset = true
+
+    if tzset
+      userTime = moment.tz(user.timetable.timezone.name)
+      user.directMessage "Your timezone is now
+                          *#{user.timetable.timezone.name}*
+                          (#{userTime.format('z, Z')}).",
+                         Logger
+      Logger.addReaction 'dog2', res.message
+    else
+      user.directMessage "I do not recognize that timezone.
+                          Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list>
+                          for a valid time zone name.",
+                         Logger
+      Logger.addReaction 'x', res.message
+
+  # Sets the user's active times
+  robot.respond /active\s*(.*)?$/i, id: 'time.active', userRequired: true, (res) ->
+    user = Organization.getUserBySlackName res.message.user.name
+    command = res.match[1]
+    if not command
+      res.send strings.activehelp
+      Logger.addReaction 'dog2', res.message
+      return
+    comps = command.split(' ') || []
+    scope = comps[0] || 'unknown'
+    time = comps[1] || 'notime'
+
+    if scope isnt 'unknown' and time isnt 'notime'
+      newtime = moment.tz(time, 'h:mm A', user.timetable.timezone.name)
+      if not newtime.isValid()
+        user.directMessage "#{time} is not a valid time.", Logger
+        Logger.addReaction 'x', res.message
+        return
+      if scope is 'start'
+        if not newtime.isBefore(user.timetable.end)
+          user.directMessage "#{newtime.format('h:mm A')} is not before your
+                              current end time of
+                              #{user.timetable.start.format('h:mm A')}.",
+                             Logger
+          Logger.addReaction 'x', res.message
+          return
+        else
+          user.setStart newtime
+      else if scope is 'end'
+        if not newtime.isAfter(user.timetable.start)
+          user.directMessage "#{newtime.format('h:mm A')} is not after your
+                              current start time of
+                              #{user.timetable.start.format('h:mm A')}.",
+                             Logger
+          Logger.addReaction 'x', res.message
+          return
+        else
+          user.setEnd newtime
+      user.directMessage "Your active *#{scope}* time is now
+                          *#{newtime.format('h:mm A')}*.",
+                         Logger
+      Logger.addReaction 'dog2', res.message
+    else
+      user.directMessage strings.activefail, Logger
+      Logger.addReaction 'x', res.message

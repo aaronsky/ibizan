@@ -97,3 +97,6 @@ describe 'moment', ->
       expect(date.month()).to.equal(10)
       expect(date.date()).to.equal(24)
       expect(date.year()).to.equal(2016)
+    it 'should return \"null\" for \"\"', ->
+      date = moment().fromHolidayString('')
+      expect(date).to.equal(null)

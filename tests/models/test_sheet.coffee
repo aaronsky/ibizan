@@ -69,7 +69,7 @@ describe 'Sheet', ->
                 console.log err
                 assert.fail('success', err)
               )
-    it 'should enter out punch for user', ->
+    it 'should attempt out punch for user, but fail due to lack of notes', ->
       that = @
       user = null
       return @sheet.loadOptions()
@@ -77,6 +77,28 @@ describe 'Sheet', ->
                 user = opts.users[0]
                 if last = user.lastPunch 'in'
                   outPunch = Punch.parse user, 'out', 'out'
+                  promise = that.sheet.enterPunch outPunch, user
+                if promise
+                  return promise
+                else
+                  inPunch = Punch.parse user, 'in', 'in'
+                  return that.sheet.enterPunch(inPunch, user)
+                          .then(that.sheet.enterPunch(outPunch, user).bind(that))
+              )
+              .then(() ->
+                assert.fail('success')
+              )
+              .catch((err) ->
+                assert.isOk true
+              )
+    it 'should enter out punch for user', ->
+      that = @
+      user = null
+      return @sheet.loadOptions()
+              .then((opts) ->
+                user = opts.users[0]
+                if last = user.lastPunch 'in'
+                  outPunch = Punch.parse user, 'out did some things', 'out'
                   promise = that.sheet.enterPunch outPunch, user
                 if promise
                   return promise

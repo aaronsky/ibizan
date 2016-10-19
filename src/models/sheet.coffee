@@ -4,9 +4,9 @@ Q = require 'q'
 moment = require 'moment'
 
 require '../../lib/moment-holidays.js'
-constants = require '../helpers/constants'
+{ HEADERS } = require '../helpers/constants'
+{ Calendar, CalendarEvent } = require './calendar'
 Logger = require('../helpers/logger')()
-HEADERS = constants.HEADERS
 Project = require './project'
 { User, Settings, Timetable } = require './user'
 
@@ -37,6 +37,7 @@ class Spreadsheet
     .then(@_loadVariables.bind(@))
     .then(@_loadProjects.bind(@))
     .then(@_loadEmployees.bind(@))
+    .then(@_loadEvents.bind(@))
     .then(@_loadPunches.bind(@))
     .catch((error) -> deferred.reject("Couldn't download sheet data: #{error}"))
     .done(
@@ -44,6 +45,60 @@ class Spreadsheet
         @initialized = true
         deferred.resolve opts
     )
+    return deferred.promise
+
+  saveRow: (row, rowname="row") ->
+    deferred = Q.defer()
+    if not row
+      deferred.reject "No row passed to saveRow"
+    else
+      row.save (err) ->
+        if err
+          # Retry up to 3 times
+          retry = 1
+          setTimeout ->
+            if retry <= 3
+              Logger.debug "Retrying save of #{rowname}, attempt #{retry}..."
+              row.save (err) ->
+                if not err
+                  Logger.debug "#{rowname} saved successfully"
+                  deferred.resolve row
+                  return true
+              retry += 1
+            else
+              deferred.reject err
+              Logger.error "Unable to save #{rowname}", new Error(err)
+          , 1000
+        else
+          deferred.resolve row
+    return deferred.promise
+
+  newRow: (sheet, row, rowname="row") ->
+    deferred = Q.defer()
+    if not sheet
+      deferred.reject "No sheet passed to newRow"
+    else if not row
+      deferred.reject "No row passed to newRow"
+    else
+      sheet.addRow row, (err) ->
+        if err
+          # Retry up to 3 times
+          retry = 1
+          setTimeout ->
+            if retry <= 3
+              Logger.debug "Retrying adding #{rowname}, attempt #{retry}..."
+              sheet.addRow row, (err) ->
+                if not err
+                  Logger.debug "#{rowname} saved successfully"
+                  deferred.resolve row
+                  return true
+              retry += 1
+            else
+              deferred.reject err
+              Logger.error "Unable to add #{rowname}", new Error(err)
+          , 1000
+        else
+          deferred.resolve row
     return deferred.promise
 
   enterPunch: (punch, user) ->
@@ -71,10 +126,9 @@ class Spreadsheet
             deferred.reject 'You haven\'t punched out yet.'
           last.out punch
           row = last.toRawRow user.name
-          row.save (err) ->
-            if err
-              deferred.reject err
-            else
+          @saveRow(row, "punch for #{user.name}")
+          .then(
+            () ->
               # add hours to project in projects
               if last.times.block
                 elapsed = last.times.block
@@ -97,16 +151,21 @@ class Spreadsheet
                 () ->
                   deferred.resolve last
               )
+          )
+          .catch(
+            (err) ->
+              deferred.reject err
+          ).done()
       else
         row = punch.toRawRow user.name
-        @rawData.addRow row, (err) =>
-          if err
-            deferred.reject err
-          else
+        that = @
+        @newRow(@rawData, row)
+        .then(
+          (row, rawData) ->
             params = {}
-            @rawData.getRows params, (err, rows) ->
+            that.rawData.getRows params, (err, rows) ->
               if err or not rows
-                deferred.reject err
+                deferred.reject "Could not get rawData rows: #{err}"
               else
                 row_matches =
                   (r for r in rows when r[headers.id] is row[headers.id])
@@ -135,7 +194,7 @@ class Spreadsheet
                   user.updateRow()
                   .catch(
                     (err) ->
-                      deferred.reject err
+                      deferred.reject "Could not update user row: #{err}"
                   )
                   .done(
                     () ->
@@ -143,7 +202,11 @@ class Spreadsheet
                   )
                 else
                   deferred.resolve punch
-
+        )
+        .catch(
+          (err) ->
+            deferred.reject "Could not add row: #{err}"
+        ).done()
     deferred.promise
 
   generateReport: (reports) ->
@@ -158,6 +221,16 @@ class Spreadsheet
           numberDone += 1
           if numberDone >= reports.length
             deferred.resolve numberDone
+    deferred.promise
+
+  addEventRow: (row) ->
+    deferred = Q.defer()
+
+    @events.addRow row, (err) ->
+      if err
+        deferred.reject err
+      else
+        deferred.resolve row
     deferred.promise
 
   _loadWorksheets: () ->
@@ -186,12 +259,13 @@ class Spreadsheet
                 @payroll and
                 @variables and
                 @projects and
-                @employees)
+                @employees and
+                @events)
           deferred.reject 'Worksheets failed to be associated properly'
         else
           Logger.fun "----------------------------------------"
           deferred.resolve {}
-    return deferred.promise
+    deferred.promise
 
   _loadVariables: (opts) ->
     deferred = Q.defer()
@@ -266,21 +340,30 @@ class Spreadsheet
       if err
         deferred.reject err
       else
-        users = []
+        users = members = []
         for row in rows
           user = User.parse row
           if user
-            freq = opts.houndFrequency || -1
-            user.settings = Settings.fromSettings {
-              shouldHound: true,
-              shouldResetHound: true,
-              houndFrequency: freq,
-              lastMessage: null,
-              lastPing: null
-            }
             users.push user
         opts.users = users
         Logger.fun "Loaded #{users.length} users"
+        Logger.fun "----------------------------------------"
+        deferred.resolve opts
+    deferred.promise
+
+  _loadEvents: (opts) ->
+    deferred = Q.defer()
+    @events.getRows (err, rows) ->
+      if err
+        deferred.reject err
+      else
+        events = []
+        for row in rows
+          calendarevent = CalendarEvent.parse row
+          if calendarevent
+            events.push calendarevent
+        opts.events = events
+        Logger.fun "Loaded #{events.length} calendar events"
         Logger.fun "----------------------------------------"
         deferred.resolve opts
     deferred.promise
@@ -303,8 +386,6 @@ class Spreadsheet
         Logger.fun "Loaded #{rows.length} punches for #{opts.users.length} users"
         Logger.fun "----------------------------------------"
         deferred.resolve opts
-
-
     deferred.promise
 
 module.exports = Spreadsheet
