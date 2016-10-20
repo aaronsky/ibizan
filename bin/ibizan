@@ -1,14 +1,12 @@
-#!/bin/sh
+#!/usr/bin/env node
 
-set -e
+import Botkit from 'botkit';
 
-npm install
-export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
+if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET || !process.env.PORT) {
+  console.log('Error: Specify CLIENT_ID, CLIENT_SECRET and PORT in environment');
+  process.exit(1);
+}
 
-if [ "$1" = "--heroku" ]; then
-  echo "This is a Heroku execution!"
-else
-  source ./bin/credentials
-fi
+
 
 exec node_modules/.bin/hubot --name "ibizan" -a "slack"
