@@ -44,15 +44,15 @@ export default class Calendar {
 }
 
 export class CalendarEvent {
-  date: any;
+  date: moment.Moment;
   name: any;
   row: any;
-  constructor(date: any, name: any, row?: any) {
+  constructor(date: moment.Moment, name: any, row?: any) {
     this.date = date;
     this.name = name;
     this.row = row;
   }
-  static parse(row: any) {
+  static parse(row: any): CalendarEvent {
     if (!row) {
       return;
     }
@@ -67,14 +67,14 @@ export class CalendarEvent {
     const newEvent = new CalendarEvent(date, name, row);
     return newEvent;
   }
-  daysUntil() {
+  daysUntil(): number {
     return this.date.diff(moment(), 'days');
   }
   toEventRow() {
-    const headers = HEADERS.events
-    const row = this.row || {}
-    row[headers.date] = row[headers.date] || this.date.format('MM/DD/YYYY')
-    row[headers.name] = row[headers.name] || this.name
+    const headers = HEADERS.events;
+    const row = this.row || {};
+    row[headers.date] = row[headers.date] || this.date.format('MM/DD/YYYY');
+    row[headers.name] = row[headers.name] || this.name;
     return row;
   }
   async updateRow() {
