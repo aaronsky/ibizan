@@ -22,15 +22,17 @@ const NAME = process.env.ORG_NAME;
 export namespace Organization {
   let instance: OrganizationInternal = null;
 
-  export function get(id: string) {
-    instance = new OrganizationInternal(id);
+  export function get(id?: string) {
+    if (instance === null || instance === undefined) {
+      instance = new OrganizationInternal(id);
+    }
     return instance;
   }
 
   class OrganizationInternal {
     name: string;
     spreadsheet: Spreadsheet;
-    initTime: any;
+    initTime: moment.Moment;
     houndFrequency: number;
     users: User[];
     projects: Project[];
@@ -46,8 +48,7 @@ export namespace Organization {
         Logger.fun(`Welcome to ${this.name}!`);
         this.initTime = moment();
         if (this.spreadsheet.sheet) {
-          await this.sync();
-          Logger.log('Options loaded');
+          this.sync().then(() => Logger.log('Options loaded'));
         } else {
           Logger.warn('Sheet not initialized, no spreadsheet ID was provided');
         }
@@ -55,15 +56,15 @@ export namespace Organization {
     }
     ready() {
       if (this.spreadsheet) {
-        return this.spreadsheet.initialized
+        return this.spreadsheet.initialized;
       }
       return false;
     }
-    async sync(auth) {
-      return new Promise((resolve, reject) => {
-        this.spreadsheet.authorize(auth || CONFIG.auth)
-        .then(this.spreadsheet.loadOptions.bind(this.spreadsheet))
-        .then((opts) => {
+    async sync(auth?: any) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          await this.spreadsheet.authorize(auth || CONFIG.auth);
+          let opts = await this.spreadsheet.loadOptions();
           if (opts) {
             this.houndFrequency = opts.houndFrequency;
             let old;
@@ -83,9 +84,10 @@ export namespace Organization {
             this.clockChannel = opts.clockChannel;
             this.exemptChannels = opts.exemptChannels;
           }
-        })
-        .catch((err) => reject(err))
-        .then(() => resolve(true));
+        } catch (err) {
+          reject(err);
+        }
+        resolve(true);
       });
     }
     getUserBySlackName(name: string, users?: User[]) {
@@ -128,8 +130,8 @@ export namespace Organization {
       }
       Logger.debug(`Project ${name} could not be found`);
     }
-    async addEvent(date: any, name: string) {
-      return new Promise((resolve, reject) => {
+    async addEvent(date: string, name: string) {
+      return new Promise<CalendarEvent>((resolve, reject) => {
         date = moment(date, 'MM/DD/YYYY');
         if (!date.isValid()) {
           reject('Invalid date given to addEvent');
@@ -139,17 +141,17 @@ export namespace Organization {
         const calendarEvent = new CalendarEvent(date, name);
         const calendar = this.calendar;
         this.spreadsheet.addEventRow(calendarEvent.toEventRow())
-        .then(() => {
-          calendar.events.push(calendarEvent);
-          resolve(calendarEvent);
-        })
-        .catch((err) => {
-          reject(`Could not add event row: ${err}`);
-        });
+          .then(() => {
+            calendar.events.push(calendarEvent);
+            resolve(calendarEvent);
+          })
+          .catch((err) => {
+            reject(`Could not add event row: ${err}`);
+          });
       });
     }
     async generateReport(start: any, end: any, send: boolean = false) {
-      return new Promise((resolve, reject) => {
+      return new Promise<any[]|number>(async (resolve, reject) => {
         if (!this.spreadsheet) {
           reject('No spreadsheet is loaded, report cannot be generated');
           return;
@@ -158,7 +160,7 @@ export namespace Organization {
           return;
         }
         Logger.log(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
-        
+
         const headers = HEADERS.payrollreports;
         const reports = [];
 
@@ -177,8 +179,12 @@ export namespace Organization {
           return 0;
         });
         if (send) {
-          this.spreadsheet.generateReport(reports)
-          .then((numberDone) => resolve(reports));
+          try {
+            const numberDone = await this.spreadsheet.generateReport(reports);
+            resolve(numberDone);
+          } catch (err) {
+            reject(err);
+          }
         } else {
           resolve(reports);
         }

@@ -34,6 +34,9 @@
     "node": "6.3.x"
   },
   "devDependencies": {
+    "@types/moment-timezone": "^0.2.32",
+    "@types/node": "^6.0.45",
+    "@types/node-uuid": "0.0.28",
     "chai": "^3.5.0",
     "co": "^4.6.0",
     "coffee-coverage": "^1.0.1",

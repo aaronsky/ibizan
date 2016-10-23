@@ -1,23 +1,27 @@
-# Description:
-#   Your dog friend guards access to your most prized commands
-#
-# Commands:
-#
-# Author:
-#   bcoia
+// Description:
+//   Your dog friend guards access to your most prized commands
+//
+// Commands:
+//
+// Author:
+//   bcoia
 
-{ REGEX, STRINGS } = require '../helpers/constants'
-strings = STRINGS.access
+import { REGEX, STRINGS } from '../helpers/constants';
+const strings = STRINGS.access;
+import logger from '../helpers/logger';
 
-Organization = require('../models/organization').get()
+import { Organization as Org } from '../models/organization';
+const Organization = Org.get();
 
-module.exports = (robot) ->
-  Logger = require('../helpers/logger')(robot)
+export default function (controller) {
+  const Logger = logger(controller);
 
-  isAdminUser = (user) ->
-    return user? and user in process.env.ADMINS.split(" ")
+  function isAdminUser(userName: string) {
+    return process.env.ADMINS.split(' ').indexOf(userName) !== -1;
+  }
 
-  robot.listenerMiddleware (context, next, done) ->
+  controller.middleware.receive.use(function (bot, message, next) {
+    /*
     command = context.listener.options.id
     message = context.response.message
     username = context.response.message.user.name
@@ -50,15 +54,15 @@ module.exports = (robot) ->
             done()
         # All checks passed, continue
         next(done)
+    */
+  });
 
-  # Catchall for unrecognized commands
-  robot.catchAll (res) ->
-    if res.message and
-       res.message.text and
-       res.message.text.length < 30 and
-       (res.message.text.match(REGEX.ibizan) or
-        (res.message.room and res.message.room.substring(0,1) is 'D'))
-      res.send "_#{res.random strings.unknowncommand}
-                #{res.random strings.askforhelp}_"
-      Logger.addReaction 'question', res.message
-      res.finish()
+  // Catch-all for unrecognized commands
+  controller.on('message_received', function(bot, message) {
+    if (message && message.text && message.text.length < 30 && (message.text.match(REGEX.ibizan) || message.room && message.room.substring(0, 1) === 'D')) {
+      bot.reply(`_${bot.random(strings.unknowncommand)} ${bot.random(strings.askforhelp)}_`);
+      Logger.addReaction('question', message);
+      bot.finish();
+    }
+  });
+};

@@ -4,19 +4,22 @@ import * as weekend from 'moment-weekend';
 import * as uuid from 'node-uuid';
 
 import { HEADERS, MODES, REGEX, TIMEZONE } from '../helpers/constants';
-import logger from '../helpers/logger'
+import logger from '../helpers/logger';
 const Logger = logger();
 import User from './user';
 import Project from './project';
-import Org from './organization';
+import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 
 export default class Punch {
   mode: string;
-  times: any[];
+  times: moment.Moment[];
   projects: Project[];
   notes: string;
   date: moment.Moment;
+  timezone: any;
+  elapsed?: number;
+  row: any;
 
   constructor(mode: string, times: any[], projects: Project[], notes: string) {
     this.mode = mode;
@@ -33,13 +36,16 @@ export default class Punch {
       return;
     }
     if (mode && mode !== 'none') {
-      const [mode, command] = this.parseMode(command);
+      const [mode, commandWithoutMode] = this.parseMode(command);
+      command = commandWithoutMode;
     }
     const original = command.slice(0);
     const [start, end] = user.activeHours;
     const tz = timezone || user.timetable.timezone.name;
-    const [times, command] = this.parseTime(command, start, end, timezone);
-    const [dates, command] = this.parseDate(command);
+    const [times, commandWithoutTime] = this.parseTime(command, start, end, timezone);
+    command = commandWithoutTime;
+    const [dates, commandWithoutDate] = this.parseDate(command);
+    command = commandWithoutDate;
 
     const datetimes = []
     if (dates.length === 0 && times.length === 0) {
@@ -92,7 +98,8 @@ export default class Punch {
       }
     }
 
-    const [projects, command] = this.parseProjects(command);
+    const [projects, commandWithoutProject] = this.parseProjects(command);
+    command = commandWithoutProject;
     const notes = command.trim();
 
     const punch = new Punch(mode, datetimes, projects, notes);
@@ -131,28 +138,29 @@ export default class Punch {
     } else {
       mode = 'none';
     }
-    const datetimes = [];
+    const datetimes: moment.Moment[] = [];
     const tz = user.timetable.timezone.name;
     for (var i = 0; i < 2; i++) {
       if (row[headers[MODES[i]]]) {
         let newDate = moment.tz(row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a', TIMEZONE);
         if (!newDate || !newDate.isValid()) {
-          timePiece = moment.tz(row[headers[MODES[i]]], 'hh:mm:ss a', TIMEZONE);
+          const timePiece = moment.tz(row[headers[MODES[i]]], 'hh:mm:ss a', TIMEZONE);
           newDate = moment.tz(`${row[headers.today]} ${row[headers[MODES[i]]]}`, 'MM/DD/YYYY hh:mm:ss a', TIMEZONE);
         }
         datetimes.push(newDate.tz(tz));
       }
     }
+    let rawElapsed;
     if (row[headers.totalTime]) {
       const comps = row[headers.totalTime].split(':');
-      let rawElapsed = 0;
+      rawElapsed = 0;
       for (let i in comps) {
         const comp = comps[i];
         if (isNaN(comp)) {
           continue;
         } else {
-          comp = parseInt(comp);
-          rawElapsed += +(comp / Math.pow(60), i).toFixed(2);
+          const compInt = parseInt(comp);
+          rawElapsed += +(compInt / Math.pow(60, i).toFixed(2));
         } 
       }
       if (isNaN(rawElapsed)) {
@@ -171,7 +179,7 @@ export default class Punch {
       if (elapsed < 0) {
         Logger.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes));
         return;
-      } else if (elapsed !== rawElapsed && (rawElapsed === undefined || Math.abs(elapsed - rawElapsed) > 0.02)) {
+      } else if (elapsed !== rawElapsed && (rawElapsed == null || Math.abs(elapsed - rawElapsed) > 0.02)) {
         Logger.debug(`${row[headers.id]} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
         const hours = Math.floor(elapsed);
         const minutes = Math.round((elapsed - hours) * 60);
@@ -249,7 +257,7 @@ export default class Punch {
       return;
     }
     if (!this.times.block && this.mode === 'in' && this.times.length === 1) {
-      let newTime;
+      let newTime: moment.Moment;
       if (punch.times.block) {
         newTime = moment.tz(this.times[0], this.timezone).add(punch.times.block, 'hours');
       } else {
@@ -312,14 +320,12 @@ export default class Punch {
     }
     return row;
   }
-  assignRow(row: any) {
-    if (row && row.save && typeof row.save === 'function' && row.del && typeof row.del === 'function') {
-      this.row = row;
-    }
+  assignRow(row: ISheetRow) {
+    this.row = row;
   }
   isValid(user: User) {
     // fail cases
-    let elapsed;
+    let elapsed, date;
     if (this.times.block) {
       elapsed = this.times.block;
     } else if (this.elapsed) {
@@ -350,13 +356,13 @@ export default class Punch {
     } else if (this.mode === 'out') {
       let lastIn;
       if (lastIn = user.lastPunch('in')) {
-        if (!lastIn.notes && !lastIn.projects.length > 0 && !this.notes && this.projects.length === 0) {
+        if (!lastIn.notes && lastIn.projects.length === 0 && !this.notes && this.projects.length === 0) {
           return 'You must add either a project or some notes to your punch. You can do this along with your out-punch using this format:\n`ibizan out [either notes or #projects]`';
         } else {
           return true;
         }
       }
-      const last = user.lastPunch('out', 'vacation', 'unpaid', 'sick');
+      const last = user.lastPunch(['out', 'vacation', 'unpaid', 'sick']);
       const time = last.times[1].tz(user.timetable.timezone.name) || last.times[0].tz(user.timetable.timezone.name);
       return `You cannot punch out before punching in. Your last out-punch was at *${time.format('h:mma')} on ${time.format('dddd, MMMM Do')}*.`;
     } else if (this.mode === 'unpaid' && !user.salary) {
@@ -365,7 +371,7 @@ export default class Punch {
     } else if (this.mode === 'vacation' || this.mode === 'sick' || this.mode === 'unpaid') {
       const last = user.lastPunch('in');
       if (last && !this.times.block) {
-        time = last.times[0].tz(user.timetable.timezone.name);
+        const time = last.times[0].tz(user.timetable.timezone.name);
         return `You haven't punched out yet. Your last in-punch was at *${time.format('h:mma')} on ${time.format('dddd, MMMM Do')}*.`;
       }
       if (elapsed) {
@@ -394,8 +400,8 @@ export default class Punch {
   }
   slackAttachment() {
     const fields = [];
-    const color = '#33BB33';
-    let elapsed = punchDate = '';
+    let color = '#33BB33';
+    let elapsed = '', punchDate = '';
     if (this.times.block) {
       elapsed = `${this.times.block} hours on `;
     } else if (this.elapsed) {
@@ -406,12 +412,11 @@ export default class Punch {
     }
 
     const headers = HEADERS.rawdata;
-    let punchDate;
     if (this.row && this.row[headers.today]) {
       punchDate = moment(this.row[headers.today], "MM/DD/YYYY").format("dddd, MMMM Do YYYY");
     }
 
-    const notes = this.notes || '';
+    let notes = this.notes || '';
     if (this.projects && this.projects.length > 0) {
       const projects = this.projects.map((el) => `#${el.name}`).join(', ');
       if (notes === '') {
@@ -617,9 +622,10 @@ export default class Punch {
         const block = parseFloat(block_str);
         time.block = block
       }
-      command = command.replace ///#{match[0]} ?///i, ''
+      const pattern = new RegExp(match[0] + ' ?', 'i');
+      command = command.replace(pattern, '');
     } else if (match = command.match(REGEX.time)) {
-      const timeMatch = match[0];
+      let timeMatch = match[0];
       const now = moment.tz(tz);
       let hourStr;
       if (hourStr = timeMatch.match(/\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i)) {
@@ -639,7 +645,8 @@ export default class Punch {
         }
       }
       time.push(today);
-      command = command.replace ///#{match[0]} ?///i, ''
+      const pattern = new RegExp(match[0] + ' ?', 'i');
+      command = command.replace(pattern, '');
     }
     return [time, command];
   }
@@ -653,18 +660,21 @@ export default class Punch {
     let match;
     if (match = command.match(/today/i)) {
       date.push(moment());
-      command = command.replace ///#{match[0]} ?///i, ''
+      const pattern = new RegExp(match[0] + ' ?', 'i');
+      command = command.replace(pattern, '');
     } else if (match = command.match(/yesterday/i)) {
       const yesterday = moment().subtract(1, 'days');
       date.push(yesterday);
-      command = command.replace ///#{match[0]} ?///i, ''
+      const pattern = new RegExp(match[0] + ' ?', 'i');
+      command = command.replace(pattern, '');
     } else if (match = command.match REGEX.days) {
       let today = moment();
       if (today.format('dddd').toLowerCase() !== match[0]) {
         today = today.day(match[0]).subtract(7, 'days');
       }
       date.push(today);
-      command = command.replace ///#{match[0]} ?///i, ''
+      const pattern = new RegExp(match[0] + ' ?', 'i');
+      command = command.replace(pattern, '');
     } else if (match = command.match(REGEX.date)) { 
       // Placeholder for date blocks
       if (match[0].indexOf('-') !== -1) {
@@ -683,7 +693,8 @@ export default class Punch {
         const absDate = moment(match[0], "MMMM DD");
         date.push(absDate);
       }
-      command = command.replace ///#{match[0]} ?///i, ''
+      const pattern = new RegExp(match[0] + ' ?', 'i');
+      command = command.replace(pattern, '');
     } else if (match = command.match(REGEX.numdate)) {
       if (match[0].indexOf('-') !== -1) {
         const dateStrings = match[0].split('-')
@@ -696,19 +707,21 @@ export default class Punch {
         const absDate = moment(match[0], 'MM/DD');
         date.push(absDate);
       }
-      command = command.replace ///#{match[0]} ?///i, ''
+      const pattern = new RegExp(match[0] + ' ?', 'i');
+      command = command.replace(pattern, '');
     }
     return [date, command];
   }
   private calculateElapsed(start: any, end: any, mode: string, user: User) {
-    const elapsed = end.diff(start, 'hours', true);
+    let elapsed = end.diff(start, 'hours', true);
     if (mode === 'vacation' || mode === 'sick') {
       const [activeStart, activeEnd] = user.activeHours;
-      const activeTime = user.activeTime();
+      const activeTime = user.activeTime;
       const inactiveTime = +moment(activeStart).add(1, 'days').diff(activeEnd, 'hours', true).toFixed(2);
+      let numDays, numWeekends;
       if (start && start.isValid() && end && end.isValid()) {
-        const numDays = end.diff(start, 'days');
-        const holidays = 0;
+        numDays = end.diff(start, 'days');
+        let holidays = 0;
         const currentDate = moment(start);
         while (currentDate.isSameOrBefore(end)) {
           const holidayStr = currentDate.holiday();
@@ -719,7 +732,7 @@ export default class Punch {
           currentDate.add(1, 'days');
         }
         const numWorkdays = weekend.diff(start, end) - holidays;
-        const numWeekends = numDays - numWorkdays;
+        numWeekends = numDays - numWorkdays;
       }
       if (elapsed > activeTime && numDays) {
         elapsed -= (inactiveTime * numDays) + (activeTime * numWeekends);
@@ -739,7 +752,8 @@ export default class Punch {
       let project;
       if (project = Organization.getProjectByName(word)) {
         projects.push(project);
-        command = command.replace ///#{word} ?///i, ''
+        const pattern = new RegExp(word + ' ?', 'i');
+        command = command.replace(pattern, '');
       }
     }
     return [projects, command];
