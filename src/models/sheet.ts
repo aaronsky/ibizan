@@ -123,7 +123,7 @@ export default class Spreadsheet {
     });
   }
   async enterPunch(punch: Punch, user: User) {
-    return new Promise((resolve, reject) => {
+    return new Promise<Punch>(async (resolve, reject) => {
       const valid = punch.isValid(user);
       if (!punch || !user) {
         reject('Invalid parameters passed: Punch or user is undefined');
@@ -180,7 +180,7 @@ export default class Spreadsheet {
           const row = punch.toRawRow(user.name);
           try {
             const newRow = await this.newRow(this.rawData, row);
-            this.rawData.getRows({}, (err, rows) => {
+            this.rawData.getRows({}, async (err, rows) => {
               if (err || !rows) {
                 reject(`Could not get rawData rows: ${err}`);
               } else {
@@ -225,12 +225,12 @@ export default class Spreadsheet {
     });
   }
   async generateReport(reports) {
-    return new Promise((resolve, reject) => {
+    return new Promise<number>((resolve, reject) => {
       let numberDone = 0;
       for (let row of reports) {
         this.payroll.addRow(row, (err) => {
           if (err) {
-            reject(err, numberDone);
+            reject(err);
           } else {
             numberDone += 1;
             if (numberDone >= reports.length) {

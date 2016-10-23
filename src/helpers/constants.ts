@@ -160,4 +160,10 @@ const modes = ['in', 'out', 'vacation', 'unpaid', 'sick'];
 
 const timezone = 'America/Phoenix';
 
-export { cellHeaders as HEADERS, modes as MODES, regex as REGEX, strings as STRINGS, timezone as TIMEZONE };
+export { 
+  cellHeaders as HEADERS, 
+  modes as MODES, 
+  regex as REGEX, 
+  strings as STRINGS, 
+  timezone as TIMEZONE 
+};

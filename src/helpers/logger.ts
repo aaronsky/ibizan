@@ -42,13 +42,14 @@ const err = chalk.red;
 const funHeader = chalk.bold.magenta;
 const fun = chalk.magenta;
 
+function typeIsArray(value: any) {
+  return (value && typeof value === 'object' && value instanceof Array && typeof value.length === 'number' && typeof value.splice === 'function' && !(value.propertyIsEnumerable('length')));
+}
+
 export default function (robot?: any) {
   class Logger {
     constructor() {
 
-    }
-    typeIsArray(value: any) {
-      return (value && typeof value === 'object' && value instanceof Array && typeof value.length === 'number' && typeof value.splice === 'function' && !(value.propertyIsEnumerable('length')));
     }
     static clean(msg: any) {
       let message = '';
@@ -136,9 +137,9 @@ export default function (robot?: any) {
         });
       }
     }
-    static getChannelName(channel: string) {
+    static getChannelName(channelName: string) {
       const rtm = Logger.initRTM();
-      channel = rtm.dataStore.getChannelGroupOrDMById(channel)
+      const channel = rtm.dataStore.getChannelGroupOrDMById(channelName)
       return channel.name;
     }
     static logToChannel(msg: string, channel: string, attachment?: any, isUser?: boolean) {
@@ -148,13 +149,11 @@ export default function (robot?: any) {
             text: msg,
             parse: 'full',
             username: 'ibizan',
+            icon_url: ICON_URL || undefined,
+            icon_emoji: ICON_URL ? undefined : ':dog2:',
+            attachments: null
           };
-          if (ICON_URL) {
-            message.icon_url = ICON_URL;
-          } else {
-            message.icon_emoji = ':dog2:';
-          }
-          if (attachment && this.typeIsArray(attachment)) {
+          if (attachment && typeIsArray(attachment)) {
             message.attachments = attachment;
           } else if (attachment) {
             message.attachments = {

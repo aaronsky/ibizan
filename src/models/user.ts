@@ -4,6 +4,7 @@ import * as moment from 'moment-timezone';
 import { HEADERS, TIMEZONE } from '../helpers/constants';
 import logger from '../helpers/logger';
 const Logger = logger();
+import Punch from './punch';
 
 function getPositiveNumber(input?: number, current: number = 0) {
   if (!input) {
@@ -19,11 +20,11 @@ function getPositiveNumber(input?: number, current: number = 0) {
 }
 
 export class Timetable {
-  private _start: any;
-  private startRaw: any;
-  private _end: any;
-  private endRaw: any;
-  private _timezone: any;
+  private _start: moment.Moment;
+  private startRaw: moment.Moment;
+  private _end: moment.Moment;
+  private endRaw: moment.Moment;
+  private _timezone: MomentTimezone;
   vacationTotal: number;
   vacationAvailable: number;
   sickTotal: number;
@@ -32,21 +33,21 @@ export class Timetable {
   private _loggedTotal: number;
   private _averageLoggedTotal: number;
 
-  get start(): any {
+  get start(): moment.Moment {
     return this._start;
   }
   set start(newStart) {
     this.startRaw = newStart;
     this._start = moment.tz(this.startRaw, 'hh:mm a', this.timezone.name);
   }
-  get end(): any {
+  get end(): moment.Moment {
     return this._end;
   }
   set end(newEnd) {
     this.endRaw = newEnd;
     this._end = moment.tz(this.endRaw, 'hh:mm a', this.timezone.name);
   }
-  get timezone(): any {
+  get timezone(): MomentTimezone {
     return this._timezone;
   }
   set timezone(newTimezone) {
@@ -82,7 +83,7 @@ export class Timetable {
     this.sickTotal = getPositiveNumber(total, this.sickTotal);
     this.sickAvailable = getPositiveNumber(available, this.sickAvailable);
   }
-  activeHours(): any[] {
+  activeHours(): moment.Moment[] {
     const now = moment.tz(this.timezone.name);
     const start = this.start.year(now.year()).dayOfYear(now.dayOfYear());
     const end = this.end.year(now.year()).dayOfYear(now.dayOfYear());
@@ -97,12 +98,17 @@ export class Timetable {
   }
 }
 
+interface ILastMessage {
+  time: moment.Moment;
+  channel: string;
+};
+
 export class Settings {
   shouldHound: boolean;
   shouldResetHound: boolean;
   houndFrequency: number;
-  lastMessage: any;
-  lastPing: any;
+  lastMessage: ILastMessage;
+  lastPing: moment.Moment;
 
   constructor() {
     this.shouldHound = true
@@ -256,7 +262,7 @@ export default class User {
       return true;
     }
   }
-  lastPunch(modes?: any) {
+  lastPunch(modes?: string | string[]) {
     if (typeof modes === 'string') {
       modes = [modes]
     }
@@ -481,7 +487,7 @@ export default class User {
     this.updateRow();
   }
   hexColor() {
-    let hash = 0
+    let hash = 0;
     for (let i = 0, len = this.slack.length; i < len; i++) {
       hash = this.slack.charCodeAt(i) + ((hash << 3) - hash);
     }
@@ -490,7 +496,7 @@ export default class User {
     return hexColor;
   }
   slackAttachment() {
-    const fields = []
+    const fields = [];
     const statusString = `${this.salary ? 'Salary' : 'Hourly'} - Active ${this.timetable.start.format('h:mm a')} to ${this.timetable.end.format('h:mm a z')}`;
     const lastPunch = this.lastPunch();
     if (lastPunch) {
