@@ -1,7 +1,7 @@
 
 import * as moment from 'moment';
 
-import { HEADERS } from '../helpers/constants';
+import { HEADERS } from '../shared/constants';
 
 export default class Project {
   name: string;

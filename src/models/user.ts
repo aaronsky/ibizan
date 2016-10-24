@@ -1,9 +1,10 @@
 
-import * as moment from 'moment-timezone';
+import moment from 'moment-timezone';
 
-import { HEADERS, TIMEZONE } from '../helpers/constants';
-import logger from '../helpers/logger';
-const Logger = logger();
+import { HEADERS, TIMEZONE } from '../shared/constants';
+import { holidayForMoment } from '../shared/moment-holiday';
+import { Rows } from '../shared/common';
+import Logger from '../logger/logger';
 import Punch from './punch';
 
 function getPositiveNumber(input?: number, current: number = 0) {
@@ -21,9 +22,7 @@ function getPositiveNumber(input?: number, current: number = 0) {
 
 export class Timetable {
   private _start: moment.Moment;
-  private startRaw: moment.Moment;
   private _end: moment.Moment;
-  private endRaw: moment.Moment;
   private _timezone: MomentTimezone;
   vacationTotal: number;
   vacationAvailable: number;
@@ -32,28 +31,27 @@ export class Timetable {
   private _unpaidTotal: number;
   private _loggedTotal: number;
   private _averageLoggedTotal: number;
+  holiday: number;
 
   get start(): moment.Moment {
     return this._start;
   }
-  set start(newStart) {
-    this.startRaw = newStart;
-    this._start = moment.tz(this.startRaw, 'hh:mm a', this.timezone.name);
+  set start(newStart: moment.Moment) {
+    this._start = moment.tz(newStart, 'hh:mm a', this.timezone.name);
   }
   get end(): moment.Moment {
     return this._end;
   }
   set end(newEnd) {
-    this.endRaw = newEnd;
-    this._end = moment.tz(this.endRaw, 'hh:mm a', this.timezone.name);
+    this._end = moment.tz(newEnd, 'hh:mm a', this.timezone.name);
   }
   get timezone(): MomentTimezone {
     return this._timezone;
   }
   set timezone(newTimezone) {
     this.timezone = newTimezone;
-    this._start = moment.tz(this.startRaw, 'hh:mm a', this.timezone.name);
-    this._end = moment.tz(this.endRaw, 'hh:mm a', this.timezone.name);
+    this._start = moment.tz(this._start, 'hh:mm a', this.timezone.name);
+    this._end = moment.tz(this._end, 'hh:mm a', this.timezone.name);
   }
   set unpaidTotal(newTotal) {
     this._unpaidTotal = getPositiveNumber(newTotal, this._unpaidTotal);
@@ -65,15 +63,13 @@ export class Timetable {
     this._averageLoggedTotal = getPositiveNumber(newTotal, this._averageLoggedTotal);
   }
 
-  constructor(start, end, timezone) {
+  constructor(start: string, end: string, timezone) {
     this.timezone = timezone;
     if (typeof this.timezone === 'string') {
       this.timezone = moment.tz.zone(this.timezone);
     }
-    this.startRaw = this.start;
-    this.endRaw = this.end;
-    this._start = moment.tz(this.start, 'hh:mm a', this.timezone.name);
-    this._end = moment.tz(this.end, 'hh:mm a', this.timezone.name);
+    this._start = moment.tz(start, 'hh:mm a', this.timezone.name);
+    this._end = moment.tz(end, 'hh:mm a', this.timezone.name);
   }
   setVacation(total, available) {
     this.vacationTotal = getPositiveNumber(total, this.vacationTotal);
@@ -138,7 +134,7 @@ export default class User {
   slack: string;
   salary: boolean;
   timetable: Timetable;
-  row: any;
+  row: Rows.UsersRow;
   punches: Punch[];
   settings: Settings;
   
@@ -150,7 +146,7 @@ export default class User {
     this.row = row;
     this.punches = [];
   }
-  static parse(row) {
+  static parse(row: Rows.UsersRow) {
     const headers = HEADERS.users;
     const temp: any = {};
     for (let key in headers) {
@@ -251,10 +247,10 @@ export default class User {
   toDays(hours) {
     return this.timetable.toDays(hours);
   }
-  isInactive(current) {
+  isInactive(current?: moment.Moment) {
     current = current || moment.tz(this.timetable.timezone.name);
     const [start, end] = this.activeHours;
-    if (current.holiday()) {
+    if (holidayForMoment(current)) {
       return true;
     } else if (current.isBetween(start, end)) {
       return false;
@@ -311,7 +307,7 @@ export default class User {
   async undoPunch() {
     return new Promise((resolve, reject) => {
       const lastPunch = this.lastPunch();
-      Logger.log(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
+      Logger.Console.log(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
       let elapsed;
       if (lastPunch.times.block) {
         elapsed = lastPunch.times.block;
@@ -364,7 +360,7 @@ export default class User {
   }
   toRawPayroll(start, end) {
     const headers = HEADERS.payrollreports;
-    const row: any = {};
+    let row: Rows.PayrollReportsRow;
     row[headers.date] = moment.tz(TIMEZONE).format('M/DD/YYYY');
     row[headers.name] = this.name;
     let loggedTime = 0, 
@@ -405,7 +401,7 @@ export default class User {
         }
       }
       if (punch.projects && punch.projects.length > 0) {
-        for (let project in punch.projects) {
+        for (let project of punch.projects) {
           const match = projectsForPeriod.filter((item, index, arr) => {
             return project.name === item.name;
           })[0];
@@ -440,7 +436,7 @@ export default class User {
     return row;
   }
   updateRow() {
-    return new Promise((resolve, reject) => {
+    return new Promise<boolean>((resolve, reject) => {
       if (this.row) {
         const headers = HEADERS.users;
         this.row[headers.start] = this.timetable.start.format('h:mm A');
@@ -474,7 +470,7 @@ export default class User {
     });
   }
   directMessage(msg: string, logger = Logger, attachment?: any) {
-    logger.logToChannel(msg, this.slack, attachment, true);
+    logger.Slack.logToChannel(msg, this.slack, attachment, true);
   }
   hound(msg: string, logger = Logger) {
     const now = moment.tz(TIMEZONE);
@@ -483,7 +479,7 @@ export default class User {
       msg = `You have been on the clock for ${this.settings.houndFrequency} hours.\n` + msg;
     }
     setTimeout(() => this.directMessage(msg, logger), 1000 * (Math.floor(Math.random() * 3) + 1));
-    Logger.log(`Hounded ${this.slack} with '${msg}'`);
+    Logger.Console.log(`Hounded ${this.slack} with '${msg}'`);
     this.updateRow();
   }
   hexColor() {
@@ -549,6 +545,6 @@ export default class User {
     return attachment;
   }
   description() {
-    return `User: ${this.name} (${this.slack})\nThey have #{(@punches || []).length} punches on record\nLast punch was #{@lastPunchTime()}\nTheir active hours are from ${this.timetable.start.format('h:mm a')} to ${this.timetable.end.format('h:mm a')}\nThey are in ${this.timetable.timezone.name}\nThe last time they sent a message was ${+(moment.tz(TIMEZONE).diff(this.settings.lastMessage.time, 'hours', true).toFixed(2))} hours ago`;
+    return `User: ${this.name} (${this.slack})\nThey have ${(this.punches || []).length} punches on record\nLast punch was ${this.lastPunchTime()}\nTheir active hours are from ${this.timetable.start.format('h:mm a')} to ${this.timetable.end.format('h:mm a')}\nThey are in ${this.timetable.timezone.name}\nThe last time they sent a message was ${+(moment.tz(TIMEZONE).diff(this.settings.lastMessage.time, 'hours', true).toFixed(2))} hours ago`;
   }
 }

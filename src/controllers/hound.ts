@@ -17,14 +17,14 @@
 import moment from 'moment';
 import schedule from 'node-schedule';
 
-import { STRINGS, TIMEZONE } from '../helpers/constants';
-import logger from '../helpers/logger';
+import { STRINGS, TIMEZONE } from '../shared/constants';
+import Logger from '../logger/logger';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 const strings = STRINGS.hound;
 
 export default function (controller) {
-  const Logger = logger(controller);
+  Logger.Slack.setController(controller);
 
   // Generates a random [in/out] hound message
   function houndMessage (mode: 'in'|'out') {
@@ -42,15 +42,15 @@ export default function (controller) {
 
   function hound(slackuser, channel, forceHound = false, passive = false) {
     if (controller.name === slackuser.name) {
-      Logger.debug('Caught myself, don\'t hound the hound.');
+      Logger.Console.debug('Caught myself, don\'t hound the hound.');
       return;
     } else if (!Organization.ready()) {
-      Logger.debug('Don\'t hound, Organization isn\'t ready yet');
+      Logger.Console.debug('Don\'t hound, Organization isn\'t ready yet');
       return;
     }
     const user = Organization.getUserBySlackName(slackuser.name);
     if (!user) {
-      Logger.debug(`${slackuser.name} couldn't be found while attempting to hound`);
+      Logger.Console.debug(`${slackuser.name} couldn't be found while attempting to hound`);
       return;
     }
     if (user.settings.shouldHound && user.settings.houndFrequency > 0) {
@@ -58,7 +58,7 @@ export default function (controller) {
         channel.private = !!channel.is_im || !!channel.is_group;
       }
       if (channel.private || Organization.exemptChannels.indexOf(channel.name) !== -1) {
-        Logger.debug(`#${channel.name} is not an appropriate hounding channel`);
+        Logger.Console.debug(`#${channel.name} is not an appropriate hounding channel`);
         return;
       }
       const now = moment.tz(user.timetable.timezone.name);
@@ -82,28 +82,28 @@ export default function (controller) {
       const timeSinceLastMessage = user.settings.lastMessage.time.diff(last.time, 'hours', true) || 0;
       const timeSinceLastPing = +Math.abs(now.diff(lastPing, 'hours', true)) || 0;
       
-      Logger.debug(`${user.slack} - ${user.salary}, now: ${now.format('h:mm A, z')}, isInactive: ${user.isInactive()}, start: ${start.format('h:mm A')}, end: ${end.format('h:mm A')}, timeSinceLastPunch: ${timeSinceLastPunch}, timeSinceLastMessage: ${timeSinceLastMessage}, timeSinceStart: ${timeSinceStart}, timeSinceEnd: ${timeSinceEnd}, timeSinceLastPing: ${timeSinceLastPing}, houndFrequency: ${user.settings.houndFrequency}`);
+      Logger.Console.debug(`${user.slack} - ${user.salary}, now: ${now.format('h:mm A, z')}, isInactive: ${user.isInactive()}, start: ${start.format('h:mm A')}, end: ${end.format('h:mm A')}, timeSinceLastPunch: ${timeSinceLastPunch}, timeSinceLastMessage: ${timeSinceLastMessage}, timeSinceStart: ${timeSinceStart}, timeSinceEnd: ${timeSinceEnd}, timeSinceLastPing: ${timeSinceLastPing}, houndFrequency: ${user.settings.houndFrequency}`);
 
       if (user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
         if (!lastPunch && !user.isInactive() && !passive) {
-          Logger.debug(`Considering hounding ${user.slack} because of missing lastPunch during active period`);
+          Logger.Console.debug(`Considering hounding ${user.slack} because of missing lastPunch during active period`);
           if (now.isAfter(start) && timeSinceStart >= 0.5) {
             user.hound(houndMessage('in'), Logger);
           } else if (now.isAfter(end) && timeSinceEnd >= 0.5) {
             user.hound(houndMessage('out'), Logger);
           }
         } else if (lastPunch.mode === 'in' && user.isInactive()) {
-          Logger.debug(`Considering hounding ${user.slack} because lastPunch is in and it's outside of their active period`);
+          Logger.Console.debug(`Considering hounding ${user.slack} because lastPunch is in and it's outside of their active period`);
           if (now.isAfter(end) && timeSinceEnd >= 0.5) {
             user.hound(houndMessage('out'), Logger);
           }
         } else if (lastPunch.mode === 'out' && !passive) {
-          Logger.debug(`Considering hounding ${user.slack} because lastPunch is out during active period`);
+          Logger.Console.debug(`Considering hounding ${user.slack} because lastPunch is out during active period`);
           if (!user.isInactive() && timeSinceStart >= 0.5) {
             user.hound(houndMessage('in'), Logger);
           }
         } else if (lastPunch.mode === 'vacation' || lastPunch.mode === 'sick' || lastPunch.mode === 'unpaid') {
-          Logger.debug(`Considering hounding ${user.slack} because lastPunch is special`);
+          Logger.Console.debug(`Considering hounding ${user.slack} because lastPunch is special`);
           if (lastPunch.times.length > 0 && !now.isBetween(lastPunch.times[0], lastPunch.times[1]) && !passive) {
             user.hound(houndMessage('in'), Logger);
           } else if (lastPunch.times.block && !passive) {
@@ -113,14 +113,14 @@ export default function (controller) {
             }
           }
         } else if (user.salary && timeSinceLastPunch <= 0.25) {
-          Logger.debug(`${user.slack} is safe from hounding because they punched ${timeSinceLastPunch.toFixed(2)} hours ago`);
+          Logger.Console.debug(`${user.slack} is safe from hounding because they punched ${timeSinceLastPunch.toFixed(2)} hours ago`);
         } else if (!user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
           // Ping part-timers when their shift is longer than their houndFrequency
           if (lastPunch && lastPunch.mode === 'in' && timeSinceLastPunch > user.settings.houndFrequency) {
             user.hound(houndMessage('out'), Logger);
           }
         } else {
-          Logger.debug(`${user.slack} is safe from hounding for another ${user.settings.houndFrequency - +timeSinceLastPing.toFixed(2)} hours`);
+          Logger.Console.debug(`${user.slack} is safe from hounding for another ${user.settings.houndFrequency - +timeSinceLastPing.toFixed(2)} hours`);
         }
       }
     }
@@ -128,7 +128,7 @@ export default function (controller) {
 
   controller.on('user_typing', (bot, message) => {
     const user = robot.adapter.client.rtm.dataStore.getUserById(message.user);
-    const channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById(res.channel);
+    let channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById(message.channel);
     if (!channel.name) {
       channel = {
         private: true,
@@ -148,7 +148,7 @@ export default function (controller) {
   // Every five minutes, attempt to hound non-salaried users
   const autoHoundJob = schedule.scheduleJob('*/5 * * * *', () => {
     if (!Organization.ready()) {
-      Logger.warn('Don\'t autohound, Organization isn\'t ready yet');
+      Logger.Console.warn('Don\'t autohound, Organization isn\'t ready yet');
       return;
     }
     for (let user of Organization.users) {
@@ -159,12 +159,12 @@ export default function (controller) {
   // Every morning, reset hound status for each user
   const resetHoundJob = schedule.scheduleJob('0 9 * * 1-5', () => {
     if (!Organization.ready()) {
-      Logger.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
+      Logger.Console.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
       return;
     }
     const count = Organization.resetHounding();
     const response = `Reset ${count} ${count === 1 ? 'person\'s' : 'peoples\''} hound status for the morning`;
-    Logger.logToChannel(response, 'ibizan-diagnostics');
+    Logger.Slack.logToChannel(response, 'ibizan-diagnostics');
   });
 
 
@@ -177,7 +177,7 @@ export default function (controller) {
     const command = message.match[1]
     if (!command) {
       bot.reply(message, strings.houndhelp);
-      Logger.addReaction('dog2', message);
+      Logger.Slack.addReaction('dog2', message);
       return;
     }
     let comps = command.split(' ') || [];
@@ -210,7 +210,7 @@ export default function (controller) {
         });
         user.updateRow();
         user.directMessage(`Hounding frequency set to be every ${block} hours during your active timers.`, Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'start' || action === 'on' || action === 'enable') {
         user.settings.fromSettings({
           shouldHound: true,
@@ -219,7 +219,7 @@ export default function (controller) {
         });
         user.updateRow();
         user.directMessage('Hounding is now *on*.', Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'stop' || action === 'off' || action === 'disable') {
         user.settings.fromSettings({
           shouldHound: false,
@@ -228,7 +228,7 @@ export default function (controller) {
         });
         user.updateRow();
         user.directMessage('Hounding is now *off*. You will not be hounded until you turn this setting back on.', Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'pause') {
         if (user.settings.houndFrequency > -1 && user.settings.shouldHound) {
           user.settings.fromSettings({
@@ -237,10 +237,10 @@ export default function (controller) {
           });
           user.updateRow();
           user.directMessage('Hounding is now *paused*. Hounding will resume tomorrow.', Logger);
-          Logger.addReaction('dog2', message);
+          Logger.Slack.addReaction('dog2', message);
         } else {
           user.directMessage('Hounding is not enabled, so you cannot pause it.', Logger);
-          Logger.addReaction('x', message);
+          Logger.Slack.addReaction('x', message);
         }
       } else if (action === 'reset') {
         user.settings.fromSettings({
@@ -250,7 +250,7 @@ export default function (controller) {
         });
         user.updateRow();
         user.directMessage(`Reset your hounding status to organization defaults *(${Organization.houndFrequency} hours)*.`, Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'status' || action === 'info') {
         let status = user.settings.shouldHound ? 'on' : 'off';
         status = user.settings.shouldResetHound ? status : 'disabled';
@@ -258,15 +258,15 @@ export default function (controller) {
           status += `, and is set to ping every *${user.settings.houndFrequency} hours* while active`;
         }
         user.directMessage(`Hounding is ${status}.`, Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else {
         user.directMessage('I couldn\'t understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`', Logger);
-        Logger.addReaction('x', message);
+        Logger.Slack.addReaction('x', message);
       }
     } else if (scope === 'org') {
       if (!Organization.ready()) {
         user.directMessage('Organization is not ready', Logger);
-        Logger.addReaction('x', message);
+        Logger.Slack.addReaction('x', message);
         return;
       }
       let match;
@@ -275,45 +275,45 @@ export default function (controller) {
         const block = parseFloat(blockStr);
         Organization.setHoundFrequency(+block.toFixed(2));
         user.directMessage(`Hounding frequency set to every ${block} hours for ${Organization.name}, time until next hound reset.`, Logger);
-        Logger.addReaction('dog2', message); 
+        Logger.Slack.addReaction('dog2', message); 
       } else if (action === 'start' || action === 'enable' || action === 'on') {
         Organization.shouldHound = true;
         Organization.shouldResetHound = true;
         Organization.setShouldHound(true);
-        Organization.setHoundFrequency(+block.toFixed(2));
+        //Organization.setHoundFrequency(+block.toFixed(2));
         user.directMessage('Hounding is now *on* for the organization.', Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'stop' || action === 'disable' || action === 'off') {
         Organization.shouldHound = false;
         Organization.shouldResetHound = false;
         Organization.setShouldHound(false);
         user.directMessage('Hounding is now *off* for the organization. Hounding status will not reset until it is reactivated.', Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'pause') {
         Organization.shouldHound = false;
         Organization.shouldResetHound = true;
         Organization.setShouldHound(false);
         user.directMessage('Hounding is now *paused* for the organization. Hounding will resume tomorrow.', Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'reset') {
         Organization.resetHounding();
         user.directMessage(`Reset hounding status for all ${Organization.name} employees.`, Logger);
-        Logger.addReaction('dog2', message);
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'status' || action === 'info') {
         let status = Organization.shouldHound ? 'on' : 'off';
         status = Organization.shouldResetHound ? status : 'disabled';
         if (status === 'on') {
           status += `, and is set to ping every ${Organization.houndFrequency} hours while active`;
           user.directMessage(`Hounding is ${status}.`, Logger);
-          Logger.addReaction('dog2', message);
+          Logger.Slack.addReaction('dog2', message);
         } else {
           user.directMessage('I couldn\'t understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`', Logger);
-          Logger.addReaction('x', message);
+          Logger.Slack.addReaction('x', message);
         }
       } else {
-        Logger.debug(`Hound could not parse ${command}`);
+        Logger.Console.debug(`Hound could not parse ${command}`);
         user.directMessage('I couldn\'t understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`', Logger);
-        Logger.addReaction('x', message);
+        Logger.Slack.addReaction('x', message);
       }
     }
   });
