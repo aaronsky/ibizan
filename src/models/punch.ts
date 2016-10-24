@@ -1,19 +1,30 @@
+import moment from 'moment-timezone';
+import weekend from 'moment-weekend';
+import uuid from 'node-uuid';
 
-import * as moment from 'moment-timezone';
-import * as weekend from 'moment-weekend';
-import * as uuid from 'node-uuid';
-
-import { HEADERS, MODES, REGEX, TIMEZONE } from '../helpers/constants';
-import logger from '../helpers/logger';
-const Logger = logger();
+import { HEADERS, MODES, REGEX, TIMEZONE } from '../shared/constants';
+import { PunchTime, Rows } from '../shared/common';
+import { holidayForMoment } from '../shared/moment-holiday';
+import Logger from '../logger/logger';
 import User from './user';
 import Project from './project';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 
+function mergeDateTime(date: moment.Moment, time: any, tz: any = TIMEZONE) {
+  return moment.tz({
+    year: date.get('year'),
+    month: date.get('month'),
+    date: date.get('date'),
+    hour: time.get('hour'),
+    minute: time.get('minute'),
+    second: time.get('second')
+  }, tz);
+};
+
 export default class Punch {
   mode: string;
-  times: moment.Moment[];
+  times: PunchTime;
   projects: Project[];
   notes: string;
   date: moment.Moment;
@@ -21,7 +32,7 @@ export default class Punch {
   elapsed?: number;
   row: any;
 
-  constructor(mode: string, times: any[], projects: Project[], notes: string) {
+  constructor(mode: string, times: PunchTime, projects: Project[], notes: string) {
     this.mode = mode;
     this.times = times;
     this.projects = projects;
@@ -29,10 +40,10 @@ export default class Punch {
   }
   static parse(user: User, command: string, mode: string = 'none', timezone?: any) {
     if (!user) {
-      Logger.error('No user passed', new Error(command));
+      Logger.Console.error('No user passed', new Error(command));
       return;
     } else if (!command) {
-      Logger.error('No command passed', new Error(user));
+      Logger.Console.error('No command passed', new Error(user.toString()));
       return;
     }
     if (mode && mode !== 'none') {
@@ -47,31 +58,31 @@ export default class Punch {
     const [dates, commandWithoutDate] = this.parseDate(command);
     command = commandWithoutDate;
 
-    const datetimes = []
+    let datetimes: PunchTime = [];
     if (dates.length === 0 && times.length === 0) {
       datetimes.push(moment.tz(tz));
     } else if (dates.length > 0 && times.length === 0) {
-      datetimes.push(this.mergeDateTime(dates[0], start, tz));
-      datetimes.push(this.mergeDateTime(dates[dates.length - 1], end, tz));
+      datetimes.push(mergeDateTime(dates[0], start, tz));
+      datetimes.push(mergeDateTime(dates[dates.length - 1], end, tz));
     } else if (dates.length === 0 && times.length > 0) {
       for (let time of times) {
-        datetimes.push(this.mergeDateTime(moment.tz(tz), time, tz));
+        datetimes.push(mergeDateTime(moment.tz(tz), time, tz));
       }
     } else {
       if (dates.length === 2 && times.length === 2) {
-        datetimes.push(this.mergeDateTime(dates[0], times[0], tz));
-        datetimes.push(this.mergeDateTime(dates[1], times[1], tz));
+        datetimes.push(mergeDateTime(dates[0], times[0], tz));
+        datetimes.push(mergeDateTime(dates[1], times[1], tz));
       } else if (dates.length === 2 && times.length === 1) {
-        datetimes.push(this.mergeDateTime(dates[0], times[0], tz));
-        datetimes.push(this.mergeDateTime(dates[1], times[0], tz));
+        datetimes.push(mergeDateTime(dates[0], times[0], tz));
+        datetimes.push(mergeDateTime(dates[1], times[0], tz));
       } else if (dates.length === 1 && times.length === 2) {
-        datetimes.push(this.mergeDateTime(dates[0], times[0], tz));
-        datetimes.push(this.mergeDateTime(dates[0], times[1], tz));
+        datetimes.push(mergeDateTime(dates[0], times[0], tz));
+        datetimes.push(mergeDateTime(dates[0], times[1], tz));
       } else {
-        datetimes.push(this.mergeDateTime(dates[0], times[0], tz));
+        datetimes.push(mergeDateTime(dates[0], times[0], tz));
       }
     }
-    
+
     let date, elapsed;
     if (times.block) {
       datetimes.block = times.block;
@@ -86,7 +97,7 @@ export default class Punch {
       }
     } else if (datetimes.length === 2) {
       if (mode === 'out') {
-        Logger.error ('An out-punch cannot be a range', new Error(original));
+        Logger.Console.error('An out-punch cannot be a range', new Error(original));
         return;
       }
       if (datetimes[1].isBefore(datetimes[0])) {
@@ -110,7 +121,7 @@ export default class Punch {
     }
     return punch;
   }
-  static parseRaw(user: User, row: any, projects: Project[] = []) {
+  static parseRaw(user: User, row: Rows.RawDataRow, projects: Project[] = []) {
     if (!user) {
       return;
     } else if (!row) {
@@ -123,7 +134,7 @@ export default class Punch {
 
     // UUID sanity check
     if (row[headers.id].length != 36) {
-      Logger.debug(`${row[headers.id]} is not a valid UUID, changing to valid UUID`);
+      Logger.Console.debug(`${row[headers.id]} is not a valid UUID, changing to valid UUID`);
       row[headers.id] = uuid.v1();
       Organization.spreadsheet.saveRow(row);
     }
@@ -138,7 +149,7 @@ export default class Punch {
     } else {
       mode = 'none';
     }
-    const datetimes: moment.Moment[] = [];
+    const datetimes: PunchTime = [];
     const tz = user.timetable.timezone.name;
     for (var i = 0; i < 2; i++) {
       if (row[headers[MODES[i]]]) {
@@ -150,7 +161,7 @@ export default class Punch {
         datetimes.push(newDate.tz(tz));
       }
     }
-    let rawElapsed;
+    let rawElapsed, elapsed;
     if (row[headers.totalTime]) {
       const comps = row[headers.totalTime].split(':');
       rawElapsed = 0;
@@ -161,7 +172,7 @@ export default class Punch {
         } else {
           const compInt = parseInt(comp);
           rawElapsed += +(compInt / Math.pow(60, i).toFixed(2));
-        } 
+        }
       }
       if (isNaN(rawElapsed)) {
         rawElapsed = 0;
@@ -175,18 +186,18 @@ export default class Punch {
       if (datetimes[1].isBefore(datetimes[0])) {
         datetimes[1].add(1, 'days');
       }
-      const elapsed = this.calculateElapsed(datetimes[0], datetimes[1], mode, user)
+      elapsed = this.calculateElapsed(datetimes[0], datetimes[1], mode, user)
       if (elapsed < 0) {
-        Logger.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes));
+        Logger.Console.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes.toString()));
         return;
       } else if (elapsed !== rawElapsed && (rawElapsed == null || Math.abs(elapsed - rawElapsed) > 0.02)) {
-        Logger.debug(`${row[headers.id]} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
+        Logger.Console.debug(`${row[headers.id]} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
         const hours = Math.floor(elapsed);
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
         row[headers.totalTime] = `${hours}:${minute_str}:00.000`;
         Organization.spreadsheet.saveRow(row)
-        .catch((err) => Logger.error('Unable to save row', new Error(err)));
+          .catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
       }
     }
 
@@ -223,25 +234,31 @@ export default class Punch {
     punch.assignRow(row);
     return punch;
   }
-  appendProjects(projects: string[] = []) {
+  appendProjects(projects: string[] | Project[] = []) {
     const extraProjectCount = this.projects.length;
     if (extraProjectCount >= 6) {
       return;
     }
-    for (let projectStr of projects) {
+    for (let project of projects) {
       if (this.projects.length > 6) {
         return;
       }
-      let project;
-      if (project.charAt(0) === '#') {
-        project = Organization.getProjectByName(project);
+      let projectStr;
+      if (project instanceof Project) {
+        projectStr = project.name;  
       } else {
-        project = Organization.getProjectByName(`#${project}`);
+        projectStr = project;
+      }
+      let projectObject;
+      if (projectStr.charAt(0) === '#') {
+        projectObject = Organization.getProjectByName(projectStr);
+      } else {
+        projectObject = Organization.getProjectByName(`#${project}`);
       }
       if (!project) {
         continue;
-      } else if (this.projects.indexOf(project) === -1) {
-        this.projects.push(project);
+      } else if (this.projects.indexOf(projectObject) === -1) {
+        this.projects.push(projectObject);
       }
     }
     return projects.join(' ');
@@ -320,10 +337,10 @@ export default class Punch {
     }
     return row;
   }
-  assignRow(row: ISheetRow) {
+  assignRow(row: any) {
     this.row = row;
   }
-  isValid(user: User) {
+  isValid(user: User): string | boolean {
     // fail cases
     let elapsed, date;
     if (this.times.block) {
@@ -378,9 +395,9 @@ export default class Punch {
         // if mode is 'vacation' and user doesn't have enough vacation time
         const elapsedDays = user.toDays(elapsed);
         if (this.mode === 'vacation' && user.timetable.vacationAvailable < elapsedDays) {
-          return `This punch exceeds your remaining vacation time. You\'re trying to add *${elapsedDays} days* worth of vacation time but you only have *${user.timetable.vacationAvailable} days* left.`; 
+          return `This punch exceeds your remaining vacation time. You\'re trying to add *${elapsedDays} days* worth of vacation time but you only have *${user.timetable.vacationAvailable} days* left.`;
         } else if (this.mode === 'sick' && user.timetable.sickAvailable < elapsedDays) {
-        // if mode is 'sick' and user doesn't have enough sick time
+          // if mode is 'sick' and user doesn't have enough sick time
           return `This punch exceeds your remaining sick time. You\'re trying to add *${elapsedDays} days* worth of sick time but you only have *${user.timetable.sickAvailable} days* left.`;
         }
         // if mode is 'vacation' and time isn't divisible by 4
@@ -458,15 +475,15 @@ export default class Punch {
     return attachment;
   }
   description(user: User, full: boolean = false) {
-    const modeQualifier = timeQualifier = elapsedQualifier = projectsQualifier = notesQualifier = warningQualifier = '';
-    const time = this.times.slice(-1)[0];
+    let modeQualifier, timeQualifier, blockTimeQualifier, elapsedQualifier, projectsQualifier, notesQualifier, warningQualifier;
+    let time = this.times.slice(-1)[0];
 
     let timeStr;
     if (!time) {
       time = this.date;
       timeStr = '';
     } else {
-      timeStr = "at #{time?.tz(user.timetable?.timezone?.name).format('h:mma')} "
+      timeStr = `at ${time.tz(user.timetable.timezone.name).format('h:mma')} `
     }
 
     let dateQualifier;
@@ -477,8 +494,9 @@ export default class Punch {
     } else {
       dateQualifier = `on ${time.format('MMM Do, YYYY')}`;
     }
-    const timeQualifier = ` ${timeStr}${dateQualifier}`;
+    timeQualifier = ` ${timeStr}${dateQualifier}`;
 
+    let article;
     if (this.times.block) {
       const hours = Math.floor(this.times.block);
       let hoursStr = '';
@@ -490,7 +508,7 @@ export default class Punch {
       if (minutes !== 0) {
         minutesStr = `${minutes} minute`;
       }
-      const blockTimeQualifier = `${hoursStr}${hours > 0 && minutes > 0 ? ', ' : ''}${minutesStr}`;
+      blockTimeQualifier = `${hoursStr}${hours > 0 && minutes > 0 ? ', ' : ''}${minutesStr}`;
       if (blockTimeQualifier.charAt(0) === '8' || this.times.block === 11 || this.times.block === 18) {
         article = 'an';
       } else {
@@ -511,7 +529,7 @@ export default class Punch {
       } else if (minutes > 1) {
         minutesStr = `${minutes} minutes`;
       }
-      const elapsedQualifier = " (#{hoursStr}#{if hours > 0 and minutes > 0 then ', ' else ''}#{minutesStr})"
+      elapsedQualifier = ` (${hoursStr}${hours > 0 && minutes > 0 ? ', ' : ''}${minutesStr})`
     }
     if (this.mode === 'vacation' || this.mode === 'sick' || this.mode === 'unpaid') {
       if (blockTimeQualifier) {
@@ -528,6 +546,7 @@ export default class Punch {
       projectsQualifier = ' (';
       projectsQualifier += this.projects.map((el) => `#${el.name}`).join(', ');
     }
+    let warnings;
     if (this.notes) {
       if (projectsQualifier) {
         notesQualifier = `, '${this.notes}')`;
@@ -535,7 +554,7 @@ export default class Punch {
         notesQualifier = ` ('${this.notes}')`;
       }
       const words = this.notes.split(' ');
-      const warnings = {
+      warnings = {
         projects: [],
         other: []
       };
@@ -565,16 +584,6 @@ export default class Punch {
     }
     return description;
   }
-  private mergeDateTime(date: moment.Moment, time: any, tz: any = TIMEZONE) {
-    return moment.tz({
-      year: date.get('year'),
-      month: date.get('month'),
-      date: date.get('date'),
-      hour: time.get('hour'),
-      minute: time.get('minute'),
-      second: time.get('second')
-    }, tz);
-  }
   private parseMode(command: string) {
     const comps = command.split(' ');
     let [mode, commandWithoutMode] = [comps.shift(), comps.join(' ')];
@@ -587,13 +596,13 @@ export default class Punch {
   }
   private parseTime(command: string, activeStart: any, activeEnd: any, tz: any) {
     // parse time component
-    command = command.trimLeft() || '';
+    command = command.replace(/^\s+/,'') || '';
     if (command.indexOf('at') === 0) {
       command = command.replace('at', '');
-      command = command.trimLeft();
+      command = command.replace(/^\s+/,'');
     }
     const activeTime = activeEnd.diff(activeStart, 'hours', true).toFixed(2);
-    const time = [];
+    const time: PunchTime = [];
     let match;
     if (match = command.match(REGEX.rel_time)) {
       if (match[0] === 'half-day' || match[0] === 'half day') {
@@ -608,13 +617,13 @@ export default class Punch {
           time.push(midTime, moment(activeEnd));
         }
       } else if (match[0] === 'noon') {
-        time.push(moment({ 
-          hour: 12, 
+        time.push(moment({
+          hour: 12,
           minute: 0
         }));
       } else if (match[0] === 'midnight') {
         time.push(moment({
-          hour: 0, 
+          hour: 0,
           minute: 0
         }));
       } else {
@@ -627,14 +636,14 @@ export default class Punch {
     } else if (match = command.match(REGEX.time)) {
       let timeMatch = match[0];
       const now = moment.tz(tz);
-      let hourStr;
+      let hourStr, period;
       if (hourStr = timeMatch.match(/\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i)) {
         const hour = parseInt(hourStr[0].replace(':', ''));
         if (hour <= 12) {
           if (!timeMatch.match(/(a|p)m?/i)) {
             // Inferred period
-            const period = now.format('a');
-            timeMatch = "#{timeMatch} #{period}";
+            period = now.format('a');
+            timeMatch = `${timeMatch} ${period}`;
           }
         }
       }
@@ -651,10 +660,10 @@ export default class Punch {
     return [time, command];
   }
   private parseDate(command: string) {
-    command = command.trimLeft() || '';
+    command = command.replace(/^\s+/,'') || '';
     if (command.indexOf('on') === 0) {
       command = command.replace('on', '');
-      command = command.trimLeft();
+      command = command.replace(/^\s+/,'');
     }
     const date = [];
     let match;
@@ -667,7 +676,7 @@ export default class Punch {
       date.push(yesterday);
       const pattern = new RegExp(match[0] + ' ?', 'i');
       command = command.replace(pattern, '');
-    } else if (match = command.match REGEX.days) {
+    } else if (match = command.match(REGEX.days)) {
       let today = moment();
       if (today.format('dddd').toLowerCase() !== match[0]) {
         today = today.day(match[0]).subtract(7, 'days');
@@ -675,7 +684,7 @@ export default class Punch {
       date.push(today);
       const pattern = new RegExp(match[0] + ' ?', 'i');
       command = command.replace(pattern, '');
-    } else if (match = command.match(REGEX.date)) { 
+    } else if (match = command.match(REGEX.date)) {
       // Placeholder for date blocks
       if (match[0].indexOf('-') !== -1) {
         const dateStrings = match[0].split('-')
@@ -712,7 +721,7 @@ export default class Punch {
     }
     return [date, command];
   }
-  private calculateElapsed(start: any, end: any, mode: string, user: User) {
+  private calculateElapsed(start: moment.Moment, end: moment.Moment, mode: string, user: User) {
     let elapsed = end.diff(start, 'hours', true);
     if (mode === 'vacation' || mode === 'sick') {
       const [activeStart, activeEnd] = user.activeHours;
@@ -724,7 +733,7 @@ export default class Punch {
         let holidays = 0;
         const currentDate = moment(start);
         while (currentDate.isSameOrBefore(end)) {
-          const holidayStr = currentDate.holiday();
+          const holidayStr = holidayForMoment(currentDate);
           const dayOfWeek = currentDate.day();
           if (holidayStr && dayOfWeek !== 0 && dayOfWeek !== 6) {
             holidays += 1;
@@ -742,10 +751,10 @@ export default class Punch {
   }
   private parseProjects(command: string) {
     const projects = [];
-    command = command.trimLeft() || '';
+    command = command.replace(/^\s+/,'') || '';
     if (command.indexOf('in') === 0) {
       command = command.replace('in', '');
-      command = command.trimLeft();
+      command = command.replace(/^\s+/,'');
     }
     const commandCopy = command.split(' ').slice();
     for (let word of commandCopy) {

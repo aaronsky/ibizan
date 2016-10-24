@@ -6,15 +6,15 @@
 // Author:
 //   bcoia
 
-import { REGEX, STRINGS } from '../helpers/constants';
+import { REGEX, STRINGS } from '../shared/constants';
 const strings = STRINGS.access;
-import logger from '../helpers/logger';
+import Logger from '../logger/logger';
 
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 
 export default function (controller) {
-  const Logger = logger(controller);
+  Logger.Slack.setController(controller);
 
   function isAdminUser(userName: string) {
     return process.env.ADMINS.split(' ').indexOf(userName) !== -1;
@@ -61,7 +61,7 @@ export default function (controller) {
   controller.on('message_received', function(bot, message) {
     if (message && message.text && message.text.length < 30 && (message.text.match(REGEX.ibizan) || message.room && message.room.substring(0, 1) === 'D')) {
       bot.reply(`_${bot.random(strings.unknowncommand)} ${bot.random(strings.askforhelp)}_`);
-      Logger.addReaction('question', message);
+      Logger.Slack.addReaction('question', message);
       bot.finish();
     }
   });

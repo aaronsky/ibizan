@@ -11,25 +11,25 @@ import { NONAME } from 'dns';
 
 import moment from 'moment';
 
-import { HEADERS, STRINGS, TIMEZONE } from '../helpers/constants';
+import { HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.diagnostics;
-import logger from '../helpers/logger';
+import Logger from '../logger/logger';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 
 export default function (controller) {
-  const Logger = logger(controller);
+  Logger.Slack.setController(controller);
 
   // respond
   // diagnostics.uptime
-  controller.hears('uptime', ['message_received'], (bot, message) => {
+  controller.hears('uptime', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
     bot.reply(message, `${Organization.name}'s Ibizan has been up since ${Organization.initTime.toDate()} _(${+moment().diff(Organization.initTime, 'minutes', true).toFixed(2)} minutes)_`);
-    Logger.addReaction('dog2', message);
+    Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // id: diagnostics.users, userRequired: true, adminOnly: true
-  controller.hears('users', ['message_received'], (bot, message) => {
+  controller.hears('users', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
     const response = 'All users:';
     const attachments = [];
@@ -37,36 +37,36 @@ export default function (controller) {
       attachments.push(user.slackAttachment());
     }
     user.directMessage(response, Logger, attachments);
-    Logger.addReaction('dog2', message);
+    Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // id: diagnostics.userHelp, adminOnly: true
-  controller.hears('user$', ['message_received'], (bot, message) => {
+  controller.hears('user$', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
     bot.reply(message, strings.userhelp);
-    Logger.addReaction('dog2', message);
+    Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // id: diagnostics.user, userRequired: true, adminOnly: true
-  controller.hears('user (.*)', ['message_received'], (bot, message) => {
+  controller.hears('user (.*)', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
     const u = Organization.getUserBySlackName(message.match[1]);
     let response = `User ${message.match[1]}`;
     if (u) {
       response += ':';
       user.directMessage(response, Logger, [u.slackAttachment()]);
-      Logger.addReaction('dog2', message);
+      Logger.Slack.addReaction('dog2', message);
     } else {
       response += ' could not be found. Make sure you\'re using their Slack name.';
       user.directMessage(response, Logger);
-      Logger.addReaction('x', message);
+      Logger.Slack.addReaction('x', message);
     }
   });
 
   // respond
   // id: diagnostics.dailyReport, adminOnly: true
-  controller.hears('daily report', ['message_received'], async (bot, message) => {
+  controller.hears('daily report', ['direct_message','direct_mention','mention','ambient'], async (bot, message) => {
     const yesterday = moment.tz({
       hour: 0,
       minute: 0,
@@ -82,44 +82,44 @@ export default function (controller) {
       const report = Organization.dailyReport(reports, today, yesterday);
       bot.reply(message, report);
     } catch (err) {
-      Logger.errorToSlack('Failed to produce a daily report', err);
+      Logger.Slack.errorToSlack('Failed to produce a daily report', err);
     }
-    Logger.addReaction('dog2', message);
+    Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // id: diagnostics.projects, userRequired: true, adminOnly: true
-  controller.hears('projects', ['message_received'], (bot, message) => {
+  controller.hears('projects', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
     let response = '';
     for (let project of Organization.projects) {
       response += project.description() + '\n\n';
     }
     user.directMessage(response, Logger);
-    Logger.addReaction('dog2', message);
+    Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // id: diagnostics.calendar, userRequired: true, adminOnly: true
-  controller.hears('calendar', ['message_received'], (bot, message) => {
+  controller.hears('calendar', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
     user.directMessage(Organization.calendar.description(), Logger);
-    Logger.addReaction('dog2', message);
+    Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // diagnostics.sync
-  controller.hears('sync', ['message_received'], async (bot, message) => {
-    Logger.addReaction('clock4', message);
+  controller.hears('sync', ['direct_message','direct_mention','mention','ambient'], async (bot, message) => {
+    Logger.Slack.addReaction('clock4', message);
     try {
       const status = await Organization.sync();
       bot.say(message, 'Resynced with spreadsheet');
-      Logger.removeReaction('clock4', message);
-      Logger.addReaction('dog2', message);
+      Logger.Slack.removeReaction('clock4', message);
+      Logger.Slack.addReaction('dog2', message);
     } catch (err) {
-      Logger.errorToSlack('Failed to resync', err);
-      Logger.removeReaction('clock4', message);
-      Logger.addReaction('x', message);
+      Logger.Slack.errorToSlack('Failed to resync', err);
+      Logger.Slack.removeReaction('clock4', message);
+      Logger.Slack.addReaction('x', message);
     }
   });
 
@@ -133,7 +133,7 @@ export default function (controller) {
     } else {
       const responseUrl = body.response_url || null;
       if (responseUrl) {
-        Logger.log('POSTing to ${responseUrl}');
+        Logger.Console.log('POSTing to ${responseUrl}');
       }
       res.status(200);
       res.json({
@@ -142,7 +142,7 @@ export default function (controller) {
       try {
         const status = await Organization.sync();
         const message = 'Resynced with spreadsheet';
-        Logger.log(message);
+        Logger.Console.log(message);
         const payload = {
           text: message
         };
@@ -161,7 +161,7 @@ export default function (controller) {
         }
       } catch (err) {
         const message = 'Failed to resync';
-        Logger.errorToSlack(message, err);
+        Logger.Slack.errorToSlack(message, err);
         const payload = {
           text: message
         };
@@ -176,9 +176,9 @@ export default function (controller) {
 
   // respond
   // diagnostics.help
-  controller.hears('.*(help|docs|documentation|commands).*', ['message_received'], (bot, message) => {
+  controller.hears('.*(help|docs|documentation|commands).*', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
     user.directMessage(strings.help, Logger);
-    Logger.addReaction('dog2', message);
+    Logger.Slack.addReaction('dog2', message);
   });
 };

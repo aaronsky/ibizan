@@ -1,9 +1,8 @@
 
 import * as moment from 'moment';
 
-import { HEADERS } from '../helpers/constants';
-import logger from '../helpers/logger';
-const Logger = logger();
+import { HEADERS } from '../shared/constants';
+import Logger from '../logger/logger';
 import Calendar, { CalendarEvent } from './calendar';
 import Spreadsheet from './sheet';
 import Project from './project';
@@ -39,18 +38,20 @@ export namespace Organization {
     calendar: Calendar;
     clockChannel: string;
     exemptChannels: string[];
+    shouldHound: boolean;
+    shouldResetHound: boolean;
 
     constructor(id?: string) {
       this.name = NAME || 'Bad organization name';
       const sheetId = id || CONFIG.sheet_id;
       if (sheetId) {
         this.spreadsheet = new Spreadsheet(sheetId);
-        Logger.fun(`Welcome to ${this.name}!`);
+        Logger.Console.fun(`Welcome to ${this.name}!`);
         this.initTime = moment();
         if (this.spreadsheet.sheet) {
-          this.sync().then(() => Logger.log('Options loaded'));
+          this.sync().then(() => Logger.Console.log('Options loaded'));
         } else {
-          Logger.warn('Sheet not initialized, no spreadsheet ID was provided');
+          Logger.Console.warn('Sheet not initialized, no spreadsheet ID was provided');
         }
       }
     }
@@ -101,7 +102,7 @@ export namespace Organization {
           }
         }
       }
-      Logger.debug(`User ${name} could not be found`);
+      Logger.Console.debug(`User ${name} could not be found`);
     }
     getUserByRealName(name: string, users?: User[]) {
       if (!users) {
@@ -114,7 +115,7 @@ export namespace Organization {
           }
         }
       }
-      Logger.debug(`Person ${name} could not be found`);
+      Logger.Console.debug(`Person ${name} could not be found`);
     }
     getProjectByName(name: string, projects?: Project[]) {
       if (!projects) {
@@ -128,17 +129,22 @@ export namespace Organization {
           }
         }
       }
-      Logger.debug(`Project ${name} could not be found`);
+      Logger.Console.debug(`Project ${name} could not be found`);
     }
-    async addEvent(date: string, name: string) {
+    async addEvent(date: string | moment.Moment, name: string) {
       return new Promise<CalendarEvent>((resolve, reject) => {
-        date = moment(date, 'MM/DD/YYYY');
-        if (!date.isValid()) {
+        let dateObject;
+        if (typeof date === 'string') {
+          dateObject = moment(date, 'MM/DD/YYYY');
+        } else {
+          dateObject = date;
+        }
+        if (!dateObject.isValid()) {
           reject('Invalid date given to addEvent');
         } else if (!name || name.length === 0) {
           reject('Invalid name given to addEvent');
         }
-        const calendarEvent = new CalendarEvent(date, name);
+        const calendarEvent = new CalendarEvent(dateObject, name);
         const calendar = this.calendar;
         this.spreadsheet.addEventRow(calendarEvent.toEventRow())
           .then(() => {
@@ -159,7 +165,7 @@ export namespace Organization {
           reject('No start or end date were passed as arguments');
           return;
         }
-        Logger.log(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
+        Logger.Console.log(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
 
         const headers = HEADERS.payrollreports;
         const reports = [];
@@ -233,7 +239,7 @@ export namespace Organization {
           recorded = true
         }
         if (!recorded) {
-          offBuffer += "#{report.extra.slack}:\t0 hours\n"
+          offBuffer += `${report.extra.slack}:\t0 hours\n`
         }
       }
       response += logBuffer + "\n"
@@ -259,7 +265,7 @@ export namespace Organization {
           if (weeks > 0) {
             const daysRemainder = days % 7 || 0;
             daysArticle = daysRemainder > 1 ? 'days' : 'day';
-            response += "#{upcomingEvent.name} in #{weeks} #{if weeks > 1 then 'weeks' else 'week'}#{if daysRemainder > 0 then ', ' + daysRemainder + ' ' + daysArticle}\n"
+            response += `${upcomingEvent.name} in ${weeks} ${weeks > 1 ? 'weeks' : 'week'}${daysRemainder > 0 ? ', ' + daysRemainder + ' ' + daysArticle : ''}\n`
           } else {
             response += `*${upcomingEvent.name}* ${days > 1 ? 'in *' + days + ' days*' : '*tomorrow*'}\n`
           }

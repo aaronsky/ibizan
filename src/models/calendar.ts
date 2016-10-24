@@ -1,10 +1,9 @@
 'use strict';
 
-import * as moment from 'moment';
+import moment from 'moment';
 
-import { HEADERS, TIMEZONE } from '../helpers/constants';
-import logger from '../helpers/logger';
-const Logger = logger();
+import { HEADERS, TIMEZONE } from '../shared/constants';
+import Logger from '../logger/logger';
 
 export default class Calendar {
   vacation: any;

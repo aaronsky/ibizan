@@ -6,33 +6,33 @@
 //  Author:
 //    aaronsky
 
-import { REGEX, STRINGS } from '../helpers/constants';
-import logger from '../helpers/logger';
+import { REGEX, STRINGS } from '../shared/constants';
+import { random } from '../shared/common';
+import Logger from '../logger/logger';
 const strings = STRINGS.bark;
 import * as moment from 'moment';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 
 export default function (controller) {
-  const Logger = logger(controller);
+  Logger.Slack.setController(controller);
 
   // bark.bark
-  controller.hears('bark', ['message_received'], (bot, message) => {
-    bot.say({
-      text: bot.random(strings.bark),
-      channel: message.channel
-    });
+  controller.hears('bark', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
+    bot.startTyping(message);
+    bot.reply(message, random(strings.bark));
   });
 
   //bark.story
-  controller.hears('tell me a story', ['message_received'], (bot, message) => {
-    bot.reply(message, bot.random(strings.story));
+  controller.hears('tell me a story', ['direct_message','direct_mention','mention'], (bot, message) => {
+    bot.startTyping(message);
+    bot.reply(message, random(strings.story));
   });
 
   // bark.goodboy
-  controller.hears('good (dog|boy|pup|puppy|ibizan|ibi)', ['message_received'], (bot, message) => {
+  controller.hears('good (dog|boy|pup|puppy|ibizan|ibi)', ['direct_message','direct_mention','mention'], (bot, message) => {
     bot.say({
-      text: bot.random(strings.goodboy),
+      text: strings.goodboy,
       channel: message.channel
     });
   });
@@ -53,18 +53,18 @@ export default function (controller) {
       setTimeout(() => {
         if ((Math.floor(Math.random() * 10) + 1) === 1) {
           bot.say({
-            text: `_returns to @${message.user.name}, unable to find ${thing}${bot.random(strings.fetchsuffix)}_`,
+            text: `_returns to @${message.user.name}, unable to find ${thing}${random(strings.fetchsuffix)}_`,
             channel: message.channel
           });
         } else {
           const match = thing.match(/:(.*?):/g);
           if (match) {
             for (let el of match) {
-              Logger.addReaction(el.replace(/:/g, ''), message);
+              Logger.Slack.addReaction(el.replace(/:/g, ''), message);
             }
           }
-          bot.say({
-            text: `_drops ${thing} at @${message.user.name}'s feet${bot.random(strings.fetchsuffix)}_`,
+          bot.reply({
+            text: `_drops ${thing} at @${message.user.name}'s feet${random(strings.fetchsuffix)}_`,
             channel: message.channel
           })
         }

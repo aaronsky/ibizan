@@ -1,12 +1,12 @@
 
 import * as GoogleSpreadsheet from 'google-spreadsheet';
-import * as moment from 'moment';
+import moment from 'moment';
 
-import '../../lib/moment-holidays.js';
-import { HEADERS } from '../helpers/constants';
+import { momentForHoliday } from '../shared/moment-holiday';
+import { HEADERS } from '../shared/constants';
+import { Rows } from '../shared/common';
 import Calendar, { CalendarEvent } from './calendar';
-import logger from '../helpers/logger';
-const Logger = logger();
+import Logger from '../logger/logger';
 import Project from './project';
 import User, { Settings, Timetable } from './user';
 import Punch from './punch';
@@ -38,11 +38,11 @@ export default class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          Logger.log('Authorized successfully');
+          Logger.Console.log('Authorized successfully');
           resolve();
         }
       });
-      Logger.log('Waiting for authorization');
+      Logger.Console.log('Waiting for authorization');
     });
   }
   async loadOptions() {
@@ -68,10 +68,10 @@ export default class Spreadsheet {
           let retry = 1
           setTimeout(() => {
             if (retry <= 3) {
-              Logger.debug(`Retrying save of ${rowName}, attempt ${retry}...`);
+              Logger.Console.debug(`Retrying save of ${rowName}, attempt ${retry}...`);
               row.save((err) => {
                 if (!err) {
-                  Logger.debug(`${rowName} saved successfully`);
+                  Logger.Console.debug(`${rowName} saved successfully`);
                   resolve(row);
                   return true;
                 }
@@ -79,7 +79,7 @@ export default class Spreadsheet {
               retry += 1;
             } else {
               reject(err);
-              Logger.error(`Unable to save ${rowName}`, new Error(err));
+              Logger.Console.error(`Unable to save ${rowName}`, new Error(err));
             }
           }, 1000);
         } else {
@@ -101,10 +101,10 @@ export default class Spreadsheet {
             let retry = 1
             setTimeout(() => {
               if (retry <= 3) {
-                Logger.debug(`Retrying adding ${rowName}, attempt ${retry}...`);
+                Logger.Console.debug(`Retrying adding ${rowName}, attempt ${retry}...`);
                 sheet.addRow(row, (err) => {
                   if (!err) {
-                    Logger.debug(`${rowName} saved successfully`);
+                    Logger.Console.debug(`${rowName} saved successfully`);
                     resolve(row);
                     return true;
                   }
@@ -112,7 +112,7 @@ export default class Spreadsheet {
                 retry += 1;
               } else {
                 reject(err);
-                Logger.error(`Unable to add ${rowName}`, new Error(err));
+                Logger.Console.error(`Unable to add ${rowName}`, new Error(err));
               }
             }, 1000);
           } else {
@@ -262,7 +262,7 @@ export default class Spreadsheet {
           let id = info.id;
           id = id.replace('https://spreadsheets.google.com/feeds/worksheets/', '');
           this.id = id.replace('/private/full', '');
-          this.url = `https://docs.google.com/spreadsheets/d/#{@id}`;
+          this.url = `https://docs.google.com/spreadsheets/d/${this.id}`;
           for (let worksheet of info.worksheets) {
             let title = worksheet.title;
             const words = title.split(' ');
@@ -277,7 +277,7 @@ export default class Spreadsheet {
           if (!(this.rawData && this.payroll && this.variables && this.projects && this.employees && this.events)) {
             reject('Worksheets failed to be associated properly');
           } else {
-            Logger.fun('----------------------------------------');
+            Logger.Console.fun('----------------------------------------');
             resolve({});
           }
         }
@@ -290,6 +290,7 @@ export default class Spreadsheet {
         if (err) {
           reject(err);
         } else {
+          const variableRows = rows as Rows.VariablesRow[];
           const opts = {
             vacation: 0,
             sick: 0,
@@ -300,7 +301,7 @@ export default class Spreadsheet {
             exemptChannels: []
           };
           const VARIABLE_HEADERS = HEADERS.variables;
-          for (let row of rows) {
+          for (let row of variableRows) {
             for (let key in VARIABLE_HEADERS) {
               const header = VARIABLE_HEADERS[key];
               if (row[header]) {
@@ -312,7 +313,7 @@ export default class Spreadsheet {
                   if (row[VARIABLE_HEADERS.holidayOverride]) {
                     date = moment(row[VARIABLE_HEADERS.holidayOverride], 'MM/DD/YYYY');
                   } else {
-                    date = moment().fromHolidayString(row[VARIABLE_HEADERS.holidays]);
+                    date = momentForHoliday(row[VARIABLE_HEADERS.holidays]);
                   }
                   opts[key].push({
                     name,
@@ -339,8 +340,8 @@ export default class Spreadsheet {
               }
             }
           }
-          Logger.fun('Loaded organization settings');
-          Logger.fun('----------------------------------------');
+          Logger.Console.fun('Loaded organization settings');
+          Logger.Console.fun('----------------------------------------');
           resolve(opts);
         }
       });
@@ -352,16 +353,17 @@ export default class Spreadsheet {
         if (err) {
           reject(err);
         } else {
+          const projectRows = rows as Rows.ProjectsRow[];
           const projects = [];
-          for (let row of rows) {
+          for (let row of projectRows) {
             const project = Project.parse(row);
             if (project) {
               projects.push(project);
             }
           }
           opts.projects = projects;
-          Logger.fun(`Loaded ${projects.length} projects`);
-          Logger.fun('----------------------------------------');
+          Logger.Console.fun(`Loaded ${projects.length} projects`);
+          Logger.Console.fun('----------------------------------------');
           resolve(opts);
         }
       });
@@ -373,6 +375,7 @@ export default class Spreadsheet {
         if (err) {
           reject(err);
         } else {
+          const userRows = rows as Rows.UsersRow[];
           const users = [];
           for (let row of rows) {
             const user = User.parse(row);
@@ -381,8 +384,8 @@ export default class Spreadsheet {
             }
           }
           opts.users = users;
-          Logger.fun(`Loaded ${users.length} users`);
-          Logger.fun('----------------------------------------');
+          Logger.Console.fun(`Loaded ${users.length} users`);
+          Logger.Console.fun('----------------------------------------');
           resolve(opts);
         }
       });
@@ -394,16 +397,17 @@ export default class Spreadsheet {
         if (err) {
           reject(err);
         } else {
+          const eventsRows = rows as Rows.EventsRow[];
           const events = [];
-          for (let row of rows) {
+          for (let row of eventsRows) {
             const calendarEvent = CalendarEvent.parse(row);
             if (calendarEvent) {
               events.push(calendarEvent);
             }
           }
           opts.events = events;
-          Logger.fun(`Loaded ${events.length} calendar events`);
-          Logger.fun('----------------------------------------');
+          Logger.Console.fun(`Loaded ${events.length} calendar events`);
+          Logger.Console.fun('----------------------------------------');
           resolve(opts);
         }
       })
@@ -415,15 +419,16 @@ export default class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          for (let row of rows) {
+          const punchRows = rows as Rows.RawDataRow[];
+          for (let row of punchRows) {
             const user = opts.users.filter((item, index, arr) => item.name === row[HEADERS.rawdata.name])[0];
             const punch = Punch.parseRaw(user, row, opts.projects);
             if (punch && user) {
               user.punches.push(punch);
             }
           }
-          Logger.fun(`Loaded ${rows.length} punches for ${opts.users.length} users`);
-          Logger.fun('----------------------------------------');
+          Logger.Console.fun(`Loaded ${rows.length} punches for ${opts.users.length} users`);
+          Logger.Console.fun('----------------------------------------');
           resolve(opts);
         }
       });
