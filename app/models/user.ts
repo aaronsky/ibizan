@@ -1,3 +1,4 @@
+import * as console from 'console';
 
 import moment from 'moment-timezone';
 
@@ -23,7 +24,7 @@ function getPositiveNumber(input?: number, current: number = 0) {
 export class Timetable {
   private _start: moment.Moment;
   private _end: moment.Moment;
-  private _timezone: MomentTimezone;
+  private _timezone: any;
   vacationTotal: number;
   vacationAvailable: number;
   sickTotal: number;
@@ -37,21 +38,21 @@ export class Timetable {
     return this._start;
   }
   set start(newStart: moment.Moment) {
-    this._start = moment.tz(newStart, 'hh:mm a', this.timezone.name);
+    this._start = moment.tz(newStart.format('hh:mm a'), 'hh:mm a', this.timezone.name);
   }
   get end(): moment.Moment {
     return this._end;
   }
   set end(newEnd) {
-    this._end = moment.tz(newEnd, 'hh:mm a', this.timezone.name);
+    this._end = moment.tz(newEnd.format('hh:mm a'), 'hh:mm a', this.timezone.name);
   }
-  get timezone(): MomentTimezone {
+  get timezone(): any {
     return this._timezone;
   }
   set timezone(newTimezone) {
     this.timezone = newTimezone;
-    this._start = moment.tz(this._start, 'hh:mm a', this.timezone.name);
-    this._end = moment.tz(this._end, 'hh:mm a', this.timezone.name);
+    this._start = moment.tz(this._start.format('hh:mm a'), 'hh:mm a', this.timezone.name);
+    this._end = moment.tz(this._end.format('hh:mm a'), 'hh:mm a', this.timezone.name);
   }
   set unpaidTotal(newTotal) {
     this._unpaidTotal = getPositiveNumber(newTotal, this._unpaidTotal);
@@ -361,6 +362,7 @@ export default class User {
   toRawPayroll(start, end) {
     const headers = HEADERS.payrollreports;
     let row: Rows.PayrollReportsRow;
+
     row[headers.date] = moment.tz(TIMEZONE).format('M/DD/YYYY');
     row[headers.name] = this.name;
     let loggedTime = 0, 

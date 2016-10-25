@@ -7,6 +7,9 @@
     "sourceMap": false,
     "outDir": "build"
   },
+  "include": [
+    "app/**/*.ts"
+  ],
   "exclude": [
     "node_modules"
   ]

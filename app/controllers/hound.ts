@@ -15,15 +15,16 @@
 //   aaronsky
 
 import moment from 'moment';
-import schedule from 'node-schedule';
+const schedule = require('node-schedule');
 
 import { STRINGS, TIMEZONE } from '../shared/constants';
+import { Controller } from '../shared/common';
 import Logger from '../logger';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 const strings = STRINGS.hound;
 
-export default function (controller) {
+export default function (controller: Controller) {
   Logger.Slack.setController(controller);
 
   // Generates a random [in/out] hound message
@@ -41,7 +42,8 @@ export default function (controller) {
   }
 
   function hound(slackuser, channel, forceHound = false, passive = false) {
-    if (controller.name === slackuser.name) {
+    // HACK: CONSTANT
+    if (slackuser.name === 'ibizan') {
       Logger.Console.debug('Caught myself, don\'t hound the hound.');
       return;
     } else if (!Organization.ready()) {
@@ -127,21 +129,24 @@ export default function (controller) {
   }
 
   controller.on('user_typing', (bot, message) => {
-    const user = robot.adapter.client.rtm.dataStore.getUserById(message.user);
-    let channel = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById(message.channel);
-    if (!channel.name) {
-      channel = {
-        private: true,
-        name: 'DM'
-      };
-    }
-    hound(user, channel, false);
+    bot.storage.users.get(message.user, (err, user) => {
+      bot.storage.channels.get(message.channel, (err, channel) => {
+        if (!channel.name) {
+          channel = {
+            private: true,
+            name: 'DM'
+          };
+        }
+        hound(user, channel, false);
+      });
+    });
   });
 
   controller.on('presence_change', (bot, message) => {
     if (message.presence === 'active') {
-      const user = robot.adapter.client.rtm.dataStore.getUserById(message.user);
-      hound(user, { private: null, name: '' }, false, true);
+      bot.storage.users.get(message.user, (err, user) => {
+        hound(user, { private: null, name: '' }, false, true);
+      });
     }
   });
 
@@ -171,7 +176,7 @@ export default function (controller) {
   // Check/adjust hounding settings
   // respond
   // hound.hound, userRequired: true
-  controller.hear('hound\s*(.*)?$', ['message_received'], (bot, message) => {
+  controller.hears('hound\s*(.*)?$', ['message_received'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
 
     const command = message.match[1]

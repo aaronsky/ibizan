@@ -48,34 +48,42 @@
 
 import moment from 'moment-timezone';
 
-import { REGEX, HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
+import { REGEX, REGEX_STR, HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
+import { Bot, Controller } from '../shared/common';
 import Logger from '../logger';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 import Punch from '../models/punch';
 import User from '../models/user';
 
-export default function (controller) {
+export default function (controller: Controller) {
   Logger.Slack.setController(controller);
 
-  function isDM(channel) {
-    const channelName = channel.toString();
-    return channelName.substring(0, 1) === 'D';
+  function isDM(channel: string) {
+    return channel.substring(0, 1) === 'D';
   }
 
-  function isClockChannel(channel) {
-    const chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById(channel);
-    return chan.name === Organization.clockChannel;
+  function isClockChannel(bot: Bot, channel: string, resolve: (isChannel: boolean) => void) {
+    bot.storage.channels.get(channel, (err, data) => {
+      resolve(data.name === Organization.clockChannel);
+    });
   }
 
-  function isProjectChannel(channel) {
-    const chan = robot.adapter.client.rtm.dataStore.getChannelGroupOrDMById(channel);
-    return (!isClockChannel(channel) && !isDM(channel) && Organization.getProjectByName(chan.name) != null);
+  function isProjectChannel(bot: Bot, channel: string, resolve: (isChannel: boolean) => void) {
+    bot.storage.channels.get(channel, (err, data) => {
+      isClockChannel(bot, channel, (isClockChannel) => {
+        resolve(!isClockChannel && !isDM(channel) && Organization.getProjectByName(data.name) != null);
+      });
+    });
   }
 
-  function canPunchHere(channel) {
-    return isDM(channel) || isClockChannel(channel) || isProjectChannel(channel);
+  function canPunchHere(bot: Bot, channel: string, resolve: (isAllowed: boolean) => void) {
+    isProjectChannel(bot, channel, (isProjectChannel) => {
+      isClockChannel(bot, channel, (isClockChannel) => {
+        return isDM(channel) || isClockChannel || isProjectChannel;
+      });
+    });
   }
 
   function toTimeStr(duration: number) {
@@ -101,43 +109,48 @@ export default function (controller) {
   }
 
   // Parse a textual punch and produce a new Punch object
-  function parse(bot, message, mode) {
+  function parse(bot: Bot, message: any, mode: string) {
     mode = mode.toLowerCase();
     const user = Organization.getUserBySlackName(message.user.name);
     Logger.Console.log(`Parsing '${message.text} for @${user.slack}.`);
-    if (canPunchHere(message.room)) {
-      Logger.Slack.addReaction('clock4', message);
-      const msg = message.match.input.replace(REGEX.ibizan, '').trim();
-      const tz = user.timetable.timezone.name || TIMEZONE;
-      const punch = Punch.parse(user, msg, mode, tz);
-      if (!punch.projects.length && isProjectChannel(message.room)) {
-        const project = Organization.getProjectByName(message.room);
-        if (project) {
-          punch.projects.push(project);
-        }
-      }
-      let modeQualifier, article;
-      if (punch.mode === 'none') {
-        modeQualifier = 'block';
+    canPunchHere(bot, message.room, (isAllowed) => {
+      if (isAllowed) {
+        Logger.Slack.addReaction('clock4', message);
+        const msg = message.match.input.replace(REGEX.ibizan, '').trim();
+        const tz = user.timetable.timezone.name || TIMEZONE;
+        const punch = Punch.parse(user, msg, mode, tz);
+        isProjectChannel(bot, message.room, (isProjectChannel) => {
+          if (!punch.projects.length && isProjectChannel) {
+            const project = Organization.getProjectByName(message.room);
+            if (project) {
+              punch.projects.push(project);
+            }
+          }
+          let modeQualifier, article;
+          if (punch.mode === 'none') {
+            modeQualifier = 'block';
+          } else {
+            modeQualifier = punch.mode;
+          }
+          if (punch.mode === 'none' || punch.mode === 'vacation' || punch.mode === 'sick') {
+            article = 'a';
+          } else {
+            article = 'an';
+          }
+          Logger.Console.log(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slack}: ${punch.description(user)}`);
+          sendPunch(punch, user, message);
+        });
       } else {
-        modeQualifier = punch.mode;
+        Logger.Slack.getChannelName(message.user.room, (channelName) => {
+          Logger.Slack.addReaction('x', message);
+          user.directMessage(`You cannot punch in #${channelName}. Try punching in #${Organization.clockChannel}, a designated project channel, or here.`, Logger);
+        });
       }
-      if (punch.mode === 'none' || punch.mode === 'vacation' || punch.mode === 'sick') {
-        article = 'a';
-      } else {
-        article = 'an';
-      }
-      Logger.Console.log(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slack}: ${punch.description(user)}`);
-      sendPunch(punch, user, message);
-    } else {
-      const channelName = Logger.Slack.getChannelName(message.user.room);
-      Logger.Slack.addReaction('x', message);
-      user.directMessage(`You cannot punch in #${channelName}. Try punching in #${Organization.clockChannel}, a designated project channel, or here.`, Logger);
-    }
+    });
   }
 
   // Send the punch to the Organization's Spreadsheet
-  async function sendPunch(punch, user, message) {
+  async function sendPunch(punch: Punch, user: User, message: any) {
     if (!punch) {
       Logger.Slack.errorToSlack(`Somehow, a punch was not generated for \"${user.slack}\". Punch:\n`, message.match.input);
       user.directMessage('An unexpected error occured while generating your punch.', Logger);
@@ -150,7 +163,7 @@ export default function (controller) {
       if (enteredPunch.mode === 'in') {
         user.directMessage(punchEnglish, Logger);
       } else {
-        user.directMessage(punchEnglish, Logger, [ enteredPunch.slackAttachment() ]);
+        user.directMessage(punchEnglish, Logger, [enteredPunch.slackAttachment()]);
       }
       Logger.Slack.addReaction('dog2', message);
       Logger.Slack.removeReaction('clock4', message);
@@ -167,14 +180,14 @@ export default function (controller) {
   // Punch for a given mode
   // respond
   // time.punchByMode, userRequired: true
-  controller.hears(REGEX.modes, ['message_received'], (bot, message) => {
+  controller.hears(REGEX_STR.modes, ['message_received'], (bot, message) => {
     parse(bot, message, message.match[1]);
   });
 
   // Punch for a block of time
   // respond
   // 'time.punchByTime', userRequired: true
-  controller.hears(REGEX.rel_time, ['message_received'], (bot, message) => {
+  controller.hears(REGEX_STR.rel_time, ['message_received'], (bot, message) => {
     parse(bot, message, message.match[1]);
   });
 
@@ -189,7 +202,7 @@ export default function (controller) {
     const operator = words[0];
     words.shift();
     const msgWithoutOperator = words.join(' ').trim();
-    
+
     let results = '';
     if (operator === 'project' || operator === 'projects' || operator === 'note' || operator === 'notes') {
       const punch = user.lastPunch('in');
@@ -199,11 +212,13 @@ export default function (controller) {
       }
       if (operator === 'project' || operator === 'projects') {
         const projects = msgWithoutOperator.split(' ');
-        if (projects.length === 0 && isProjectChannel(message.user.room)) {
-          projects.push(Organization.getProjectByName(message.user.room));
-        }
-        punch.appendProjects(projects);
-        results = projects.join(', ') || '';
+        isProjectChannel(bot, message.user.room, (isProjectChannel) => {
+          if (projects.length === 0 && isProjectChannel) {
+            projects.push(Organization.getProjectByName(message.user.room));
+          }
+          punch.appendProjects(projects);
+          results = projects.join(', ') || '';
+        });
       } else if (operator === 'note' || operator === 'notes') {
         punch.appendNotes(msgWithoutOperator);
         results = `'${msgWithoutOperator}'`;
@@ -273,7 +288,7 @@ export default function (controller) {
     } else {
       user.directMessage(strings.undofail, Logger);
     }
-  });      
+  });
 
   // respond
   // time.events
@@ -384,12 +399,12 @@ export default function (controller) {
     const attachments = [];
     const mode = message.match[1].toLowerCase();
     const headers = HEADERS.payrollreports;
-    
+
     let report, dateArticle;
     if (mode === 'week') {
       const sunday = moment({
-        hour: 0, 
-        minute: 0, 
+        hour: 0,
+        minute: 0,
         second: 0
       }).day('Sunday');
       report = user.toRawPayroll(sunday, now);
@@ -405,24 +420,24 @@ export default function (controller) {
       }
     } else if (mode === 'month') {
       const startOfMonth = moment.tz({
-        hour: 0, 
-        minute: 0, 
+        hour: 0,
+        minute: 0,
         second: 0
       }, tz).startOf('month');
       report = user.toRawPayroll(startOfMonth, now);
       dateArticle = 'this month';
     } else if (mode === 'year') {
       const startOfYear = moment.tz({
-        hour: 0, 
-        minute: 0, 
+        hour: 0,
+        minute: 0,
         second: 0
       }, tz).startOf('year');
       report = user.toRawPayroll(startOfYear, now);
       dateArticle = 'this year';
     } else if (mode === 'period') {
       let periodStart = moment({
-        hour: 0, 
-        minute: 0, 
+        hour: 0,
+        minute: 0,
         second: 0
       }).day('Sunday');
       if (Organization.calendar.isPayWeek()) {
@@ -501,7 +516,7 @@ export default function (controller) {
   // time.status, userRequired: true
   controller.hears('\b(status|info)$', ['message_received'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
-    user.directMessage('Your status:', Logger, [ user.slackAttachment() ]);
+    user.directMessage('Your status:', Logger, [user.slackAttachment()]);
     Logger.Slack.addReaction('dog2', message);
   });
 
@@ -571,7 +586,7 @@ export default function (controller) {
   controller.hears('active\s*(.*)?$', ['message_received'], (bot, message) => {
     const user = Organization.getUserBySlackName(message.user.name);
     const command = message.match[1];
-    
+
     if (!command) {
       bot.say({
         text: strings.activehelp,

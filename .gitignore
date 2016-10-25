@@ -1,8 +1,8 @@
 node_modules
 .DS_Store*
-.hubot_history
+build
 config
-bin/*credentials
+data
 coverage
+typings
 *.log
-typings/

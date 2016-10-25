@@ -62,34 +62,32 @@ export namespace Organization {
       return false;
     }
     async sync(auth?: any) {
-      return new Promise(async (resolve, reject) => {
-        try {
-          await this.spreadsheet.authorize(auth || CONFIG.auth);
-          let opts = await this.spreadsheet.loadOptions();
-          if (opts) {
-            this.houndFrequency = opts.houndFrequency;
-            let old;
-            if (this.users) {
-              old = this.users.slice(0);
-            }
-            this.users = opts.users;
-            if (old) {
-              for (let user of old) {
-                let newUser;
-                if (newUser = this.getUserBySlackName(user.slack)) {
-                  newUser.settings = Settings.fromSettings(user.settings);
-                }
+      try {
+        await this.spreadsheet.authorize(auth || CONFIG.auth);
+        let opts = await this.spreadsheet.loadOptions();
+        if (opts) {
+          this.houndFrequency = opts.houndFrequency;
+          let old;
+          if (this.users) {
+            old = this.users.slice(0);
+          }
+          this.users = opts.users;
+          if (old) {
+            for (let user of old) {
+              let newUser;
+              if (newUser = this.getUserBySlackName(user.slack)) {
+                newUser.settings = Settings.fromSettings(user.settings);
               }
             }
-            this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek, opts.events);
-            this.clockChannel = opts.clockChannel;
-            this.exemptChannels = opts.exemptChannels;
           }
-        } catch (err) {
-          reject(err);
+          this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek, opts.events);
+          this.clockChannel = opts.clockChannel;
+          this.exemptChannels = opts.exemptChannels;
         }
-        resolve(true);
-      });
+      } catch (err) {
+        throw err;
+      }
+      return true;
     }
     getUserBySlackName(name: string, users?: User[]) {
       if (!users) {
@@ -132,38 +130,32 @@ export namespace Organization {
       Logger.Console.debug(`Project ${name} could not be found`);
     }
     async addEvent(date: string | moment.Moment, name: string) {
-      return new Promise<CalendarEvent>((resolve, reject) => {
-        let dateObject;
-        if (typeof date === 'string') {
-          dateObject = moment(date, 'MM/DD/YYYY');
-        } else {
-          dateObject = date;
-        }
-        if (!dateObject.isValid()) {
-          reject('Invalid date given to addEvent');
-        } else if (!name || name.length === 0) {
-          reject('Invalid name given to addEvent');
-        }
-        const calendarEvent = new CalendarEvent(dateObject, name);
-        const calendar = this.calendar;
-        this.spreadsheet.addEventRow(calendarEvent.toEventRow())
-          .then(() => {
-            calendar.events.push(calendarEvent);
-            resolve(calendarEvent);
-          })
-          .catch((err) => {
-            reject(`Could not add event row: ${err}`);
-          });
-      });
+      let dateObject;
+      if (typeof date === 'string') {
+        dateObject = moment(date, 'MM/DD/YYYY');
+      } else {
+        dateObject = date;
+      }
+      if (!dateObject.isValid()) {
+        throw 'Invalid date given to addEvent';
+      } else if (!name || name.length === 0) {
+        throw 'Invalid name given to addEvent';
+      }
+      const calendarEvent = new CalendarEvent(dateObject, name);
+      const calendar = this.calendar;
+      try {
+        await this.spreadsheet.addEventRow(calendarEvent.toEventRow());
+      } catch (err) {
+        throw `Could not add event row: ${err}`;
+      }
+      calendar.events.push(calendarEvent);
+      return calendarEvent;
     }
-    async generateReport(start: any, end: any, send: boolean = false) {
-      return new Promise<any[]|number>(async (resolve, reject) => {
+    async generateReport(start: any, end: any, send: boolean = false): Promise<number | any[]> {
         if (!this.spreadsheet) {
-          reject('No spreadsheet is loaded, report cannot be generated');
-          return;
+          throw 'No spreadsheet is loaded, report cannot be generated';
         } else if (!start || !end) {
-          reject('No start or end date were passed as arguments');
-          return;
+          throw 'No start or end date were passed as arguments';
         }
         Logger.Console.log(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
 
@@ -187,14 +179,13 @@ export namespace Organization {
         if (send) {
           try {
             const numberDone = await this.spreadsheet.generateReport(reports);
-            resolve(numberDone);
+            return numberDone;
           } catch (err) {
-            reject(err);
+            throw err;
           }
         } else {
-          resolve(reports);
+          return reports;
         }
-      });
     }
     dailyReport(reports: any, today: any, yesterday: any) {
       const PAYROLL = HEADERS.payrollreports;

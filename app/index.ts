@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 const Botkit = require('botkit');
+const FirebaseStorage = require('botkit-storage-firebase');
 
 import { Bot, Controller } from './shared/common';
 import Config from './config';
@@ -16,7 +17,9 @@ export default class App {
     }
     start() {
         this.controller = Botkit.slackbot({
-            json_file_store: '../data/db_ibizan/'
+            storage: FirebaseStorage({
+                firebase_uri: this.config.storageUri
+            })
         }).configureSlackApp({
             clientId: this.config.clientId,
             clientSecret: this.config.clientSecret,
