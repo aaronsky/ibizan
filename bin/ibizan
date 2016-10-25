@@ -12,8 +12,8 @@ import minimist from 'minimist';
 import * as path from 'path';
 import * as fs from 'fs';
 
-import App from '../app';
-import Config from '../app/config';
+import App from '../build';
+import Config from '../build/config';
 
 const config = new Config();
 const argv = minimist(process.argv.slice(2));

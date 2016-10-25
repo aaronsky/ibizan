@@ -1,5 +1,5 @@
 
-import * as chalk from 'chalk';
+const chalk = require('chalk');
 import { STRINGS } from '../shared/constants';
 
 const strings = STRINGS.logger;

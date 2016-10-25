@@ -1,6 +1,6 @@
 
-import * as GoogleSpreadsheet from 'google-spreadsheet';
 import moment from 'moment';
+const GoogleSpreadsheet = require('google-spreadsheet');
 
 import { momentForHoliday } from '../shared/moment-holiday';
 import { HEADERS } from '../shared/constants';
@@ -12,7 +12,7 @@ import User, { Settings, Timetable } from './user';
 import Punch from './punch';
 
 export default class Spreadsheet {
-  sheet: GoogleSpreadsheet;
+  sheet: any;
   initialized: boolean;
   title: string;
   id: string;
@@ -123,12 +123,11 @@ export default class Spreadsheet {
     });
   }
   async enterPunch(punch: Punch, user: User) {
-    return new Promise<Punch>(async (resolve, reject) => {
       const valid = punch.isValid(user);
       if (!punch || !user) {
-        reject('Invalid parameters passed: Punch or user is undefined');
+        throw 'Invalid parameters passed: Punch or user is undefined';
       } else if (typeof valid === 'string') {
-        reject(valid);
+        throw valid;
       } else {
         const headers = HEADERS.rawdata;
         if (punch.mode === 'out') {
@@ -146,8 +145,7 @@ export default class Spreadsheet {
               }
             }
             if (!last) {
-              reject('You haven\'t punched out yet.');
-              return;
+              throw 'You haven\'t punched out yet.';
             }
             last.out(punch);
             const row = last.toRawRow(user.name);
@@ -168,12 +166,12 @@ export default class Spreadsheet {
                 try {
                   await project.updateRow();
                 } catch (err) {
-                  reject(err);
+                  throw err;
                 }
               }
-              resolve(last);
+              return last;
             } catch (err) {
-              reject(err);
+              throw err;
             }
           }
         } else {
@@ -182,7 +180,7 @@ export default class Spreadsheet {
             const newRow = await this.newRow(this.rawData, row);
             this.rawData.getRows({}, async (err, rows) => {
               if (err || !rows) {
-                reject(`Could not get rawData rows: ${err}`);
+                throw `Could not get rawData rows: ${err}`;
               } else {
                 const rowMatches = rows.filter(r => r[headers.id] === row[headers.id]);
                 const rowMatch = rowMatches[0];
@@ -211,18 +209,17 @@ export default class Spreadsheet {
                   try {
                     await user.updateRow();
                   } catch (err) {
-                    reject(`Could not update user row: ${err}`);
+                    throw `Could not update user row: ${err}`;
                   }
-                  resolve(punch);
+                  return punch;
                 }
               }
             });
           } catch (err) {
-            reject(`Could not add row: ${err}`);
+            throw `Could not add row: ${err}`;
           }
         }
       }
-    });
   }
   async generateReport(reports) {
     return new Promise<number>((resolve, reject) => {

@@ -10,7 +10,7 @@
 //   aaronsky
 
 import moment from 'moment';
-import schedule from 'node-schedule';
+const schedule = require('node-schedule');
 
 import { HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
 import Logger from '../logger';

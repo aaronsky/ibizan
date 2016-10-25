@@ -1,5 +1,5 @@
 import moment from 'moment-timezone';
-import weekend from 'moment-weekend';
+const weekend = require('moment-weekend');
 import uuid from 'node-uuid';
 
 import { HEADERS, MODES, REGEX, TIMEZONE } from '../shared/constants';
@@ -21,6 +21,193 @@ function mergeDateTime(date: moment.Moment, time: any, tz: any = TIMEZONE) {
     second: time.get('second')
   }, tz);
 };
+
+function parseMode(command: string): [string, string] {
+  const comps = command.split(' ');
+  let [mode, commandWithoutMode] = [comps.shift(), comps.join(' ')];
+  mode = (mode || '').toLowerCase().trim()
+  commandWithoutMode = (commandWithoutMode || '').trim()
+  if (MODES.indexOf(mode) !== -1) {
+    return [mode, commandWithoutMode];
+  }
+  return ['none', commandWithoutMode];
+}
+function parseTime(command: string, activeStart: any, activeEnd: any, tz: any): [PunchTime, string] {
+  // parse time component
+  command = command.replace(/^\s+/, '') || '';
+  if (command.indexOf('at') === 0) {
+    command = command.replace('at', '');
+    command = command.replace(/^\s+/, '');
+  }
+  const activeTime = activeEnd.diff(activeStart, 'hours', true).toFixed(2);
+  const time: PunchTime = [];
+  let match;
+  if (match = command.match(REGEX.rel_time)) {
+    if (match[0] === 'half-day' || match[0] === 'half day') {
+      const halfTime = activeTime / 2;
+      const midTime = moment(activeStart).add(halfTime, 'hours');
+      const period = moment().diff(activeStart, 'hours', true) <= halfTime ? 'early' : 'later';
+      if (period === 'early') {
+        // start to mid
+        time.push(moment(activeStart), midTime);
+      } else {
+        // mid to end
+        time.push(midTime, moment(activeEnd));
+      }
+    } else if (match[0] === 'noon') {
+      time.push(moment({
+        hour: 12,
+        minute: 0
+      }));
+    } else if (match[0] === 'midnight') {
+      time.push(moment({
+        hour: 0,
+        minute: 0
+      }));
+    } else {
+      const block_str = match[0].replace('hours', '').replace('hour', '').trimRight();
+      const block = parseFloat(block_str);
+      time.block = block
+    }
+    const pattern = new RegExp(match[0] + ' ?', 'i');
+    command = command.replace(pattern, '');
+  } else if (match = command.match(REGEX.time)) {
+    let timeMatch = match[0];
+    const now = moment.tz(tz);
+    let hourStr, period;
+    if (hourStr = timeMatch.match(/\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i)) {
+      const hour = parseInt(hourStr[0].replace(':', ''));
+      if (hour <= 12) {
+        if (!timeMatch.match(/(a|p)m?/i)) {
+          // Inferred period
+          period = now.format('a');
+          timeMatch = `${timeMatch} ${period}`;
+        }
+      }
+    }
+    const today = moment(timeMatch, 'h:mm a');
+    if (period && today.isAfter(now)) {
+      if (today.diff(now, 'hours', true) > 6) {
+        today.subtract(12, 'hours');
+      }
+    }
+    time.push(today);
+    const pattern = new RegExp(match[0] + ' ?', 'i');
+    command = command.replace(pattern, '');
+  }
+  return [time, command];
+}
+function parseDate(command: string): [moment.Moment[], string] {
+  command = command.replace(/^\s+/, '') || '';
+  if (command.indexOf('on') === 0) {
+    command = command.replace('on', '');
+    command = command.replace(/^\s+/, '');
+  }
+  const date = [];
+  let match;
+  if (match = command.match(/today/i)) {
+    date.push(moment());
+    const pattern = new RegExp(match[0] + ' ?', 'i');
+    command = command.replace(pattern, '');
+  } else if (match = command.match(/yesterday/i)) {
+    const yesterday = moment().subtract(1, 'days');
+    date.push(yesterday);
+    const pattern = new RegExp(match[0] + ' ?', 'i');
+    command = command.replace(pattern, '');
+  } else if (match = command.match(REGEX.days)) {
+    let today = moment();
+    if (today.format('dddd').toLowerCase() !== match[0]) {
+      today = today.day(match[0]).subtract(7, 'days');
+    }
+    date.push(today);
+    const pattern = new RegExp(match[0] + ' ?', 'i');
+    command = command.replace(pattern, '');
+  } else if (match = command.match(REGEX.date)) {
+    // Placeholder for date blocks
+    if (match[0].indexOf('-') !== -1) {
+      const dateStrings = match[0].split('-')
+      let month = ''
+      for (let str of dateStrings) {
+        str = str.trim()
+        if (!isNaN(str) && month) {
+          str = month + ' ' + str
+        }
+        const newDate = moment(str, "MMMM DD");
+        month = newDate.format('MMMM');
+        date.push(newDate);
+      }
+    } else {
+      const absDate = moment(match[0], "MMMM DD");
+      date.push(absDate);
+    }
+    const pattern = new RegExp(match[0] + ' ?', 'i');
+    command = command.replace(pattern, '');
+  } else if (match = command.match(REGEX.numdate)) {
+    if (match[0].indexOf('-') !== -1) {
+      const dateStrings = match[0].split('-')
+      let month = ''
+      for (let str of dateStrings) {
+        str = str.trim();
+        date.push(moment(str, 'MM/DD'));
+      }
+    } else {
+      const absDate = moment(match[0], 'MM/DD');
+      date.push(absDate);
+    }
+    const pattern = new RegExp(match[0] + ' ?', 'i');
+    command = command.replace(pattern, '');
+  }
+  return [date, command];
+}
+function calculateElapsed(start: moment.Moment, end: moment.Moment, mode: string, user?: User): number {
+  let elapsed = end.diff(start, 'hours', true);
+  if (!user) {
+    return +elapsed.toFixed(2);
+  }
+  if (mode === 'vacation' || mode === 'sick') {
+    const [activeStart, activeEnd] = user.activeHours;
+    const activeTime = user.activeTime;
+    const inactiveTime = +moment(activeStart).add(1, 'days').diff(activeEnd, 'hours', true).toFixed(2);
+    let numDays, numWeekends;
+    if (start && start.isValid() && end && end.isValid()) {
+      numDays = end.diff(start, 'days');
+      let holidays = 0;
+      const currentDate = moment(start);
+      while (currentDate.isSameOrBefore(end)) {
+        const holidayStr = holidayForMoment(currentDate);
+        const dayOfWeek = currentDate.day();
+        if (holidayStr && dayOfWeek !== 0 && dayOfWeek !== 6) {
+          holidays += 1;
+        }
+        currentDate.add(1, 'days');
+      }
+      const numWorkdays = weekend.diff(start, end) - holidays;
+      numWeekends = numDays - numWorkdays;
+    }
+    if (elapsed > activeTime && numDays) {
+      elapsed -= (inactiveTime * numDays) + (activeTime * numWeekends);
+    }
+  }
+  return +elapsed.toFixed(2);
+}
+function parseProjects(command: string): [Project[], string] {
+  const projects: Project[] = [];
+  command = command.replace(/^\s+/, '') || '';
+  if (command.indexOf('in') === 0) {
+    command = command.replace('in', '');
+    command = command.replace(/^\s+/, '');
+  }
+  const commandCopy = command.split(' ').slice();
+  for (let word of commandCopy) {
+    let project;
+    if (project = Organization.getProjectByName(word)) {
+      projects.push(project);
+      const pattern = new RegExp(word + ' ?', 'i');
+      command = command.replace(pattern, '');
+    }
+  }
+  return [projects, command];
+}
 
 export default class Punch {
   mode: string;
@@ -47,15 +234,15 @@ export default class Punch {
       return;
     }
     if (mode && mode !== 'none') {
-      const [mode, commandWithoutMode] = this.parseMode(command);
+      const [mode, commandWithoutMode] = parseMode(command);
       command = commandWithoutMode;
     }
     const original = command.slice(0);
     const [start, end] = user.activeHours;
     const tz = timezone || user.timetable.timezone.name;
-    const [times, commandWithoutTime] = this.parseTime(command, start, end, timezone);
+    const [times, commandWithoutTime] = parseTime(command, start, end, timezone);
     command = commandWithoutTime;
-    const [dates, commandWithoutDate] = this.parseDate(command);
+    const [dates, commandWithoutDate] = parseDate(command);
     command = commandWithoutDate;
 
     let datetimes: PunchTime = [];
@@ -103,13 +290,13 @@ export default class Punch {
       if (datetimes[1].isBefore(datetimes[0])) {
         datetimes[1] = datetimes[1].add(1, 'days');
       }
-      elapsed = this.calculateElapsed(datetimes[0], datetimes[1], mode, user);
+      elapsed = calculateElapsed(datetimes[0], datetimes[1], mode, user);
       if (mode === 'in') {
         mode = 'none'
       }
     }
 
-    const [projects, commandWithoutProject] = this.parseProjects(command);
+    const [projects, commandWithoutProject] = parseProjects(command);
     command = commandWithoutProject;
     const notes = command.trim();
 
@@ -163,15 +350,15 @@ export default class Punch {
     }
     let rawElapsed, elapsed;
     if (row[headers.totalTime]) {
-      const comps = row[headers.totalTime].split(':');
+      const comps = row.totalTime.split(':');
       rawElapsed = 0;
-      for (let i in comps) {
-        const comp = comps[i];
+      for (let i = 0; i < comps.length; i++) {
+        const comp: any = comps[i];
         if (isNaN(comp)) {
           continue;
         } else {
           const compInt = parseInt(comp);
-          rawElapsed += +(compInt / Math.pow(60, i).toFixed(2));
+          rawElapsed += +(compInt / (60 ** i)).toFixed(2);
         }
       }
       if (isNaN(rawElapsed)) {
@@ -186,7 +373,7 @@ export default class Punch {
       if (datetimes[1].isBefore(datetimes[0])) {
         datetimes[1].add(1, 'days');
       }
-      elapsed = this.calculateElapsed(datetimes[0], datetimes[1], mode, user)
+      elapsed = calculateElapsed(datetimes[0], datetimes[1], mode, user)
       if (elapsed < 0) {
         Logger.Console.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes.toString()));
         return;
@@ -245,7 +432,7 @@ export default class Punch {
       }
       let projectStr;
       if (project instanceof Project) {
-        projectStr = project.name;  
+        projectStr = project.name;
       } else {
         projectStr = project;
       }
@@ -283,7 +470,7 @@ export default class Punch {
           newTime.add(1, 'days');
         }
       }
-      this.elapsed = this.calculateElapsed(this.times[0], newTime, 'out');
+      this.elapsed = calculateElapsed(this.times[0], newTime, 'out');
       this.times.push(newTime);
     }
     if (punch.projects) {
@@ -583,188 +770,5 @@ export default class Punch {
       description = `${modeQualifier}${timeQualifier}${elapsedQualifier}`;
     }
     return description;
-  }
-  private parseMode(command: string) {
-    const comps = command.split(' ');
-    let [mode, commandWithoutMode] = [comps.shift(), comps.join(' ')];
-    mode = (mode || '').toLowerCase().trim()
-    commandWithoutMode = (commandWithoutMode || '').trim()
-    if (MODES.indexOf(mode) !== -1) {
-      return [mode, commandWithoutMode];
-    }
-    return ['none', commandWithoutMode];
-  }
-  private parseTime(command: string, activeStart: any, activeEnd: any, tz: any) {
-    // parse time component
-    command = command.replace(/^\s+/,'') || '';
-    if (command.indexOf('at') === 0) {
-      command = command.replace('at', '');
-      command = command.replace(/^\s+/,'');
-    }
-    const activeTime = activeEnd.diff(activeStart, 'hours', true).toFixed(2);
-    const time: PunchTime = [];
-    let match;
-    if (match = command.match(REGEX.rel_time)) {
-      if (match[0] === 'half-day' || match[0] === 'half day') {
-        const halfTime = activeTime / 2;
-        const midTime = moment(activeStart).add(halfTime, 'hours');
-        const period = moment().diff(activeStart, 'hours', true) <= halfTime ? 'early' : 'later';
-        if (period === 'early') {
-          // start to mid
-          time.push(moment(activeStart), midTime);
-        } else {
-          // mid to end
-          time.push(midTime, moment(activeEnd));
-        }
-      } else if (match[0] === 'noon') {
-        time.push(moment({
-          hour: 12,
-          minute: 0
-        }));
-      } else if (match[0] === 'midnight') {
-        time.push(moment({
-          hour: 0,
-          minute: 0
-        }));
-      } else {
-        const block_str = match[0].replace('hours', '').replace('hour', '').trimRight();
-        const block = parseFloat(block_str);
-        time.block = block
-      }
-      const pattern = new RegExp(match[0] + ' ?', 'i');
-      command = command.replace(pattern, '');
-    } else if (match = command.match(REGEX.time)) {
-      let timeMatch = match[0];
-      const now = moment.tz(tz);
-      let hourStr, period;
-      if (hourStr = timeMatch.match(/\b((0?[1-9]|1[0-2])|(([0-1][0-9])|(2[0-3]))):/i)) {
-        const hour = parseInt(hourStr[0].replace(':', ''));
-        if (hour <= 12) {
-          if (!timeMatch.match(/(a|p)m?/i)) {
-            // Inferred period
-            period = now.format('a');
-            timeMatch = `${timeMatch} ${period}`;
-          }
-        }
-      }
-      const today = moment(timeMatch, 'h:mm a');
-      if (period && today.isAfter(now)) {
-        if (today.diff(now, 'hours', true) > 6) {
-          today.subtract(12, 'hours');
-        }
-      }
-      time.push(today);
-      const pattern = new RegExp(match[0] + ' ?', 'i');
-      command = command.replace(pattern, '');
-    }
-    return [time, command];
-  }
-  private parseDate(command: string) {
-    command = command.replace(/^\s+/,'') || '';
-    if (command.indexOf('on') === 0) {
-      command = command.replace('on', '');
-      command = command.replace(/^\s+/,'');
-    }
-    const date = [];
-    let match;
-    if (match = command.match(/today/i)) {
-      date.push(moment());
-      const pattern = new RegExp(match[0] + ' ?', 'i');
-      command = command.replace(pattern, '');
-    } else if (match = command.match(/yesterday/i)) {
-      const yesterday = moment().subtract(1, 'days');
-      date.push(yesterday);
-      const pattern = new RegExp(match[0] + ' ?', 'i');
-      command = command.replace(pattern, '');
-    } else if (match = command.match(REGEX.days)) {
-      let today = moment();
-      if (today.format('dddd').toLowerCase() !== match[0]) {
-        today = today.day(match[0]).subtract(7, 'days');
-      }
-      date.push(today);
-      const pattern = new RegExp(match[0] + ' ?', 'i');
-      command = command.replace(pattern, '');
-    } else if (match = command.match(REGEX.date)) {
-      // Placeholder for date blocks
-      if (match[0].indexOf('-') !== -1) {
-        const dateStrings = match[0].split('-')
-        let month = ''
-        for (let str of dateStrings) {
-          str = str.trim()
-          if (!isNaN(str) && month) {
-            str = month + ' ' + str
-          }
-          const newDate = moment(str, "MMMM DD");
-          month = newDate.format('MMMM');
-          date.push(newDate);
-        }
-      } else {
-        const absDate = moment(match[0], "MMMM DD");
-        date.push(absDate);
-      }
-      const pattern = new RegExp(match[0] + ' ?', 'i');
-      command = command.replace(pattern, '');
-    } else if (match = command.match(REGEX.numdate)) {
-      if (match[0].indexOf('-') !== -1) {
-        const dateStrings = match[0].split('-')
-        let month = ''
-        for (let str of dateStrings) {
-          str = str.trim();
-          date.push(moment(str, 'MM/DD'));
-        }
-      } else {
-        const absDate = moment(match[0], 'MM/DD');
-        date.push(absDate);
-      }
-      const pattern = new RegExp(match[0] + ' ?', 'i');
-      command = command.replace(pattern, '');
-    }
-    return [date, command];
-  }
-  private calculateElapsed(start: moment.Moment, end: moment.Moment, mode: string, user: User) {
-    let elapsed = end.diff(start, 'hours', true);
-    if (mode === 'vacation' || mode === 'sick') {
-      const [activeStart, activeEnd] = user.activeHours;
-      const activeTime = user.activeTime;
-      const inactiveTime = +moment(activeStart).add(1, 'days').diff(activeEnd, 'hours', true).toFixed(2);
-      let numDays, numWeekends;
-      if (start && start.isValid() && end && end.isValid()) {
-        numDays = end.diff(start, 'days');
-        let holidays = 0;
-        const currentDate = moment(start);
-        while (currentDate.isSameOrBefore(end)) {
-          const holidayStr = holidayForMoment(currentDate);
-          const dayOfWeek = currentDate.day();
-          if (holidayStr && dayOfWeek !== 0 && dayOfWeek !== 6) {
-            holidays += 1;
-          }
-          currentDate.add(1, 'days');
-        }
-        const numWorkdays = weekend.diff(start, end) - holidays;
-        numWeekends = numDays - numWorkdays;
-      }
-      if (elapsed > activeTime && numDays) {
-        elapsed -= (inactiveTime * numDays) + (activeTime * numWeekends);
-      }
-    }
-    return +elapsed.toFixed(2);
-  }
-  private parseProjects(command: string) {
-    const projects = [];
-    command = command.replace(/^\s+/,'') || '';
-    if (command.indexOf('in') === 0) {
-      command = command.replace('in', '');
-      command = command.replace(/^\s+/,'');
-    }
-    const commandCopy = command.split(' ').slice();
-    for (let word of commandCopy) {
-      let project;
-      if (project = Organization.getProjectByName(word)) {
-        projects.push(project);
-        const pattern = new RegExp(word + ' ?', 'i');
-        command = command.replace(pattern, '');
-      }
-    }
-    return [projects, command];
   }
 }

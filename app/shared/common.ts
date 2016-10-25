@@ -1,4 +1,5 @@
 import * as moment from 'moment';
+import { HEADERS } from '../shared/constants';
 
 export function typeIsArray(value: any) {
   return (value && typeof value === 'object' && value instanceof Array && typeof value.length === 'number' && typeof value.splice === 'function' && !(value.propertyIsEnumerable('length')));
@@ -16,11 +17,23 @@ export interface PunchTime extends Array<moment.Moment> {
 };
 
 export namespace Rows {
-  interface Row {
-    save(cb: (err: Error) => void);
-    del(cb: (err: Error) => void);
-  };
-  interface Variables {
+  type RawGoogleRow = { [props: string]: any, save: (cb: (err: Error) => void) => void, del: (cb: (err: Error) => void) => void };
+  abstract class Row {
+    protected raw: any;
+    save: (cb: (err: Error) => void) => void;
+    del: (cb: (err: Error) => void) => void;
+
+    constructor(kind: string, raw: RawGoogleRow) {
+      const headers = HEADERS[kind];
+      for (let key in headers) {
+        this[key] = raw[headers[key]];
+      }
+      this.raw = raw;
+      this.save = raw.save;
+      this.del = raw.del;
+    }
+  }
+  export class VariablesRow extends Row {
     vacation: string;
     sick: string;
     houndFrequency: string;
@@ -29,13 +42,19 @@ export namespace Rows {
     exemptChannel: string;
     holidays: string;
     holidayOverride: string;
+    constructor(raw: RawGoogleRow) {
+      super('variables', raw);
+    }
   };
-  interface Projects {
+  export class ProjectsRow extends Row {
     name: string;
     start: string;
     total: string;
+    constructor(raw: RawGoogleRow) {
+      super('projects', raw);
+    }
   };
-  interface Users {
+  export class UsersRow extends Row {
     slackname: string;
     name: string;
     salary: string;
@@ -53,8 +72,11 @@ export namespace Rows {
     totalLogged: string;
     averageLogged: string;
     lastPing: string;
+    constructor(raw: RawGoogleRow) {
+      super('users', raw);
+    }
   };
-  interface RawData {
+  export class RawDataRow extends Row {
     id: string;
     today: string;
     name: string;
@@ -69,8 +91,11 @@ export namespace Rows {
     project4: string;
     project5: string;
     project6: string;
+    constructor(raw: RawGoogleRow) {
+      super('rawdata', raw);
+    }
   };
-  interface PayrollReports {
+  export class PayrollReportsRow extends Row {
     date: string;
     name: string;
     paid: string;
@@ -80,21 +105,44 @@ export namespace Rows {
     sick: string;
     overtime: string;
     holiday: string;
+    extra: any;
+    constructor(raw: RawGoogleRow) {
+      super('payrollreports', raw);
+    }
   };
-  interface Events {
+  export class EventsRow extends Row {
     date: string;
     name: string;
+    constructor(raw: RawGoogleRow) {
+      super('events', raw);
+    }
   };
-  export type VariablesRow = Variables | Row;
-  export type ProjectsRow = Projects | Row;
-  export type UsersRow = Users | Row;
-  export type RawDataRow = RawData | Row;
-  export type PayrollReportsRow = PayrollReports | Row;
-  export type EventsRow = Events | Row;
 }
 
 export interface Bot {
   config: any;
+  api: any;
+  storage: {
+    users: {
+      get(data: any, callback: (err: Error, data: any) => void): void;
+      save(id: any, callback: (err: Error, data: any[]) => void): void;
+      all(callback: (err: Error, data: any[]) => void): void;
+    };
+    channels: {
+      get(data: any, callback: (err: Error, data: any) => void): void;
+      save(id: any, callback: (err: Error, data: any[]) => void): void;
+      all(callback: (err: Error, data: any[]) => void): void;
+    };
+    teams: {
+      get(data: any, callback: (err: Error, data: any) => void): void;
+      save(id: any, callback: (err: Error, data: any[]) => void): void;
+      all(callback: (err: Error, data: any[]) => void): void;
+    };
+  };
+  say(message: any);
+  reply(message: any, reply: any);
+  startRTM(callback: (err: Error) => void);
+  startPrivateConversation(user: any, callback: (err: Error, conversation: any) => void);
 }
 
 export interface Controller {
@@ -124,7 +172,9 @@ export interface Controller {
     teams: any;
   }
   spawn(team);
-  on(scope: string, callback): void;
+  on(scope: string, callback: (bot: Bot, message: any) => void);
+  hears(pattern: string | string[], modes: string | string[], callback: (bot: Bot, message: any) => void);
+  hears(pattern: string | string[], modes: string | string[], middleware: () => void, callback: (bot: Bot, message: any) => void);
   setupWebserver(port: any, callback: (err: Error, webserver) => void): void;
   createWebhookEndpoints(webserver: any): void;
   createOauthEndpoints(webserver: any, callback: (err: Error, req, res) => void): void;

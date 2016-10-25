@@ -10,6 +10,13 @@ const regex = {
   numdate:         /((?:\b(0?2)\/(0?[1-9]|[1-2][0-9])\b)|(?:\b(0?[469]|11)\/(0?[1-9]|[1-2][1-9]|30)\b)|(?:\b(0?[13578]|(10|12))\/(0?[1-9]|[1-2][1-9]|3[01])\b))(?: ?- ?((?:\b(0?2)\/(0?[1-9]|[1-2][0-9])\b)|(?:\b(0?[469]|11)\/(0?[1-9]|[1-2][1-9]|30)\b)|(?:\b(0?[13578]|(10|12))\/(0?[1-9]|[1-2][1-9]|3[01])\b)))?(?:\/((19[6-9][0-9])|(2[0-9]{3})))?/i,
 };
 
+
+let regexStringVariants;
+for (let key in regex) {
+  let regexString = regex[key].toString();
+  regexStringVariants[key] = regexString.substring(1, regexString.indexOf('/i'));
+}
+
 const cellHeaders = {
   variables: {
     vacation:            'vacationhoursforsalariedemployees',
@@ -163,7 +170,8 @@ const timezone = 'America/Phoenix';
 export { 
   cellHeaders as HEADERS, 
   modes as MODES, 
-  regex as REGEX, 
+  regex as REGEX,
+  regexStringVariants as REGEX_STR,
   strings as STRINGS, 
   timezone as TIMEZONE 
 };
