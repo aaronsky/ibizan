@@ -1,12 +1,23 @@
 #!/usr/bin/env node
 
-import Botkit from 'botkit';
+/*
+ibizan --opts dog.opts
+ibizan --id=xofb-xxxxx-xxxx-xxx-xxxxxxx --secret=xxxxx-xxxxxxx-xxxx-xxxxxx
+PORT=8000 ibizan
+ibizan --port 8000
 
-if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET || !process.env.PORT) {
-  console.log('Error: Specify CLIENT_ID, CLIENT_SECRET and PORT in environment');
-  process.exit(1);
-}
+*/
 
+import minimist from 'minimist';
+import path from 'path';
+import fs from 'fs';
 
+import App from '../app';
+import Config from '../app/config';
 
-exec node_modules/.bin/hubot --name "ibizan" -a "slack"
+const config = new Config();
+const argv = minimist(process.argv.slice(2));
+config.loadOptions(argv);
+
+const ibizan = new App(config);
+ibizan.start();

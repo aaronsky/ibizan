@@ -8,7 +8,7 @@
 
 import { REGEX, STRINGS } from '../shared/constants';
 const strings = STRINGS.access;
-import Logger from '../logger/logger';
+import Logger from '../logger';
 
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();

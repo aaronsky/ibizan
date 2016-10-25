@@ -50,7 +50,7 @@ import moment from 'moment-timezone';
 
 import { REGEX, HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
-import Logger from '../logger/logger';
+import Logger from '../logger';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 import Punch from '../models/punch';

@@ -5,7 +5,7 @@ import uuid from 'node-uuid';
 import { HEADERS, MODES, REGEX, TIMEZONE } from '../shared/constants';
 import { PunchTime, Rows } from '../shared/common';
 import { holidayForMoment } from '../shared/moment-holiday';
-import Logger from '../logger/logger';
+import Logger from '../logger';
 import User from './user';
 import Project from './project';
 import { Organization as Org } from '../models/organization';

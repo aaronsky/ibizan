@@ -6,7 +6,7 @@ import { momentForHoliday } from '../shared/moment-holiday';
 import { HEADERS } from '../shared/constants';
 import { Rows } from '../shared/common';
 import Calendar, { CalendarEvent } from './calendar';
-import Logger from '../logger/logger';
+import Logger from '../logger';
 import Project from './project';
 import User, { Settings, Timetable } from './user';
 import Punch from './punch';
@@ -65,7 +65,7 @@ export default class Spreadsheet {
       row.save((err) => {
         if (err) {
           // Retry up to 3 times
-          let retry = 1
+          let retry = 1;
           setTimeout(() => {
             if (retry <= 3) {
               Logger.Console.debug(`Retrying save of ${rowName}, attempt ${retry}...`);

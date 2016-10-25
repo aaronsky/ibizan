@@ -2,7 +2,7 @@
 import * as moment from 'moment';
 
 import { HEADERS } from '../shared/constants';
-import Logger from '../logger/logger';
+import Logger from '../logger';
 import Calendar, { CalendarEvent } from './calendar';
 import Spreadsheet from './sheet';
 import Project from './project';

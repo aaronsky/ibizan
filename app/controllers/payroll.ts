@@ -13,7 +13,7 @@ import moment from 'moment';
 import schedule from 'node-schedule';
 
 import { HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
-import Logger from '../logger/logger';
+import Logger from '../logger';
 import { Organization as Org } from '../models/organization'
 const Organization = Org.get();
 
