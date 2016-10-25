@@ -4,7 +4,7 @@
     "target": "es6",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "outDir": "build"
   },
   "exclude": [

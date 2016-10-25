@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import Botkit from 'botkit';
+import * as fs from 'fs';
+import * as path from 'path';
+const Botkit = require('botkit');
 
 import { Bot, Controller } from './shared/common';
 import Config from './config';
