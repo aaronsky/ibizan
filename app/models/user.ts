@@ -4,7 +4,7 @@ import moment from 'moment-timezone';
 import { HEADERS, TIMEZONE } from '../shared/constants';
 import { holidayForMoment } from '../shared/moment-holiday';
 import { Rows } from '../shared/common';
-import Logger from '../logger/logger';
+import Logger from '../logger';
 import Punch from './punch';
 
 function getPositiveNumber(input?: number, current: number = 0) {

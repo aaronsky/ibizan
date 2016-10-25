@@ -93,6 +93,10 @@ export namespace Rows {
   export type EventsRow = Events | Row;
 }
 
+export interface Bot {
+  config: any;
+}
+
 export interface Controller {
   events: any;
   config: any;
@@ -114,5 +118,15 @@ export interface Controller {
     receive: any;
     spawn: any;
   };
+  webserver: any;
+  log: any;
+  storage: {
+    teams: any;
+  }
+  spawn(team);
+  on(scope: string, callback): void;
+  setupWebserver(port: any, callback: (err: Error, webserver) => void): void;
+  createWebhookEndpoints(webserver: any): void;
+  createOauthEndpoints(webserver: any, callback: (err: Error, req, res) => void): void;
 };
 

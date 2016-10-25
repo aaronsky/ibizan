@@ -8,7 +8,7 @@
 
 import { REGEX, STRINGS } from '../shared/constants';
 import { random } from '../shared/common';
-import Logger from '../logger/logger';
+import Logger from '../logger';
 const strings = STRINGS.bark;
 import * as moment from 'moment';
 import { Organization as Org } from '../models/organization';
