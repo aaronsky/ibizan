@@ -64,13 +64,21 @@ export class Timetable {
     this._averageLoggedTotal = getPositiveNumber(newTotal, this._averageLoggedTotal);
   }
 
-  constructor(start: string, end: string, timezone) {
+  constructor(start: string | moment.Moment, end: string | moment.Moment, timezone) {
     this.timezone = timezone;
+    if (typeof start === 'string') {
+      this._start = moment.tz(start, 'hh:mm a', this.timezone.name);
+    } else {
+      this._start = moment.tz(start, timezone);
+    }
+    if (typeof end === 'string') {
+      this._end = moment.tz(end, 'hh:mm a', this.timezone.name);
+    } else {
+      this._end = moment.tz(end, timezone);
+    }
     if (typeof this.timezone === 'string') {
       this.timezone = moment.tz.zone(this.timezone);
     }
-    this._start = moment.tz(start, 'hh:mm a', this.timezone.name);
-    this._end = moment.tz(end, 'hh:mm a', this.timezone.name);
   }
   setVacation(total, available) {
     this.vacationTotal = getPositiveNumber(total, this.vacationTotal);
@@ -80,7 +88,7 @@ export class Timetable {
     this.sickTotal = getPositiveNumber(total, this.sickTotal);
     this.sickAvailable = getPositiveNumber(available, this.sickAvailable);
   }
-  activeHours(): moment.Moment[] {
+  activeHours(): [moment.Moment, moment.Moment] {
     const now = moment.tz(this.timezone.name);
     const start = this.start.year(now.year()).dayOfYear(now.dayOfYear());
     const end = this.end.year(now.year()).dayOfYear(now.dayOfYear());
@@ -215,7 +223,7 @@ export default class User {
     });
     return user;
   }
-  get activeHours(): any[] {
+  get activeHours(): [moment.Moment, moment.Moment] {
     return this.timetable.activeHours();
   }
   get activeTime(): number {

@@ -36,13 +36,13 @@ const holidays = {
     }
 };
 
-export function holidayForMoment(date: moment.Moment) {
+export function holidayForMoment(date: moment.Moment): string {
     const diff = 1 + (0 | (date.get('date') - 1) / 7);
     const memorial = (date.get('day') === 1 && (date.get('date') + 7) > 30) ? '5' : null;
     return (holidays['M'][date.format('MM/DD')] || holidays['W'][date.format('M/' + (memorial || diff) + '/d')]);
 }
 
-export function momentForHoliday(name: string) {
+export function momentForHoliday(name: string): moment.Moment {
     for (let key in holidays['M']) {
         if (holidays['M'][key] === name) {
             const comps = key.split('/') as [string, string];

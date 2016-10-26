@@ -1,8 +1,8 @@
 language: node_js
 node_js:
-- '6.3'
 - '4.4'
-- '0.12'
+- '6.9'
+- '7.0'
 env:
   matrix:
   - NODE_ENV=development

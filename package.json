@@ -32,27 +32,27 @@
     "yargs": "^6.3.0"
   },
   "engines": {
-    "node": "6.3.x"
+    "node": ">= 6.0"
   },
   "devDependencies": {
+    "@types/mocha": "^2.2.32",
     "@types/moment-timezone": "^0.2.32",
     "@types/node": "^6.0.45",
     "@types/node-uuid": "0.0.28",
     "chai": "^3.5.0",
-    "co": "^4.6.0",
-    "coffee-coverage": "^1.0.1",
-    "coffee-script": "^1.11.1",
     "coveralls": "^2.11.14",
-    "hubot-test-helper": "^1.5.0",
     "istanbul": "^0.4.5",
     "mocha": "^3.1.0",
     "request": "^2.75.0",
-    "sinon": "^1.17.6"
+    "sinon": "^1.17.6",
+    "ts-node": "^1.6.0",
+    "typescript": "^2.0.6",
+    "typings": "^1.4.0"
   },
   "scripts": {
     "start": "ibizan",
-    "test": "TEST=true mocha --compilers \"coffee:coffee-script/register\" ./tests/**/test_* && exit 0",
-    "coverage": "TEST=true ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --compilers coffee:coffee-script/register --require coffee-coverage/register-istanbul --recursive ./tests/**/test_*"
+    "test": "TEST=true ./node_modules/.bin/mocha --opts test/mocha.opts src/**/__specs__/*.spec.ts",
+    "coverage": "TEST=true ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --opts test/mocha.opts src/**/__specs__/*.spec.ts"
   },
   "bin": {
     "ibizan": "bin/ibizan"

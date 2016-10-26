@@ -18,6 +18,7 @@
     "bin",
     "build",
     "node_modules",
-    "tests"
+    "tests",
+    "app/**/*.spec.ts"
   ]
 }

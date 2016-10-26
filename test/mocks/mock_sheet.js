@@ -1,7 +1,6 @@
+const { HEADERS } = require('../../src/helpers/constants');
 
-var headers = require('../../src/helpers/constants').HEADERS;
-
-var createDataSheet = function (name, file, headers) {
+function createDataSheet (name, file, headers) {
   function Row() {
     var i = 0;
     for (var key in headers) {
@@ -57,17 +56,16 @@ var createDataSheet = function (name, file, headers) {
       cb();
     }
   }
-};
+}
 
+const createRawDataSheet = function () { return createDataSheet('Raw Data', 'rawdata', HEADERS.rawdata); };
+const createPayrollReportSheet = function () { return createDataSheet('Payroll Reports', 'payroll', HEADERS.payrollreports); };
+const createEmployeeSheet = function () { return createDataSheet('Employees', 'employees', HEADERS.users); };
+const createVariableSheet = function () { return createDataSheet('Variables', 'variables', HEADERS.variables); };
+const createProjectsSheet = function () { return createDataSheet('Projects', 'projects', HEADERS.projects); };
+const createEventsSheet = function () { return createDataSheet('Events', 'events', HEADERS.events); };
 
-var createRawDataSheet = function () { return createDataSheet('Raw Data', 'rawdata', headers.rawdata); };
-var createPayrollReportSheet = function () { return createDataSheet('Payroll Reports', 'payroll', headers.payrollreports); };
-var createEmployeeSheet = function () { return createDataSheet('Employees', 'employees', headers.users); };
-var createVariableSheet = function () { return createDataSheet('Variables', 'variables', headers.variables); };
-var createProjectsSheet = function () { return createDataSheet('Projects', 'projects', headers.projects); };
-var createEventsSheet = function () { return createDataSheet('Events', 'events', headers.events); };
-
-var mockSpreadsheet = {
+const mockSpreadsheet = {
   title: '',
   id: '',
   worksheets: [
@@ -80,7 +78,7 @@ var mockSpreadsheet = {
   ]
 };
 
-var mockGoogleSpreadsheet = {
+const mockGoogleSpreadsheet = {
   _mockSpreadsheet: mockSpreadsheet,
   useServiceAccountAuth: function (auth, cb) {
     if (auth.client_email && auth.private_key) {

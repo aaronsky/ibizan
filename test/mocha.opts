@@ -1,0 +1,4 @@
+--require ts-node/require
+--require test/mocks
+--require test/setup.js
+--recursive
