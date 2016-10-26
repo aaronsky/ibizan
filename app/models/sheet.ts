@@ -11,6 +11,11 @@ import Project from './project';
 import User, { Settings, Timetable } from './user';
 import Punch from './punch';
 
+export interface GoogleAuth { 
+  client_email: string;
+  private_key: string 
+};
+
 export default class Spreadsheet {
   sheet: any;
   initialized: boolean;
@@ -32,7 +37,7 @@ export default class Spreadsheet {
     }
     this.initialized = false;
   }
-  async authorize(auth) {
+  async authorize(auth: GoogleAuth) {
     return new Promise((resolve, reject) => {
       this.sheet.useServiceAccountAuth(auth, (err) => {
         if (err) {

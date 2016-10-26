@@ -3,27 +3,22 @@ import * as moment from 'moment';
 
 import { HEADERS } from '../shared/constants';
 import Logger from '../logger';
+import Config from '../config';
 import Calendar, { CalendarEvent } from './calendar';
-import Spreadsheet from './sheet';
+import Spreadsheet, { GoogleAuth } from './sheet';
 import Project from './project';
 import User, { Settings } from './user';
 
-const CONFIG = {
-  sheet_id: process.env.SHEET_ID,
-  auth: {
-    client_email: process.env.CLIENT_EMAIL,
-    private_key: process.env.PRIVATE_KEY
-  }
-};
 const NAME = process.env.ORG_NAME;
+let AUTH: GoogleAuth;
 
 // Singleton
 export namespace Organization {
   let instance: OrganizationInternal = null;
 
-  export function get(id?: string) {
+  export function get(config?: Config) {
     if (instance === null || instance === undefined) {
-      instance = new OrganizationInternal(id);
+      instance = new OrganizationInternal(config);
     }
     return instance;
   }
@@ -41,15 +36,18 @@ export namespace Organization {
     shouldHound: boolean;
     shouldResetHound: boolean;
 
-    constructor(id?: string) {
+    constructor(config?: Config) {
       this.name = NAME || 'Bad organization name';
-      const sheetId = id || CONFIG.sheet_id;
+      const sheetId = config.google.sheetId;
       if (sheetId) {
         this.spreadsheet = new Spreadsheet(sheetId);
         Logger.Console.fun(`Welcome to ${this.name}!`);
         this.initTime = moment();
         if (this.spreadsheet.sheet) {
-          this.sync().then(() => Logger.Console.log('Options loaded'));
+          this.sync({
+            client_email: config.google.clientEmail,
+            private_key: config.google.privateKey
+          }).then(() => Logger.Console.log('Options loaded'));
         } else {
           Logger.Console.warn('Sheet not initialized, no spreadsheet ID was provided');
         }
@@ -61,9 +59,12 @@ export namespace Organization {
       }
       return false;
     }
-    async sync(auth?: any) {
+    async sync(auth?: GoogleAuth) {
+      if (auth) {
+        AUTH = auth;
+      }
       try {
-        await this.spreadsheet.authorize(auth || CONFIG.auth);
+        await this.spreadsheet.authorize(AUTH);
         let opts = await this.spreadsheet.loadOptions();
         if (opts) {
           this.houndFrequency = opts.houndFrequency;

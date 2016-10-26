@@ -1,16 +1,23 @@
 {
   "compilerOptions": {
-    "module": "es6",
     "target": "es6",
+    "module": "commonjs",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "sourceMap": false,
-    "outDir": "build"
+    "outDir": "build",
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "app/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    ".github",
+    "bin",
+    "build",
+    "node_modules",
+    "tests"
   ]
 }
