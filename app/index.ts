@@ -21,9 +21,9 @@ export default class App {
                 firebase_uri: this.config.storageUri
             })
         }).configureSlackApp({
-            clientId: this.config.clientId,
-            clientSecret: this.config.clientSecret,
-            scopes: this.config.scopes
+            clientId: this.config.slack.clientId,
+            clientSecret: this.config.slack.clientSecret,
+            scopes: this.config.slack.scopes
         });
 
         this.controller.setupWebserver(this.config.port, (err, webserver) => {
