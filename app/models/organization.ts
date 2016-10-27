@@ -3,11 +3,11 @@ import * as moment from 'moment';
 
 import { HEADERS } from '../shared/constants';
 import Logger from '../logger';
-import Config from '../config';
-import Calendar, { CalendarEvent } from './calendar';
-import Spreadsheet, { GoogleAuth } from './sheet';
-import Project from './project';
-import User, { Settings } from './user';
+import { Config } from '../config';
+import { Calendar, CalendarEvent } from './calendar';
+import { Spreadsheet, GoogleAuth } from './sheet';
+import { Project } from './project';
+import { User, Settings } from './user';
 
 const NAME = process.env.ORG_NAME;
 let AUTH: GoogleAuth;

@@ -4,9 +4,9 @@ const Botkit = require('botkit');
 const FirebaseStorage = require('botkit-storage-firebase');
 
 import { Bot, Controller } from './shared/common';
-import Config from './config';
+import { Config } from './config';
 
-export default class App {
+export class App {
     config: Config;
     controller: Controller;
     bots: Bot;

@@ -3,7 +3,7 @@ import * as moment from 'moment';
 
 import { HEADERS } from '../shared/constants';
 
-export default class Project {
+export class Project {
   name: string;
   start: any;
   total: any;

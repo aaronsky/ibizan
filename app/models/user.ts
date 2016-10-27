@@ -6,7 +6,7 @@ import { HEADERS, TIMEZONE } from '../shared/constants';
 import { holidayForMoment } from '../shared/moment-holiday';
 import { Rows } from '../shared/common';
 import Logger from '../logger';
-import Punch from './punch';
+import { Punch } from './punch';
 
 function getPositiveNumber(input?: number, current: number = 0) {
   if (!input) {
@@ -138,7 +138,7 @@ export class Settings {
   }
 }
 
-export default class User {
+export class User {
   name: string;
   slack: string;
   salary: boolean;

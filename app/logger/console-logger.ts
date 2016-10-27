@@ -1,47 +1,43 @@
+import * as console from 'console';
 
 const chalk = require('chalk');
 import { STRINGS } from '../shared/constants';
-
 const strings = STRINGS.logger;
-const TEST = process.env.TEST || false;
-
-let logLevelEnvString;
-if (logLevelEnvString = process.env.LOG_LEVEL) {
-  if (typeof logLevelEnvString === 'string') {
-    logLevelEnvString = logLevelEnvString.toLowerCase();
-    var LOG_LEVEL = logLevelEnvString;
-    if (['info', 'warn', 'warning', 'error', 'debug', 'true'].indexOf(LOG_LEVEL) === -1) {
-      LOG_LEVEL = 0;
-    } else if (LOG_LEVEL === 'debug') {
-      LOG_LEVEL = 4;
-    } else if (LOG_LEVEL === 'info' || LOG_LEVEL === 'true') {
-      LOG_LEVEL = 3;
-    } else if (LOG_LEVEL === 'warn' || LOG_LEVEL === 'warning') {
-      LOG_LEVEL = 2;
-    } else if (LOG_LEVEL === 'error') {
-      LOG_LEVEL = 1;
-    }
-  } else if (typeof logLevelEnvString === 'integer' && logLevelEnvString >= 0 && logLevelEnvString <= 4) {
-    LOG_LEVEL = logLevelEnvString;
-  } else {
-    LOG_LEVEL = 0;
-  }
-} else {
-  LOG_LEVEL = 0;
-}
-
-const debugHeader = chalk.bold.green;
-const debug = chalk.green;
-const logHeader = chalk.bold.blue;
-const log = chalk.blue;
-const warnHeader = chalk.bold.yellow;
-const warn = chalk.yellow;
-const errHeader = chalk.bold.red;
-const err = chalk.red;
-const funHeader = chalk.bold.magenta;
-const fun = chalk.magenta;
 
 export namespace ConsoleLogger {
+  let LOG_LEVEL: number;
+  const TEST = process.env.TEST || false;
+  const debugHeader = chalk.bold.green;
+  const debugBody = chalk.green;
+  const logHeader = chalk.bold.blue;
+  const logBody = chalk.blue;
+  const warnHeader = chalk.bold.yellow;
+  const warnBody = chalk.yellow;
+  const errHeader = chalk.bold.red;
+  const errBody = chalk.red;
+  const funHeader = chalk.bold.magenta;
+  const funBody = chalk.magenta;
+
+  type ValidLogLevels = 'info' | 'warn' | 'warning' | 'error' | 'debug' | 'true' | 0 | 1 | 2 | 3 | 4;
+  export function setLogLevel(level: ValidLogLevels) {
+    if (typeof level === 'number') {
+      LOG_LEVEL = level;
+    } else if (typeof level === 'string') {
+      if (level === 'debug') {
+      LOG_LEVEL = 4;
+    } else if (level === 'info' || level === 'true') {
+      LOG_LEVEL = 3;
+    } else if (level === 'warn' || level === 'warning') {
+      LOG_LEVEL = 2;
+    } else if (level === 'error') {
+      LOG_LEVEL = 1;
+    }
+    } else {
+      LOG_LEVEL = 0;
+    }
+    console.log(logHeader(`[Ibizan] (${new Date()}) INFO: `) + logBody(`Set log level to ${level}`));
+  }
+
   export function clean(msg: any) {
     let message = '';
 
@@ -64,30 +60,31 @@ export namespace ConsoleLogger {
   }
   export function debug(msg: string) {
     if (msg && LOG_LEVEL >= 4) {
-      console.log(debugHeader(`[Ibizan] (${new Date()}) DEBUG: `) + debug(`${msg}`));
+      console.log(debugHeader(`[Ibizan] (${new Date()}) DEBUG: `) + debugBody(`${msg}`));
     }
   }
   export function log(msg: string) {
     if (msg && LOG_LEVEL >= 3) {
-      console.log(logHeader(`[Ibizan] (${new Date()}) INFO: `) + log(`${msg}`));
+      console.log(logHeader(`[Ibizan] (${new Date()}) INFO: `) + logBody(`${msg}`));
     }
   }
   export function warn(msg: string) {
     if (msg && LOG_LEVEL >= 2) {
-      console.warn(warnHeader(`[Ibizan] (${new Date()}) WARN: `) + warn(`${msg}`));
+      console.warn(warnHeader(`[Ibizan] (${new Date()}) WARN: `) + warnBody(`${msg}`));
     }
   }
   export function error(msg: string, error?: any) {
     if (msg && LOG_LEVEL >= 1) {
-      console.error(errHeader(`[Ibizan] (${new Date()}) ERROR: `) + err(`${msg}`), error || '');
+      console.error(errHeader(`[Ibizan] (${new Date()}) ERROR: `) + errBody(`${msg}`), error || '');
       if (error && error.stack) {
-        console.error(errHeader(`[Ibizan] (${new Date()}) STACK: `) + err(`${error.stack}`));
+        console.error(errHeader(`[Ibizan] (${new Date()}) STACK: `) + errBody(`${error.stack}`));
       }
     }
   }
   export function fun(msg: string) {
     if (msg && !TEST) {
-      console.log(funHeader(`[Ibizan] (${new Date()}) > `) + fun(`${msg}`));
+      const now = new Date().toString();
+      console.log(funHeader(`[Ibizan] (${now}) > `) + funBody(`${msg}`));
     }
   }
 }
