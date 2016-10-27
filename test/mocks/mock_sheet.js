@@ -1,12 +1,13 @@
-const { HEADERS } = require('../../src/helpers/constants');
+
+const { HEADERS } = require('../../app/shared/constants');
 
 function createDataSheet (name, file, headers) {
   function Row() {
-    var i = 0;
-    for (var key in headers) {
-      var rowName = headers[key];
+    let i = 0;
+    for (let key in headers) {
+      const rowName = headers[key];
       this[rowName] = arguments[i] || '';
-      i++;
+      i += 1;
     }
     this.save = function(cb) {
       cb();
@@ -16,10 +17,10 @@ function createDataSheet (name, file, headers) {
     };
   }
 
-  rows = [];
+  const rows = [];
   require('./mocked/mocked_' + file + '.json').forEach(function (element, index, arr) {
-    args = [];
-    for (var key in element) {
+    const args = [];
+    for (let key in element) {
       args.push(element[key]);
     }
     rows.push(new (function () { Row.apply(this, args); }));
@@ -48,7 +49,7 @@ function createDataSheet (name, file, headers) {
       row.del = function(cb) {
         cb();
       };
-      var size = this._rows.length;
+      const size = this._rows.length;
       this._rows.push(row);
       if (this._rows.length !== size + 1) {
         cb(new Error('Row was not added'));

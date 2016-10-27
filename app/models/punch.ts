@@ -1,11 +1,11 @@
-import moment from 'moment-timezone';
+import * as moment from 'moment-timezone';
 const weekend = require('moment-weekend');
-import uuid from 'node-uuid';
+import * as uuid from 'node-uuid';
 
 import { HEADERS, MODES, REGEX, TIMEZONE } from '../shared/constants';
 import { PunchTime, Rows } from '../shared/common';
 import { holidayForMoment } from '../shared/moment-holiday';
-import Logger from '../logger';
+import * as Logger from '../logger';
 import { User } from './user';
 import { Project } from './project';
 import { Organization as Org } from '../models/organization';

@@ -1,6 +1,9 @@
+
+import 'mocha';
+const { expect } = require('chai');
 import * as moment from 'moment-timezone';
 
-import User, { Timetable } from '../user';
+import { User, Timetable } from '../user';
 
 describe('Timetable', () => {
   function testValidateSetValues(timetable: Timetable, mode: string, total: number, expectedTotal: number, available?: number, expectedAvailable?: number) {

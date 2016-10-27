@@ -1,5 +1,7 @@
 
-import Project from '../project';
+import 'mocha';
+const { expect } = require('chai');
+import { Project } from '../project';
 
 const TEST_ROW = {
   project: '#production',

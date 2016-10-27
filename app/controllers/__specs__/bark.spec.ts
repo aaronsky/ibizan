@@ -1,5 +1,7 @@
 
 import * as http from 'http';
+import 'mocha';
+const { expect } = require('chai');
 
 // helper loads a specific script if it's a file
 const helper = {

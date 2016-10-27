@@ -1,11 +1,11 @@
 import * as console from 'console';
 
-import moment from 'moment-timezone';
+import * as moment from 'moment-timezone';
 
 import { HEADERS, TIMEZONE } from '../shared/constants';
 import { holidayForMoment } from '../shared/moment-holiday';
 import { Rows } from '../shared/common';
-import Logger from '../logger';
+import * as Logger from '../logger';
 import { Punch } from './punch';
 
 function getPositiveNumber(input?: number, current: number = 0) {

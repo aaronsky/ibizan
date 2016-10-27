@@ -1,4 +1,4 @@
---require ts-node/require
+--require ts-node/register
 --require test/mocks
---require test/setup.js
 --recursive
+app/**/__specs__/*.spec.ts
