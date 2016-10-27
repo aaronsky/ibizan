@@ -1,5 +1,3 @@
-tests/
-.editorconfig
-coffeelint_config.json
+test
 LICENSE.md
 README.md

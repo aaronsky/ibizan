@@ -5,7 +5,7 @@ import moment from 'moment';
 import { HEADERS, TIMEZONE } from '../shared/constants';
 import Logger from '../logger';
 
-export default class Calendar {
+export class Calendar {
   vacation: any;
   sick: any;
   holidays: any;

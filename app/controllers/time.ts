@@ -54,8 +54,8 @@ import { Bot, Controller } from '../shared/common';
 import Logger from '../logger';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
-import Punch from '../models/punch';
-import User from '../models/user';
+import { Punch } from '../models/punch';
+import { User } from '../models/user';
 
 export default function (controller: Controller) {
   Logger.Slack.setController(controller);

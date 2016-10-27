@@ -6,8 +6,8 @@ import { HEADERS, MODES, REGEX, TIMEZONE } from '../shared/constants';
 import { PunchTime, Rows } from '../shared/common';
 import { holidayForMoment } from '../shared/moment-holiday';
 import Logger from '../logger';
-import User from './user';
-import Project from './project';
+import { User } from './user';
+import { Project } from './project';
 import { Organization as Org } from '../models/organization';
 const Organization = Org.get();
 
@@ -209,7 +209,7 @@ function parseProjects(command: string): [Project[], string] {
   return [projects, command];
 }
 
-export default class Punch {
+export class Punch {
   mode: string;
   times: PunchTime;
   projects: Project[];

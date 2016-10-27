@@ -50,7 +50,9 @@
     "typings": "^1.4.0"
   },
   "scripts": {
-    "start": "ibizan",
+    "start": "./bin/ibizan",
+    "build": "./node_modules/.bin/tsc && echo \"Built TypeScript successfully!\"",
+    "prepublish": "npm build",
     "test": "TEST=true ./node_modules/.bin/mocha --opts test/mocha.opts src/**/__specs__/*.spec.ts",
     "coverage": "TEST=true ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --opts test/mocha.opts src/**/__specs__/*.spec.ts"
   },

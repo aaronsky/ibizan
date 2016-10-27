@@ -2,8 +2,11 @@
 
 const path = require('path');
 const fs = require('fs');
+const { App } = require('../build');
+const Logger = require('../build/logger');
+const { Config } = require('../build/config');
 
-const argv = require('yargs')
+const yargs = require('yargs')
                 .usage('Usage: $0 [options]')
                 .string([
                     'config', 
@@ -64,14 +67,18 @@ const argv = require('yargs')
                 .describe('version', 'Outputs the version of Ibizan')
                 .help('help')
                 .epilog('For more information, check out http://ibizan.github.io/ or https://github.com/ibizan/ibizan')
-                .showHelpOnFail(true)
-                .argv;
+                .showHelpOnFail(true);
+const argv = yargs.argv;
 
-const App = require('../build');
-const Config = require('../build/config');
-
-const config = new Config(argv);
-config.loadOptions(argv);
+let config;
+try {
+    config = new Config(argv);
+    config.loadOptions(argv);
+} catch (err) {
+    Logger.Console.error(err.message);
+    yargs.showHelp();
+    return;
+}
 
 const ibizan = new App(config);
 ibizan.start();

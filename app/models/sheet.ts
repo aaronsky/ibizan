@@ -5,18 +5,18 @@ const GoogleSpreadsheet = require('google-spreadsheet');
 import { momentForHoliday } from '../shared/moment-holiday';
 import { HEADERS } from '../shared/constants';
 import { Rows } from '../shared/common';
-import Calendar, { CalendarEvent } from './calendar';
+import { Calendar, CalendarEvent } from './calendar';
 import Logger from '../logger';
-import Project from './project';
-import User, { Settings, Timetable } from './user';
-import Punch from './punch';
+import { Project } from './project';
+import { User, Settings, Timetable } from './user';
+import { Punch } from './punch';
 
 export interface GoogleAuth { 
   client_email: string;
   private_key: string 
 };
 
-export default class Spreadsheet {
+export class Spreadsheet {
   sheet: any;
   initialized: boolean;
   title: string;

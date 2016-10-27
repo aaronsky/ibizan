@@ -11,7 +11,7 @@ const regex = {
 };
 
 
-let regexStringVariants;
+let regexStringVariants: any = {};
 for (let key in regex) {
   let regexString = regex[key].toString();
   regexStringVariants[key] = regexString.substring(1, regexString.indexOf('/i'));
