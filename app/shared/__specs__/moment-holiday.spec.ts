@@ -1,5 +1,8 @@
 
-import moment from 'moment';
+import 'mocha';
+const { expect } = require('chai');
+import * as moment from 'moment';
+
 import { holidayForMoment, momentForHoliday } from '../moment-holiday';
 
 describe('holidayForMoment(date)', () => {

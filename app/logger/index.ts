@@ -1,7 +1,5 @@
-import { ConsoleLogger as Console } from './console-logger';
-import { SlackLogger as Slack } from './slack-logger';
+import { ConsoleLogger } from './console-logger';
+import { SlackLogger } from './slack-logger';
 
-export = {
-    Console,
-    Slack
-};
+export const Console = ConsoleLogger;
+export const Slack = SlackLogger;

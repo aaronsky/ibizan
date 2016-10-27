@@ -2,7 +2,7 @@
 import * as moment from 'moment';
 
 import { HEADERS } from '../shared/constants';
-import Logger from '../logger';
+import * as Logger from '../logger';
 import { Config } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
 import { Spreadsheet, GoogleAuth } from './sheet';

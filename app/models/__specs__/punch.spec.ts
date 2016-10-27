@@ -1,12 +1,14 @@
 
-import moment from 'moment';
+import 'mocha';
+const { expect } = require('chai');
+import * as moment from 'moment';
 
 import { Organization as Org } from '../organization';
 const Organization = Org.get();
 Organization.spreadsheet.sheet = MockSheet;
-import Project from '../project';
-import User, { Timetable } from '../user';
-import Punch from '../punch';
+import { Project } from '../project';
+import { User, Timetable } from '../user';
+import { Punch } from '../punch';
 
 Organization.projects = [
   new Project('#production', moment(), 0),

@@ -1,5 +1,6 @@
 
-import Logger from '../';
+import 'mocha';
+import * as Logger from '../';
 
 describe('Logger', () => {
   describe('.Console', () => {

@@ -1,6 +1,8 @@
 
 import * as http from 'http';
 import * as querystring from 'querystring';
+import 'mocha';
+const { expect } = require('chai');
 
 const helper = {
   createRoom: () => {

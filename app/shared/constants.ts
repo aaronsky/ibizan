@@ -1,5 +1,5 @@
 
-const regex = {
+export const REGEX = {
   ibizan:          /^(?:@)?ibizan(?::)? ?/i,
   modes:           /\b(in|out|vacation|sick|unpaid)\b/i,
   days:            /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i,
@@ -12,12 +12,13 @@ const regex = {
 
 
 let regexStringVariants: any = {};
-for (let key in regex) {
-  let regexString = regex[key].toString();
+for (let key in REGEX) {
+  let regexString = REGEX[key].toString();
   regexStringVariants[key] = regexString.substring(1, regexString.indexOf('/i'));
 }
+export const REGEX_STR = regexStringVariants;
 
-const cellHeaders = {
+export const HEADERS = {
   variables: {
     vacation:            'vacationhoursforsalariedemployees',
     sick:                'sickhoursforsalariedemployees',
@@ -85,7 +86,7 @@ const cellHeaders = {
   },
 };
 
-const strings = {
+export const STRINGS = {
   access: {
     adminonly:           "You must be an admin in order to access this command.",
     askforhelp:         [
@@ -163,15 +164,6 @@ const strings = {
   },
 };
 
-const modes = ['in', 'out', 'vacation', 'unpaid', 'sick'];
+export const MODES = ['in', 'out', 'vacation', 'unpaid', 'sick'];
 
-const timezone = 'America/Phoenix';
-
-export { 
-  cellHeaders as HEADERS, 
-  modes as MODES, 
-  regex as REGEX,
-  regexStringVariants as REGEX_STR,
-  strings as STRINGS, 
-  timezone as TIMEZONE 
-};
+export const TIMEZONE = 'America/Phoenix';

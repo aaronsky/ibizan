@@ -1,5 +1,6 @@
 
-import Calendar, { CalendarEvent } from '../calendar';
+import 'mocha';
+import { Calendar, CalendarEvent } from '../calendar';
 
 describe('Calendar', () => {
   beforeEach(() =>  {
