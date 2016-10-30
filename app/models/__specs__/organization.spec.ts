@@ -8,7 +8,7 @@ import { Organization } from '../organization';
 
 describe('Organization', () => {
   beforeEach(async () =>  {
-    this.organization = Organization.get();
+    this.organization = new Organization();
     if (!this.organization.spreadsheet.sheet) {
       this.organization.spreadsheet.sheet = MockSheet;
     }

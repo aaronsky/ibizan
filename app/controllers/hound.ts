@@ -21,7 +21,7 @@ import { STRINGS, TIMEZONE } from '../shared/constants';
 import { Controller } from '../shared/common';
 import Logger from '../logger';
 import { Organization as Org } from '../models/organization';
-const Organization = Org.get();
+const Organization = new Org();
 const strings = STRINGS.hound;
 
 export default function (controller: Controller) {

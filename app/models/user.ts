@@ -1,10 +1,9 @@
 import * as console from 'console';
-
 import * as moment from 'moment-timezone';
 
-import { HEADERS, TIMEZONE } from '../shared/constants';
+import { TIMEZONE } from '../shared/constants';
+import { Rows } from '../shared/rows';
 import { holidayForMoment } from '../shared/moment-holiday';
-import { Rows } from '../shared/common';
 import * as Logger from '../logger';
 import { Punch } from './punch';
 
@@ -156,70 +155,19 @@ export class User {
     this.punches = [];
   }
   static parse(row: Rows.UsersRow) {
-    const headers = HEADERS.users;
-    const temp: any = {};
-    for (let key in headers) {
-      const header = headers[key];
-      if (header === headers.start || header === headers.end) {
-        row[header] = row[header].toLowerCase();
-        if (row[header] === 'midnight') {
-          row[header] = '12:00 am';
-        } else if (row[header] === 'noon') {
-          row[header] = '12:00 pm';
-        }
-        temp[key] = row[header];
-      } else if (header === headers.salary) {
-        temp[key] = row[header] === 'Y';
-      } else if (header === headers.timezone) {
-        let zone;
-        if (zone = moment.tz.zone(row[header])) {
-          temp[key] = zone;
-        } else {
-          temp[key] = row[header];
-        }
-      } else if (header === headers.shouldHound) {
-        temp[key] = row[header] === 'Y';
-      } else if (header === headers.houndFrequency) {
-        temp[key] = row[header] || -1;
-        if (temp[key] === -1) {
-          temp.shouldResetHound = false;
-        } else {
-          temp.shouldResetHound = true;
-        }
-      } else if (header === headers.overtime) {
-        continue;
-      } else if (header === headers.lastPing) {
-        let tz = TIMEZONE;
-        if (temp.timezone) {
-          tz = temp.timezone.name;
-        }
-        const lastPing = moment.tz(row[header], 'MM/DD/YYYY hh:mm:ss A', tz);
-        if (lastPing.isValid()) {
-          temp[key] = lastPing;
-        } else {
-          temp[key] = moment.tz(tz).subtract(1, 'days');
-        }
-      } else {
-        if (isNaN(row[header])) {
-          temp[key] = row[header].trim();
-        } else {
-          temp[key] = parseInt(row[header]);
-        }
-      }
-    }
-    const timetable = new Timetable(temp.start, temp.end, temp.timezone);
-    timetable.setVacation(temp.vacationLogged, temp.vacationAvailable);
-    timetable.setSick(temp.sickLogged, temp.sickAvailable);
-    timetable.unpaidTotal = temp.unpaidLogged;
-    timetable.loggedTotal = temp.totalLogged;
-    timetable.averageLogged = temp.averageLogged;
-    const user = new User(temp.name, temp.slackname, temp.salary, timetable, row);
+    const timetable = new Timetable(row.start, row.end, row.timezone);
+    timetable.setVacation(row.vacationLogged, row.vacationAvailable);
+    timetable.setSick(row.sickLogged, row.sickAvailable);
+    timetable.unpaidTotal = row.unpaidLogged;
+    timetable.loggedTotal = row.totalLogged;
+    timetable.averageLogged = row.averageLogged;
+    const user = new User(row.name, row.slackname, (row.salary === 'Y'), timetable, row);
     user.settings = Settings.fromSettings({
-      shouldHound: temp.shouldHound,
-      shouldResetHound: temp.shouldResetHound,
-      houndFrequency: temp.houndFrequency,
+      shouldHound: row.shouldHound,
+      shouldResetHound: +row.houndFrequency !== -1,
+      houndFrequency: row.houndFrequency,
       lastMessage: null,
-      lastPing: temp.lastPing
+      lastPing: row.lastPing
     });
     return user;
   }
@@ -267,7 +215,7 @@ export class User {
       return true;
     }
   }
-  lastPunch(modes?: string | string[]) {
+  lastPunch(modes?: string | string[]): Punch {
     if (typeof modes === 'string') {
       modes = [modes]
     }
@@ -323,7 +271,6 @@ export class User {
       } else {
         elapsed = lastPunch.elapsed || 0;
       }
-      const headers = HEADERS.rawdata;
       if (lastPunch.mode === 'vacation' || lastPunch.mode === 'sick' || lastPunch.mode === 'unpaid' || lastPunch.mode === 'none') {
         lastPunch.row.del(() => {
           const punch = this.punches.pop();
@@ -352,8 +299,8 @@ export class User {
           lastPunch.notes = lastPunch.notes.substring(0, lastPunch.notes.lastIndexOf('\n'));
         }
         lastPunch.mode = 'in';
-        lastPunch.row[headers.out] = lastPunch.row[headers.totalTime] = lastPunch.row[headers.blockTime] = '';
-        lastPunch.row[headers.notes] = lastPunch.notes;
+        lastPunch.row.out = lastPunch.row.totalTime = lastPunch.row.blockTime = '';
+        lastPunch.row.notes = lastPunch.notes;
         lastPunch.row.save(() => {
           const logged = this.timetable.loggedTotal;
           this.timetable.loggedTotal = logged - elapsed;
@@ -368,11 +315,10 @@ export class User {
     });
   }
   toRawPayroll(start, end) {
-    const headers = HEADERS.payrollreports;
     let row: Rows.PayrollReportsRow;
 
-    row[headers.date] = moment.tz(TIMEZONE).format('M/DD/YYYY');
-    row[headers.name] = this.name;
+    row.date = moment.tz(TIMEZONE).format('M/DD/YYYY');
+    row.name = this.name;
     let loggedTime = 0, 
         unpaidTime = 0,
         vacationTime = 0,
@@ -428,17 +374,17 @@ export class User {
     unpaidTime = +unpaidTime.toFixed(2);
 
     if (this.salary) {
-      row[headers.paid] = 80 - unpaidTime;
+      row.paid = (80 - unpaidTime).toString();
     } else {
-      row[headers.paid] = loggedTime + vacationTime + sickTime;
+      row.paid = (loggedTime + vacationTime + sickTime).toString();
     }
 
-    row[headers.unpaid] = unpaidTime;
-    row[headers.logged] = loggedTime;
-    row[headers.vacation] = vacationTime;
-    row[headers.sick] = sickTime;
-    row[headers.overtime] = Math.max(0, loggedTime - 80);
-    row[headers.holiday] = this.timetable.holiday || 0;
+    row.unpaid = unpaidTime.toString();
+    row.logged = loggedTime.toString();
+    row.vacation = vacationTime.toString();
+    row.sick = sickTime.toString();
+    row.overtime = Math.max(0, loggedTime - 80).toString();
+    row.holiday = (this.timetable.holiday || 0).toString();
     row.extra = {
       slack: this.slack,
       projects: projectsForPeriod
@@ -448,24 +394,23 @@ export class User {
   updateRow() {
     return new Promise<boolean>((resolve, reject) => {
       if (this.row) {
-        const headers = HEADERS.users;
-        this.row[headers.start] = this.timetable.start.format('h:mm A');
-        this.row[headers.end] = this.timetable.end.format('h:mm A');
-        this.row[headers.timezone] = this.timetable.timezone.name;
-        this.row[headers.shouldHound] = this.settings.shouldHound ? 'Y' : 'N';
-        this.row[headers.houndFrequency] = this.settings.houndFrequency ? this.settings.houndFrequency : -1;
-        this.row[headers.vacationAvailable] = this.timetable.vacationAvailable;
-        this.row[headers.vacationLogged] = this.timetable.vacationTotal;
-        this.row[headers.sickAvailable] = this.timetable.sickAvailable;
-        this.row[headers.sickLogged] = this.timetable.sickTotal;
-        this.row[headers.unpaidLogged] = this.timetable.unpaidTotal;
-        this.row[headers.overtime] = Math.max(0, this.timetable.loggedTotal - 80);
-        this.row[headers.totalLogged] = this.timetable.loggedTotal;
-        this.row[headers.averageLogged] = this.timetable.averageLogged;
+        this.row.start = this.timetable.start.format('h:mm A');
+        this.row.end = this.timetable.end.format('h:mm A');
+        this.row.timezone = this.timetable.timezone.name;
+        this.row.shouldHound = this.settings.shouldHound ? 'Y' : 'N';
+        this.row.houndFrequency = (this.settings.houndFrequency ? this.settings.houndFrequency : -1).toString();
+        this.row.vacationAvailable = this.timetable.vacationAvailable.toString();
+        this.row.vacationLogged = this.timetable.vacationTotal.toString();
+        this.row.sickAvailable = this.timetable.sickAvailable.toString();
+        this.row.sickLogged = this.timetable.sickTotal.toString();
+        this.row.unpaidLogged = this.timetable.unpaidTotal.toString();
+        this.row.overtime = Math.max(0, this.timetable.loggedTotal - 80).toString();
+        this.row.totalLogged = this.timetable.loggedTotal;
+        this.row.averageLogged = this.timetable.averageLogged;
         if (this.settings.lastPing) {
-          this.row[headers.lastPing] = moment.tz(this.settings.lastPing, this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
+          this.row.lastPing = moment.tz(this.settings.lastPing, this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
         } else {
-          this.row[headers.lastPing] = moment.tz(this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
+          this.row.lastPing = moment.tz(this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
         }
         this.row.save((err) => {
           if (err) {

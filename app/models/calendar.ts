@@ -2,7 +2,7 @@
 
 import moment from 'moment';
 
-import { HEADERS, TIMEZONE } from '../shared/constants';
+import { TIMEZONE } from '../shared/constants';
 import Logger from '../logger';
 
 export class Calendar {
@@ -55,13 +55,12 @@ export class CalendarEvent {
     if (!row) {
       return;
     }
-    const headers = HEADERS.events;
     let date, name;
-    if (row[headers.date]) {
-      date = moment(row[headers.date], 'MM/DD/YYYY');
+    if (row.date) {
+      date = moment(row.date, 'MM/DD/YYYY');
     }
-    if (row[headers.name]) {
-      name = row[headers.name].trim();
+    if (row.name) {
+      name = row.name.trim();
     }
     const newEvent = new CalendarEvent(date, name, row);
     return newEvent;
@@ -70,18 +69,16 @@ export class CalendarEvent {
     return this.date.diff(moment(), 'days');
   }
   toEventRow() {
-    const headers = HEADERS.events;
     const row = this.row || {};
-    row[headers.date] = row[headers.date] || this.date.format('MM/DD/YYYY');
-    row[headers.name] = row[headers.name] || this.name;
+    row.date = row.date || this.date.format('MM/DD/YYYY');
+    row.name = row.name || this.name;
     return row;
   }
   async updateRow() {
     return new Promise<void>((resolve, reject) => {
       if (this.row) {
-        const headers = HEADERS.events;
-        this.row[headers.date] = this.date.format('MM/DD/YYYY');
-        this.row[headers.name] = `#${this.name}`;
+        this.row.date = this.date.format('MM/DD/YYYY');
+        this.row.name = `#${this.name}`;
         this.row.save((err) => {
           if (err) {
             reject(err);

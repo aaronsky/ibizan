@@ -5,6 +5,9 @@ const FirebaseStorage = require('botkit-storage-firebase');
 
 import { Bot, Controller } from './shared/common';
 import { Config } from './config';
+import { Organization } from './models/organization';
+
+let organization: Organization;
 
 export class App {
     config: Config;
@@ -14,6 +17,7 @@ export class App {
 
     constructor(configuration: Config) {
         this.config = configuration;
+        organization = new Organization(this.config);
     }
     start() {
         this.controller = Botkit.slackbot({

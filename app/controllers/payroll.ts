@@ -12,10 +12,10 @@
 import moment from 'moment';
 const schedule = require('node-schedule');
 
-import { HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
+import { STRINGS, TIMEZONE } from '../shared/constants';
 import Logger from '../logger';
-import { Organization as Org } from '../models/organization'
-const Organization = Org.get();
+import { Organization as Org } from '../models/organization';
+const Organization = new Org();
 
 export default function (controller) {
   Logger.Slack.setController(controller);

@@ -1,35 +1,34 @@
 
 import * as moment from 'moment';
 
-import { HEADERS } from '../shared/constants';
+import { Rows } from '../shared/rows';
 
 export class Project {
   name: string;
   start: any;
   total: any;
-  row: any;
-  constructor(name: string, start: any, total: any, row: any = null) {
+  row: Rows.ProjectsRow;
+  constructor(name: string, start: any, total: any, row: Rows.ProjectsRow = null) {
     this.name = name.replace('#', '');
     this.start = start;
     this.total = total;
     this.row = row;
   }
-  static parse(row) {
+  static parse(row: Rows.ProjectsRow) {
     if (!row) {
       return;
     }
-    const headers = HEADERS.projects;
     let name, startDate, total;
-    if (row[headers.name]) {
-      name = row[headers.name];
+    if (row.name) {
+      name = row.name;
     }
-    if (row[headers.start]) {
-      startDate = moment(row[headers.start], 'MM/DD/YYYY');
+    if (row.start) {
+      startDate = moment(row.start, 'MM/DD/YYYY');
     }
-    if (row[headers.total]) {
+    if (row.total) {
       total = 0;
-      if (!isNaN(row[headers.total])) {
-        total = parseInt(row[headers.total]);
+      if (!isNaN(+row.total)) {
+        total = parseInt(row.total);
       }
     }
     const project = new Project(name, startDate, total, row);
@@ -38,10 +37,9 @@ export class Project {
   async updateRow() {
     return new Promise<void>((resolve, reject) => {
       if (this.row) {
-        const headers = HEADERS.projects;
-        this.row[headers.name] = `#${this.name}`;
-        this.row[headers.start] = this.start.format('MM/DD/YYYY');
-        this.row[headers.total] = Math.floor(this.total);
+        this.row.name = `#${this.name}`;
+        this.row.start = this.start.format('MM/DD/YYYY');
+        this.row.total = Math.floor(this.total).toString();
         this.row.save((err) => {
           if (err) {
             reject(err);

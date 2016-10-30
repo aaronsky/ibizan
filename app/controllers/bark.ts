@@ -12,7 +12,7 @@ import Logger from '../logger';
 const strings = STRINGS.bark;
 import * as moment from 'moment';
 import { Organization as Org } from '../models/organization';
-const Organization = Org.get();
+const Organization = new Org();
 
 export default function (controller) {
   Logger.Slack.setController(controller);

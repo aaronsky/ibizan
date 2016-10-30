@@ -1,5 +1,5 @@
 
-const { HEADERS } = require('../../app/shared/constants');
+const { HEADERS } = require('../../app/shared/rows');
 
 function createDataSheet (name, file, headers) {
   function Row() {

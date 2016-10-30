@@ -2,14 +2,21 @@ import * as moment from 'moment-timezone';
 const weekend = require('moment-weekend');
 import * as uuid from 'node-uuid';
 
-import { HEADERS, MODES, REGEX, TIMEZONE } from '../shared/constants';
-import { PunchTime, Rows } from '../shared/common';
+import { MODES, REGEX, TIMEZONE } from '../shared/constants';
 import { holidayForMoment } from '../shared/moment-holiday';
+import { Rows } from '../shared/rows';
 import * as Logger from '../logger';
-import { User } from './user';
 import { Project } from './project';
+import { User } from './user';
 import { Organization as Org } from '../models/organization';
-const Organization = Org.get();
+const Organization = new Org();
+
+interface PunchTime extends Array<moment.Moment> {
+  [index: number]: moment.Moment;
+  start?: moment.Moment;
+  end?: moment.Moment;
+  block?: number;
+};
 
 function mergeDateTime(date: moment.Moment, time: any, tz: any = TIMEZONE) {
   return moment.tz({
@@ -20,8 +27,7 @@ function mergeDateTime(date: moment.Moment, time: any, tz: any = TIMEZONE) {
     minute: time.get('minute'),
     second: time.get('second')
   }, tz);
-};
-
+}
 function parseMode(command: string): [string, string] {
   const comps = command.split(' ');
   let [mode, commandWithoutMode] = [comps.shift(), comps.join(' ')];
@@ -217,7 +223,7 @@ export class Punch {
   date: moment.Moment;
   timezone: any;
   elapsed?: number;
-  row: any;
+  row: Rows.RawDataRow;
 
   constructor(mode: string, times: PunchTime, projects: Project[], notes: string) {
     this.mode = mode;
@@ -309,47 +315,41 @@ export class Punch {
     return punch;
   }
   static parseRaw(user: User, row: Rows.RawDataRow, projects: Project[] = []) {
-    if (!user) {
-      return;
-    } else if (!row) {
-      return;
-    } else if (!row.save || !row.del) {
-      return;
-    }
-    const headers = HEADERS.rawdata;
-    const date = moment.tz(row[headers.today], 'MM/DD/YYYY', TIMEZONE);
+    const date = moment.tz(row.today, 'MM/DD/YYYY', TIMEZONE);
 
     // UUID sanity check
-    if (row[headers.id].length != 36) {
-      Logger.Console.debug(`${row[headers.id]} is not a valid UUID, changing to valid UUID`);
-      row[headers.id] = uuid.v1();
+    if (row.id.length != 36) {
+      Logger.Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
+      row.id = uuid.v1();
       Organization.spreadsheet.saveRow(row);
     }
 
     let mode;
-    if (row[headers.project1] === 'vacation' || row[headers.project1] === 'sick' || row[headers.project1] === 'unpaid') {
-      mode = row[headers.project1];
-    } else if (row[headers.in] && !row[headers.out]) {
+    if (row.project1 === 'vacation' || row.project1 === 'sick' || row.project1 === 'unpaid') {
+      mode = row.project1;
+    } else if (row.in && !row.out) {
       mode = 'in';
-    } else if (row[headers.out] && row[headers.totalTime]) {
+    } else if (row.out && row.totalTime) {
       mode = 'out';
     } else {
       mode = 'none';
     }
+
     const datetimes: PunchTime = [];
     const tz = user.timetable.timezone.name;
     for (var i = 0; i < 2; i++) {
-      if (row[headers[MODES[i]]]) {
-        let newDate = moment.tz(row[headers[MODES[i]]], 'MM/DD/YYYY hh:mm:ss a', TIMEZONE);
+      const rawPunchTime = row[MODES[i]];
+      if (row[MODES[i]]) {
+        let newDate = moment.tz(rawPunchTime, 'MM/DD/YYYY hh:mm:ss a', TIMEZONE);
         if (!newDate || !newDate.isValid()) {
-          const timePiece = moment.tz(row[headers[MODES[i]]], 'hh:mm:ss a', TIMEZONE);
-          newDate = moment.tz(`${row[headers.today]} ${row[headers[MODES[i]]]}`, 'MM/DD/YYYY hh:mm:ss a', TIMEZONE);
+          const timePiece = moment.tz(rawPunchTime, 'hh:mm:ss a', TIMEZONE);
+          newDate = moment.tz(`${row.today} ${rawPunchTime}`, 'MM/DD/YYYY hh:mm:ss a', TIMEZONE);
         }
         datetimes.push(newDate.tz(tz));
       }
     }
     let rawElapsed, elapsed;
-    if (row[headers.totalTime]) {
+    if (row.totalTime) {
       const comps = row.totalTime.split(':');
       rawElapsed = 0;
       for (let i = 0; i < comps.length; i++) {
@@ -365,8 +365,9 @@ export class Punch {
         rawElapsed = 0;
       }
     }
-    if (row[headers.blockTime]) {
-      const comps = row[headers.blockTime].split(':');
+
+    if (row.blockTime) {
+      const comps = row.blockTime.split(':');
       const block = parseInt(comps[0]) + (parseFloat(comps[1]) / 60);
       datetimes.block = block;
     } else if (datetimes.length === 2) {
@@ -378,11 +379,11 @@ export class Punch {
         Logger.Console.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes.toString()));
         return;
       } else if (elapsed !== rawElapsed && (rawElapsed == null || Math.abs(elapsed - rawElapsed) > 0.02)) {
-        Logger.Console.debug(`${row[headers.id]} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
+        Logger.Console.debug(`${row.id} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
         const hours = Math.floor(elapsed);
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
-        row[headers.totalTime] = `${hours}:${minute_str}:00.000`;
+        row.totalTime = `${hours}:${minute_str}:00.000`;
         Organization.spreadsheet.saveRow(row)
           .catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
       }
@@ -390,7 +391,7 @@ export class Punch {
 
     const foundProjects = []
     for (let i = 1; i < 7; i++) {
-      const projectStr = row[headers['project' + i]];
+      const projectStr = row['project' + i];
       if (!projectStr) {
         break;
       } else if (projectStr === 'vacation' || projectStr === 'sick' || projectStr === 'unpaid') {
@@ -411,7 +412,7 @@ export class Punch {
       }
     }
 
-    const notes = row[headers.notes];
+    const notes = row.notes;
     const punch = new Punch(mode, datetimes, foundProjects, notes);
     punch.date = date;
     punch.timezone = tz;
@@ -482,49 +483,48 @@ export class Punch {
     this.mode = punch.mode;
   }
   toRawRow(name: string) {
-    const headers = HEADERS.rawdata;
     const today = moment.tz(TIMEZONE);
-    const row = this.row || {};
-    row[headers.id] = row[headers.id] || uuid.v1();
-    row[headers.today] = row[headers.today] || this.date.format('MM/DD/YYYY');
-    row[headers.name] = row[headers.name] || name;
+    const row = this.row || new Rows.RawDataRow({ save: null, del: null });
+    row.id = row.id || uuid.v1();
+    row.today = row.today || this.date.format('MM/DD/YYYY');
+    row.name = row.name || name;
     if (this.times.block) {
       const block = this.times.block;
       const hours = Math.floor(block);
       const minutes = Math.round((block - hours) * 60);
       const minute_str = minutes < 10 ? `0${minutes}` : minutes;
-      row[headers.blockTime] = `${hours}:${minute_str}:00.000`;
+      row.blockTime = `${hours}:${minute_str}:00.000`;
     } else {
       for (let i = 0; i < 2; i++) {
         let time;
         if (time = this.times[i]) {
-          row[headers[MODES[i]]] = time.tz(TIMEZONE).format('MM/DD/YYYY hh:mm:ss A');
+          row[MODES[i]] = time.tz(TIMEZONE).format('MM/DD/YYYY hh:mm:ss A');
         } else {
-          row[headers[MODES[i]]] = '';
+          row[MODES[i]] = '';
         }
       }
       if (this.elapsed) {
         const hours = Math.floor(this.elapsed);
         const minutes = Math.round((this.elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
-        row[headers.totalTime] = `${hours}:${minute_str}:00.000`;
+        row.totalTime = `${hours}:${minute_str}:00.000`;
       }
     }
-    row[headers.notes] = this.notes;
+    row.notes = this.notes;
     if (this.mode === 'vacation' || this.mode === 'sick' || this.mode === 'unpaid') {
-      row[headers.project1] = this.mode;
+      row.project1 = this.mode;
     } else {
       const max = this.projects.length < 6 ? this.projects.length : 5;
       for (let i = 0; i <= max; i++) {
         const project = this.projects[i];
         if (project) {
-          row[headers[`project${i + 1}`]] = `#${project.name}`;
+          row[`project${i + 1}`] = `#${project.name}`;
         }
       }
     }
     return row;
   }
-  assignRow(row: any) {
+  assignRow(row: Rows.RawDataRow) {
     this.row = row;
   }
   isValid(user: User): string | boolean {
@@ -615,9 +615,8 @@ export class Punch {
       elapsed += ` ${this.mode} hours on `;
     }
 
-    const headers = HEADERS.rawdata;
-    if (this.row && this.row[headers.today]) {
-      punchDate = moment(this.row[headers.today], "MM/DD/YYYY").format("dddd, MMMM Do YYYY");
+    if (this.row && this.row.today) {
+      punchDate = moment(this.row.today, "MM/DD/YYYY").format("dddd, MMMM Do YYYY");
     }
 
     let notes = this.notes || '';
