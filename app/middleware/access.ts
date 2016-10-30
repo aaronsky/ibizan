@@ -8,9 +8,10 @@
 
 import { REGEX, STRINGS } from '../shared/constants';
 const strings = STRINGS.access;
-import Logger from '../logger';
-import { Organization as Org } from '../models/organization';
-const Organization = new Org();
+import * as Logger from '../logger';
+import { Organization } from '../models/organization';
+
+const org = new Organization();
 
 export default function (controller) {
   Logger.Slack.setController(controller);

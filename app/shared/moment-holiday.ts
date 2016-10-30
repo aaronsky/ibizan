@@ -15,7 +15,7 @@
 // License:
 //   Copyright (c) 2013 [Jr. Hames](http://jrham.es) under [MIT License](http://opensource.org/licenses/MIT)
 
-import moment from 'moment';
+import * as moment from 'moment';
 
 // Holiday definitions
 const holidays = {

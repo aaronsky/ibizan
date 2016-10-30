@@ -1,9 +1,9 @@
 'use strict';
 
-import moment from 'moment';
+import * as moment from 'moment';
 
 import { TIMEZONE } from '../shared/constants';
-import Logger from '../logger';
+import * as Logger from '../logger';
 
 export class Calendar {
   vacation: any;

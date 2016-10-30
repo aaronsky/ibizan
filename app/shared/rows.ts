@@ -67,7 +67,12 @@ export const HEADERS = {
 };
 
 export namespace Rows {
-    type RawGoogleRow = { [props: string]: any, save: (cb: (err: Error) => void) => void, del: (cb: (err: Error) => void) => void };
+    interface RawGoogleRow { 
+        [props: string]: any; 
+        save: (cb: (err: Error) => void) => void;
+        del: (cb: (err: Error) => void) => void;
+    }
+
     enum RowKind {
         Variables,
         Projects,

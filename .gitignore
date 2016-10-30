@@ -6,3 +6,4 @@ data
 coverage
 typings
 *.log
+.ibizanrc.json
