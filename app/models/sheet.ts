@@ -1,10 +1,10 @@
 
-import moment from 'moment';
+import * as moment from 'moment';
 const GoogleSpreadsheet = require('google-spreadsheet');
 
 import { Rows } from '../shared/rows';
 import { momentForHoliday } from '../shared/moment-holiday';
-import Logger from '../logger';
+import * as Logger from '../logger';
 import { CalendarEvent } from './calendar';
 import { Project } from './project';
 import { Punch } from './punch';

@@ -3,17 +3,20 @@ import 'mocha';
 const { expect } = require('chai');
 import * as moment from 'moment';
 
-import { Organization as Org } from '../organization';
-const Organization = Org.get();
-Organization.spreadsheet.sheet = MockSheet;
+const { MockSheet } = require('../../../test/mocks');
+
+import { Rows } from '../../shared/rows';
+import { Organization } from '../organization';
 import { Project } from '../project';
 import { User, Timetable } from '../user';
 import { Punch } from '../punch';
 
-Organization.projects = [
+const org = new Organization();
+org.projects = [
   new Project('#production', moment(), 0),
   new Project('#camp-fangamer', moment(), 0)
 ];
+org.spreadsheet.sheet = MockSheet;
 
 describe('Punch', () => {
   describe('#constructor(mode, times, projects, notes)', () => {
@@ -406,17 +409,9 @@ describe('Punch', () => {
       punch.assignRow(null);
       expect(punch.row).to.not.exist;
     });
-    it('should not assign a row if an invalid row is passed', () => {
-      const punch = Punch.parse(this.user, 'in', 'in');
-      punch.assignRow({});
-      expect(punch.row).to.not.exist;
-    });
     it('should assign a row if a row is passed in', () => {
       const punch = Punch.parse(this.user, 'in', 'in');
-      punch.assignRow({
-        save: () => {},
-        del: () => {}
-      });
+      punch.assignRow(new Rows.RawDataRow({ save: () => {}, del: () => {} }));
       expect(punch.row).to.exist;
     });
   });

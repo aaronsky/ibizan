@@ -52,11 +52,12 @@ import { REGEX, REGEX_STR, STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
 import { Bot, Controller } from '../shared/common';
 import { Rows } from '../shared/rows';
-import Logger from '../logger';
-import { Organization as Org } from '../models/organization';
-const Organization = new Org();
+import * as Logger from '../logger';
 import { Punch } from '../models/punch';
 import { User } from '../models/user';
+import { Organization } from '../models/organization';
+
+const org = new Organization();
 
 export default function (controller: Controller) {
   Logger.Slack.setController(controller);
@@ -67,14 +68,14 @@ export default function (controller: Controller) {
 
   function isClockChannel(bot: Bot, channel: string, resolve: (isChannel: boolean) => void) {
     bot.storage.channels.get(channel, (err, data) => {
-      resolve(data.name === Organization.clockChannel);
+      resolve(data.name === org.clockChannel);
     });
   }
 
   function isProjectChannel(bot: Bot, channel: string, resolve: (isChannel: boolean) => void) {
     bot.storage.channels.get(channel, (err, data) => {
       isClockChannel(bot, channel, (isClockChannel) => {
-        resolve(!isClockChannel && !isDM(channel) && Organization.getProjectByName(data.name) != null);
+        resolve(!isClockChannel && !isDM(channel) && org.getProjectByName(data.name) != null);
       });
     });
   }
@@ -112,7 +113,7 @@ export default function (controller: Controller) {
   // Parse a textual punch and produce a new Punch object
   function parse(bot: Bot, message: any, mode: string) {
     mode = mode.toLowerCase();
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     Logger.Console.log(`Parsing '${message.text} for @${user.slack}.`);
     canPunchHere(bot, message.room, (isAllowed) => {
       if (isAllowed) {
@@ -122,7 +123,7 @@ export default function (controller: Controller) {
         const punch = Punch.parse(user, msg, mode, tz);
         isProjectChannel(bot, message.room, (isProjectChannel) => {
           if (!punch.projects.length && isProjectChannel) {
-            const project = Organization.getProjectByName(message.room);
+            const project = org.getProjectByName(message.room);
             if (project) {
               punch.projects.push(project);
             }
@@ -144,13 +145,13 @@ export default function (controller: Controller) {
       } else {
         Logger.Slack.getChannelName(message.user.room, (channelName) => {
           Logger.Slack.addReaction('x', message);
-          user.directMessage(`You cannot punch in #${channelName}. Try punching in #${Organization.clockChannel}, a designated project channel, or here.`, Logger);
+          user.directMessage(`You cannot punch in #${channelName}. Try punching in #${org.clockChannel}, a designated project channel, or here.`, Logger);
         });
       }
     });
   }
 
-  // Send the punch to the Organization's Spreadsheet
+  // Send the punch to the org's Spreadsheet
   async function sendPunch(punch: Punch, user: User, message: any) {
     if (!punch) {
       Logger.Slack.errorToSlack(`Somehow, a punch was not generated for \"${user.slack}\". Punch:\n`, message.match.input);
@@ -158,7 +159,7 @@ export default function (controller: Controller) {
       return;
     }
     try {
-      const enteredPunch = await Organization.spreadsheet.enterPunch(punch, user);
+      const enteredPunch = await org.spreadsheet.enterPunch(punch, user);
       Logger.Console.log(`@${user.slack}'s punch was successfully entered into the spreadsheet.`);
       const punchEnglish = `Punched you *${enteredPunch.description(user)}*.`;
       if (enteredPunch.mode === 'in') {
@@ -197,7 +198,7 @@ export default function (controller: Controller) {
   // respond
   // time.append, userRequired: true
   controller.hears('(append|add)', ['message_received'], async (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     const msg = message.match.input.replace(REGEX.ibizan, '').replace(/(append|add)/i, '').trim();
     const words = msg.split(' ');
     const operator = words[0];
@@ -215,7 +216,7 @@ export default function (controller: Controller) {
         const projects = msgWithoutOperator.split(' ');
         isProjectChannel(bot, message.user.room, (isProjectChannel) => {
           if (projects.length === 0 && isProjectChannel) {
-            projects.push(Organization.getProjectByName(message.user.room));
+            projects.push(org.getProjectByName(message.user.room));
           }
           punch.appendProjects(projects);
           results = projects.join(', ') || '';
@@ -226,7 +227,7 @@ export default function (controller: Controller) {
       }
       const row = punch.toRawRow(user.name);
       try {
-        await Organization.spreadsheet.saveRow(row);
+        await org.spreadsheet.saveRow(row);
         user.directMessage(`Added ${operator} ${results}`, Logger);
         Logger.Slack.addReaction('dog2', message);
       } catch (err) {
@@ -252,7 +253,7 @@ export default function (controller: Controller) {
       }
       Logger.Console.debug(`Adding event on ${date} named ${name}`);
       try {
-        const calendarEvent = await Organization.addEvent(date, name);
+        const calendarEvent = await org.addEvent(date, name);
         Logger.Slack.addReaction('dog2', message);
         Logger.Slack.removeReaction('clock4', message);
         bot.reply(message, `Added new event: *${calendarEvent.name}* on *${calendarEvent.date.format('M/DD/YYYY')}*`);
@@ -270,7 +271,7 @@ export default function (controller: Controller) {
   // respond
   // time.undo, userRequired: true
   controller.hears('undo', ['message_received'], async (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     if (user.punches && user.punches.length > 0) {
       Logger.Slack.addReaction('clock4', message);
       let punch;
@@ -295,7 +296,7 @@ export default function (controller: Controller) {
   // time.events
   controller.hears('\b(events|upcoming)$', ['message_received'], (bot, message) => {
     let response = '';
-    const upcomingEvents = Organization.calendar.upcomingEvents();
+    const upcomingEvents = org.calendar.upcomingEvents();
     if (upcomingEvents.length > 0) {
       response += 'Upcoming events:\n';
       for (let calendarEvent of upcomingEvents) {
@@ -328,7 +329,7 @@ export default function (controller: Controller) {
   // respond
   // time.hoursOnDate, userRequired: true
   controller.hears('hours (.*)', ['message_received'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     const tz = user.timetable.timezone.name;
     const date = moment(message.match[1], 'MM/DD/YYYY');
     if (!date.isValid()) {
@@ -389,7 +390,7 @@ export default function (controller: Controller) {
   // respond
   // time.hours, userRequired: true
   controller.hears('.*(hours|today|week|month|year|period)+[\?\!\.¿¡]', ['message_received'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     const tz = user.timetable.timezone.name;
     const now = moment.tz(tz);
     const attachments = [];
@@ -436,7 +437,7 @@ export default function (controller: Controller) {
         minute: 0,
         second: 0
       }).day('Sunday');
-      if (Organization.calendar.isPayWeek()) {
+      if (org.calendar.isPayWeek()) {
         periodStart = periodStart.subtract(1, 'weeks');
       }
       let periodEnd = periodStart.clone().add(2, 'weeks');
@@ -507,7 +508,7 @@ export default function (controller: Controller) {
   // respond
   // time.status, userRequired: true
   controller.hears('\b(status|info)$', ['message_received'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     user.directMessage('Your status:', Logger, [user.slackAttachment()]);
     Logger.Slack.addReaction('dog2', message);
   });
@@ -516,7 +517,7 @@ export default function (controller: Controller) {
   // respond
   // time.time, userRequired: true
   controller.hears('\btime$', ['message_received'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     const userTime = moment.tz(user.timetable.timezone.name);
     const ibizanTime = moment.tz(TIMEZONE);
     let msg = `It's currently *${userTime.format('h:mm A')}* in your timezone (${userTime.format('z, Z')}).`
@@ -531,7 +532,7 @@ export default function (controller: Controller) {
   // respond
   // time.time, userRequired: true
   controller.hears('\btimezone$', ['message_received'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     const userTime = moment.tz(user.timetable.timezone.name);
     user.directMessage(`Your timezone is set to *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`, Logger);
     Logger.Slack.addReaction('dog2', message);
@@ -541,7 +542,7 @@ export default function (controller: Controller) {
   // respond
   // time.time, userRequired: true
   controller.hears('timezone (.*)', ['message_received'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     let input = message.match[1];
     let isTzSet = false;
     let tz = user.setTimezone(input);
@@ -576,7 +577,7 @@ export default function (controller: Controller) {
   // respond
   // time.active, userRequired: true
   controller.hears('active\s*(.*)?$', ['message_received'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     const command = message.match[1];
 
     if (!command) {

@@ -4,6 +4,7 @@ const Botkit = require('botkit');
 const FirebaseStorage = require('botkit-storage-firebase');
 
 import { Bot, Controller } from './shared/common';
+import * as Logger from './logger';
 import { Config } from './config';
 import { Organization } from './models/organization';
 
@@ -52,7 +53,7 @@ export class App {
                     user: config.createdBy
                 }, (err, convo) => {
                     if (err) {
-                        console.log(err);
+                        Logger.Console.error(err.message, err);
                     } else {
                         convo.say('I am a bot that has just joined your team');
                         convo.say('You must now /invite me to a channel so that I can be of use!');
@@ -69,7 +70,7 @@ export class App {
                 if (team.bot) {
                     this.controller.spawn(team).startRTM((err, bot) => {
                         if (err) {
-                            console.log('Error connecting bot to Slack:', err);
+                            Logger.Console.error('Error connecting bot to Slack:', err);
                         } else {
                             this.trackBot(bot);
                         }

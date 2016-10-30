@@ -6,13 +6,15 @@
 //  Author:
 //    aaronsky
 
-import { REGEX, STRINGS } from '../shared/constants';
-import { random } from '../shared/common';
-import Logger from '../logger';
-const strings = STRINGS.bark;
 import * as moment from 'moment';
-import { Organization as Org } from '../models/organization';
-const Organization = new Org();
+
+import { REGEX, STRINGS } from '../shared/constants';
+const strings = STRINGS.bark;
+import { random } from '../shared/common';
+import * as Logger from '../logger';
+import { Organization } from '../models/organization';
+
+const org = new Organization();
 
 export default function (controller) {
   Logger.Slack.setController(controller);

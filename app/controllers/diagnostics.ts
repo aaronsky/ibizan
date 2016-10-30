@@ -9,13 +9,14 @@ import { NONAME } from 'dns';
 // Author:
 //   aaronsky
 
-import moment from 'moment';
+import * as moment from 'moment';
 
 import { STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.diagnostics;
-import Logger from '../logger';
-import { Organization as Org } from '../models/organization';
-const Organization = new Org();
+import * as Logger from '../logger';
+import { Organization } from '../models/organization';
+
+const org = new Organization();
 
 export default function (controller) {
   Logger.Slack.setController(controller);
@@ -23,17 +24,17 @@ export default function (controller) {
   // respond
   // diagnostics.uptime
   controller.hears('uptime', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
-    bot.reply(message, `${Organization.name}'s Ibizan has been up since ${Organization.initTime.toDate()} _(${+moment().diff(Organization.initTime, 'minutes', true).toFixed(2)} minutes)_`);
+    bot.reply(message, `${org.name}'s Ibizan has been up since ${org.initTime.toDate()} _(${+moment().diff(org.initTime, 'minutes', true).toFixed(2)} minutes)_`);
     Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // id: diagnostics.users, userRequired: true, adminOnly: true
   controller.hears('users', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     const response = 'All users:';
     const attachments = [];
-    for (let user of Organization.users) {
+    for (let user of org.users) {
       attachments.push(user.slackAttachment());
     }
     user.directMessage(response, Logger, attachments);
@@ -50,8 +51,8 @@ export default function (controller) {
   // respond
   // id: diagnostics.user, userRequired: true, adminOnly: true
   controller.hears('user (.*)', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
-    const u = Organization.getUserBySlackName(message.match[1]);
+    const user = org.getUserBySlackName(message.user.name);
+    const u = org.getUserBySlackName(message.match[1]);
     let response = `User ${message.match[1]}`;
     if (u) {
       response += ':';
@@ -78,9 +79,9 @@ export default function (controller) {
       second: 0
     }, TIMEZONE);
     try {
-      const reports = await Organization.generateReport(yesterday, today);
+      const reports = await org.generateReport(yesterday, today);
       if (typeof reports !== 'number') {
-        const report = Organization.dailyReport(reports, today, yesterday);
+        const report = org.dailyReport(reports, today, yesterday);
         bot.reply(message, report);
       }
     } catch (err) {
@@ -92,9 +93,9 @@ export default function (controller) {
   // respond
   // id: diagnostics.projects, userRequired: true, adminOnly: true
   controller.hears('projects', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     let response = '';
-    for (let project of Organization.projects) {
+    for (let project of org.projects) {
       response += project.description() + '\n\n';
     }
     user.directMessage(response, Logger);
@@ -104,8 +105,8 @@ export default function (controller) {
   // respond
   // id: diagnostics.calendar, userRequired: true, adminOnly: true
   controller.hears('calendar', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
-    user.directMessage(Organization.calendar.description(), Logger);
+    const user = org.getUserBySlackName(message.user.name);
+    user.directMessage(org.calendar.description(), Logger);
     Logger.Slack.addReaction('dog2', message);
   });
 
@@ -114,7 +115,7 @@ export default function (controller) {
   controller.hears('sync', ['direct_message', 'direct_mention', 'mention', 'ambient'], async (bot, message) => {
     Logger.Slack.addReaction('clock4', message);
     try {
-      const status = await Organization.sync();
+      const status = await org.sync();
       bot.say(message, 'Resynced with spreadsheet');
       Logger.Slack.removeReaction('clock4', message);
       Logger.Slack.addReaction('dog2', message);
@@ -127,7 +128,7 @@ export default function (controller) {
 
   controller.webserver.post('/diagnostics/sync', async (req, res) => {
     const body = req.body;
-    if (!Organization.ready()) {
+    if (!org.ready()) {
       res.status(401);
       res.json({
         text: 'Organization is not ready to resync'
@@ -142,7 +143,7 @@ export default function (controller) {
         text: 'Beginning to resync...'
       });
       try {
-        const status = await Organization.sync();
+        const status = await org.sync();
         const message = 'Resynced with spreadsheet';
         Logger.Console.log(message);
         const payload = {
@@ -179,7 +180,7 @@ export default function (controller) {
   // respond
   // diagnostics.help
   controller.hears('.*(help|docs|documentation|commands).*', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
-    const user = Organization.getUserBySlackName(message.user.name);
+    const user = org.getUserBySlackName(message.user.name);
     user.directMessage(strings.help, Logger);
     Logger.Slack.addReaction('dog2', message);
   });

@@ -8,8 +8,7 @@ import { Rows } from '../shared/rows';
 import * as Logger from '../logger';
 import { Project } from './project';
 import { User } from './user';
-import { Organization as Org } from '../models/organization';
-const Organization = new Org();
+import { Organization } from './organization';
 
 interface PunchTime extends Array<moment.Moment> {
   [index: number]: moment.Moment;
@@ -206,7 +205,8 @@ function parseProjects(command: string): [Project[], string] {
   const commandCopy = command.split(' ').slice();
   for (let word of commandCopy) {
     let project;
-    if (project = Organization.getProjectByName(word)) {
+    const org = new Organization();
+    if (project = org.getProjectByName(word)) {
       projects.push(project);
       const pattern = new RegExp(word + ' ?', 'i');
       command = command.replace(pattern, '');
@@ -321,7 +321,8 @@ export class Punch {
     if (row.id.length != 36) {
       Logger.Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
       row.id = uuid.v1();
-      Organization.spreadsheet.saveRow(row);
+      const org = new Organization();
+      org.spreadsheet.saveRow(row);
     }
 
     let mode;
@@ -384,8 +385,8 @@ export class Punch {
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
         row.totalTime = `${hours}:${minute_str}:00.000`;
-        Organization.spreadsheet.saveRow(row)
-          .catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
+        const org = new Organization();
+        org.spreadsheet.saveRow(row).catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
       }
     }
 
@@ -398,8 +399,9 @@ export class Punch {
         break;
       } else {
         let project;
-        if (Organization.ready() && projects.length === 0) {
-          project = Organization.getProjectByName(projectStr);
+        const org = new Organization();
+        if (org.ready() && projects.length === 0) {
+          project = org.getProjectByName(projectStr);
         } else if (projects.length > 0) {
           project = projects.filter((item, index, arr) => `#${item.name}` === projectStr || item.name === projectStr)[0];
         }
@@ -437,11 +439,12 @@ export class Punch {
       } else {
         projectStr = project;
       }
+      const org = new Organization();
       let projectObject;
       if (projectStr.charAt(0) === '#') {
-        projectObject = Organization.getProjectByName(projectStr);
+        projectObject = org.getProjectByName(projectStr);
       } else {
-        projectObject = Organization.getProjectByName(`#${project}`);
+        projectObject = org.getProjectByName(`#${project}`);
       }
       if (!project) {
         continue;
