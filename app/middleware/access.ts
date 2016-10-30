@@ -9,9 +9,8 @@
 import { REGEX, STRINGS } from '../shared/constants';
 const strings = STRINGS.access;
 import Logger from '../logger';
-
 import { Organization as Org } from '../models/organization';
-const Organization = Org.get();
+const Organization = new Org();
 
 export default function (controller) {
   Logger.Slack.setController(controller);

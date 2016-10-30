@@ -2,14 +2,13 @@
 import moment from 'moment';
 const GoogleSpreadsheet = require('google-spreadsheet');
 
+import { Rows } from '../shared/rows';
 import { momentForHoliday } from '../shared/moment-holiday';
-import { HEADERS } from '../shared/constants';
-import { Rows } from '../shared/common';
-import { Calendar, CalendarEvent } from './calendar';
 import Logger from '../logger';
+import { CalendarEvent } from './calendar';
 import { Project } from './project';
-import { User, Settings, Timetable } from './user';
 import { Punch } from './punch';
+import { User } from './user';
 
 export interface GoogleAuth { 
   client_email: string;
@@ -134,7 +133,6 @@ export class Spreadsheet {
       } else if (typeof valid === 'string') {
         throw valid;
       } else {
-        const headers = HEADERS.rawdata;
         if (punch.mode === 'out') {
           if (user.punches && user.punches.length > 0) {
             const len = user.punches.length;
@@ -187,7 +185,7 @@ export class Spreadsheet {
               if (err || !rows) {
                 throw `Could not get rawData rows: ${err}`;
               } else {
-                const rowMatches = rows.filter(r => r[headers.id] === row[headers.id]);
+                const rowMatches = rows.filter(r => r.id === row.id);
                 const rowMatch = rowMatches[0];
                 punch.assignRow(rowMatch);
                 user.punches.push(punch);
@@ -302,44 +300,34 @@ export class Spreadsheet {
             clockChannel: '',
             exemptChannels: []
           };
-          const VARIABLE_HEADERS = HEADERS.variables;
           for (let row of variableRows) {
-            for (let key in VARIABLE_HEADERS) {
-              const header = VARIABLE_HEADERS[key];
-              if (row[header]) {
-                if (header === VARIABLE_HEADERS.holidayOverride) {
-                  continue;
-                } else if (header === VARIABLE_HEADERS.holidays) {
-                  const name = row[header];
-                  let date;
-                  if (row[VARIABLE_HEADERS.holidayOverride]) {
-                    date = moment(row[VARIABLE_HEADERS.holidayOverride], 'MM/DD/YYYY');
-                  } else {
-                    date = momentForHoliday(row[VARIABLE_HEADERS.holidays]);
-                  }
-                  opts[key].push({
-                    name,
-                    date
-                  });
-                } else if (header === VARIABLE_HEADERS.payweek) {
-                  opts[key] = moment(row[VARIABLE_HEADERS.payweek], 'MM/DD/YYYY');
-                } else if (header === VARIABLE_HEADERS.exemptChannels) {
-                  let channel = row[header];
-                  if (channel) {
-                    channel = channel.replace('#', '');
-                    opts[key].push(channel);
-                  }
-                } else {
-                  if (isNaN(row[header])) {
-                    const value = row[header];
-                    if (value) {
-                      opts[key] = value.trim().replace('#', '');
-                    }
-                  } else {
-                    opts[key] = parseInt(row[header]);
-                  }
-                }
+            if (row.vacation || +row.vacation === 0) {
+              opts.vacation = +row.vacation;
+            }
+            if (row.sick || +row.sick === 0) {
+              opts.sick = +row.sick;
+            }
+            if (row.houndFrequency || +row.houndFrequency === 0) {
+              opts.houndFrequency = +row.houndFrequency;
+            }
+            if (row.holidays) {
+              const name = row.holidays;
+              let date;
+              if (row.holidayOverride) {
+                date = moment(row.holidayOverride, 'MM/DD/YYYY');
+              } else {
+                date = momentForHoliday(row.holidays);
               }
+              opts.holidays.push({ name, date });
+            }
+            if (row.payweek) {
+              opts.payWeek = moment(row.payweek, 'MM/DD/YYYY');
+            }
+            if (row.clockChannel) {
+              opts.clockChannel = row.clockChannel.replace('#', '');
+            }
+            if (row.exemptChannel) {
+              opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
             }
           }
           Logger.Console.fun('Loaded organization settings');
@@ -423,7 +411,7 @@ export class Spreadsheet {
         } else {
           const punchRows = rows as Rows.RawDataRow[];
           for (let row of punchRows) {
-            const user = opts.users.filter((item, index, arr) => item.name === row[HEADERS.rawdata.name])[0];
+            const user = opts.users.filter((item, index, arr) => item.name === row.name)[0];
             const punch = Punch.parseRaw(user, row, opts.projects);
             if (punch && user) {
               user.punches.push(punch);

@@ -48,12 +48,13 @@
 
 import moment from 'moment-timezone';
 
-import { REGEX, REGEX_STR, HEADERS, STRINGS, TIMEZONE } from '../shared/constants';
+import { REGEX, REGEX_STR, STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
 import { Bot, Controller } from '../shared/common';
+import { Rows } from '../shared/rows';
 import Logger from '../logger';
 import { Organization as Org } from '../models/organization';
-const Organization = Org.get();
+const Organization = new Org();
 import { Punch } from '../models/punch';
 import { User } from '../models/user';
 
@@ -339,7 +340,6 @@ export default function (controller: Controller) {
     const formattedDate = date.format('dddd, MMMM D, YYYY');
 
     const attachments = [];
-    const headers = HEADERS.payrollreports;
 
     const startOfDay = moment.tz(date, tz).startOf('day');
     const endOfDay = moment.tz(date, tz).endOf('day');
@@ -353,26 +353,22 @@ export default function (controller: Controller) {
 
     let loggedAny = false;
     let msg;
-    if (!report[headers.logged] && !report[headers.vacation] && !report[headers.sick] && !report[headers.unpaid]) {
+    if (!report.logged && !report.vacation && !report.sick && !report.unpaid) {
       msg = `You haven't recorded any hours on ${formattedDate}`;
     } else {
-      if (!report[headers.logged]) {
+      if (!report.logged) {
         msg = 'You haven\'t recorded any paid work time';
       } else {
-        msg = `You have *${toTimeStr(report[headers.logged])} of paid work time*`;
+        msg = `You have *${toTimeStr(+report.logged)} of paid work time*`;
         loggedAny = true;
       }
       for (let kind of ['vacation', 'sick', 'unpaid']) {
-        const header = headers[kind];
-        if (kind === 'unpaid') {
-          kind = 'unpaid work';
-        }
-        if (report[header]) {
+        if (report[kind]) {
           if (!loggedAny) {
-            msg += `, but you have *${toTimeStr(report[header])} of ${kind} time*`;
+            msg += `, but you have *${toTimeStr(+report[kind])} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
             loggedAny = true;
           } else {
-            msg += ` and *${toTimeStr(report[header])} of ${kind} time*`;
+            msg += ` and *${toTimeStr(+report[kind])} of ${kind} time*`;
           }
         }
       }
@@ -398,9 +394,9 @@ export default function (controller: Controller) {
     const now = moment.tz(tz);
     const attachments = [];
     const mode = message.match[1].toLowerCase();
-    const headers = HEADERS.payrollreports;
 
-    let report, dateArticle;
+    let report: Rows.PayrollReportsRow;
+    let dateArticle;
     if (mode === 'week') {
       const sunday = moment({
         hour: 0,
@@ -474,26 +470,22 @@ export default function (controller: Controller) {
 
     let loggedAny = false
     let msg;
-    if (!report[headers.logged] && !report[headers.vacation] && !report[headers.sick] && !report[headers.unpaid]) {
+    if (!report.logged && !report.vacation && !report.sick && !report.unpaid) {
       msg = `You haven't recorded any hours ${dateArticle}.`;
     } else {
-      if (!report[headers.logged]) {
+      if (!report.logged) {
         msg = 'You haven\'t recorded any paid work time';
       } else {
-        msg = `You have *${toTimeStr(report[headers.logged])} of paid work time*`;
+        msg = `You have *${toTimeStr(+report.logged)} of paid work time*`;
         loggedAny = true
       }
       for (let kind of ['vacation', 'sick', 'unpaid']) {
-        const header = headers[kind];
-        if (kind === 'unpaid') {
-          kind = 'unpaid work';
-        }
-        if (report[header]) {
+        if (report[kind]) {
           if (!loggedAny) {
-            msg += `, but you have *${toTimeStr(report[header])} of ${kind} time*`;
+            msg += `, but you have *${toTimeStr(+report[kind])} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
             loggedAny = true;
           } else {
-            msg += ` and *${toTimeStr(report[header])} of ${kind} time*`;
+            msg += ` and *${toTimeStr(+report[kind])} of ${kind} time*`;
           }
         }
       }
