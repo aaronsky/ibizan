@@ -102,7 +102,7 @@ export class Timetable {
   }
 }
 
-interface ILastMessage {
+interface LastMessage {
   time: moment.Moment;
   channel: string;
 };
@@ -111,7 +111,7 @@ export class Settings {
   shouldHound: boolean;
   shouldResetHound: boolean;
   houndFrequency: number;
-  lastMessage: ILastMessage;
+  lastMessage: LastMessage;
   lastPing: moment.Moment;
 
   constructor() {
