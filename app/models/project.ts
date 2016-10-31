@@ -1,3 +1,4 @@
+import * as console from 'console';
 
 import * as moment from 'moment';
 

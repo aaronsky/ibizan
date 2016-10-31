@@ -9,35 +9,32 @@ import { Spreadsheet, GoogleAuth } from './sheet';
 import { Project } from './project';
 import { User, Settings } from './user';
 
-let AUTH: GoogleAuth;
-
 export class Organization {
     readonly name: string = 'Unnamed organization';
+    readonly config: TeamConfig;
     spreadsheet: Spreadsheet;
     initTime: moment.Moment;
-    houndFrequency: number;
     users: User[];
     projects: Project[];
     calendar: Calendar;
     clockChannel: string;
     exemptChannels: string[];
-    shouldHound: boolean;
-    shouldResetHound: boolean;
+    shouldHound: boolean = true;
+    shouldResetHound: boolean = true;
+    houndFrequency: number;
 
     constructor(config: TeamConfig) {
+        this.config = config;
         this.name = config.name;
         Logger.Console.fun(`Welcome to ${this.name}!`);
         this.initTime = moment();
         this.spreadsheet = new Spreadsheet(config.google.sheetId);
 
-        if (config.google.clientEmail && config.google.privateKey) {
-            AUTH = {
+        if (this.spreadsheet.sheet && config.google.clientEmail && config.google.privateKey) {
+            this.sync({
                 client_email: config.google.clientEmail,
                 private_key: config.google.privateKey
-            };
-        }
-        if (this.spreadsheet.sheet && AUTH) {
-            this.sync(AUTH)
+            })
                 .then(() => Logger.Console.log('Options loaded'))
                 .catch((err) => Logger.Console.error("Failed to sync", err));
         } else {
@@ -51,14 +48,13 @@ export class Organization {
         return false;
     }
     async sync(auth?: GoogleAuth) {
-        if (auth) {
-            AUTH = auth;
-        }
         try {
-            await this.spreadsheet.authorize(AUTH);
+            await this.spreadsheet.authorize(auth || {
+                client_email: this.config.google.clientEmail,
+                private_key: this.config.google.privateKey
+            });
             let opts = await this.spreadsheet.loadOptions();
             if (opts) {
-                this.houndFrequency = opts.houndFrequency;
                 let old;
                 if (this.users) {
                     old = this.users.slice(0);
@@ -72,7 +68,9 @@ export class Organization {
                         }
                     }
                 }
+                this.projects = opts.projects as Project[];
                 this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payweek, opts.events);
+                this.houndFrequency = opts.houndFrequency;
                 this.clockChannel = opts.clockChannel;
                 this.exemptChannels = opts.exemptChannels;
             }

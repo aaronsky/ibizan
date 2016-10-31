@@ -3,14 +3,17 @@ import 'mocha';
 const { expect, assert } = require('chai');
 import * as moment from 'moment';
 
-const { MockSheet } = require('../../test/mocks');
+const { MockSheet, MockConfig } = require('../../../test/mocks');
 
+import { Organization } from '../organization';
 import { Spreadsheet } from '../sheet';
 import { Punch } from '../punch';
 
+let org = new Organization(MockConfig.team);
+
 describe('Sheet', () => {
   beforeEach(() => {
-    const sheetId = 'bad id';
+    const sheetId = 'test';
     this.sheet = new Spreadsheet(sheetId);
     this.sheet.sheet = MockSheet;
   });
@@ -57,7 +60,8 @@ describe('Sheet', () => {
     it('should fail without a user', async () => {
       try {
         const opts = await this.sheet.loadOptions();
-        const inPunch = Punch.parse(user, 'in', 'in');
+        const user = opts.users[0];
+        const inPunch = Punch.parse(org, user, 'in', 'in');
         await this.sheet.enterPunch(inPunch, null);
         assert.fail('Invalid parameters passed: Punch or user is undefined.', null);
       } catch (err) {
@@ -66,26 +70,25 @@ describe('Sheet', () => {
     });
     it('should enter in punch for user', async () => {
       try {
-        const opts = this.sheet.loadOptions();
+        const opts = await this.sheet.loadOptions();
         const user = opts.users[0];
-        const inPunch = Punch.parse(user, 'in', 'in');
+        const inPunch = Punch.parse(org, user, 'in', 'in');
         await this.sheet.enterPunch(inPunch, user);
         assert.isOk(true);
       } catch (err) {
-        console.log(err);
         assert.fail('success', err);
       }
     });
     it('should attempt out punch for user, but fail due to lack of notes', async () => {
       try {
-        const opts = this.sheet.loadOptions();
+        const opts = await this.sheet.loadOptions();
         const user = opts.users[0];
-        const outPunch = Punch.parse(user, 'out', 'out');
+        const outPunch = Punch.parse(org, user, 'out', 'out');
         let last;
         if (last = user.lastPunch('in')) {
           await this.sheet.enterPunch(outPunch, user);
         } else {
-          const inPunch = Punch.parse(user, 'in', 'in');
+          const inPunch = Punch.parse(org, user, 'in', 'in');
           await this.sheet.enterPunch(inPunch, user);
           await this.sheet.enterPunch(outPunch, user);
         }
@@ -96,44 +99,42 @@ describe('Sheet', () => {
     });
     it('should enter out punch for user', async () => {
       try {
-        const opts = this.sheet.loadOptions;
+        const opts = await this.sheet.loadOptions();
         const user = opts.users[0];
-        const outPunch = Punch.parse(user, 'out did some things', 'out');
+        const outPunch = Punch.parse(org, user, 'out did some things', 'out');
         let last;
         if (last = user.lastPunch('in')) {
           await this.sheet.enterPunch(outPunch, user);
         } else {
-          const inPunch = Punch.parse(user, 'in', 'in');
+          const inPunch = Punch.parse(org, user, 'in', 'in');
           await this.sheet.enterPunch(inPunch, user);
           await this.sheet.enterPunch(outPunch, user);
         }
         assert.isOk(true);
       } catch (err) {
-        console.log(err);
         assert.fail('success', err);
       }
     });
     it('should enter special punch for user', async () => {
       try {
-        const opts = this.sheet.loadOptions;
+        const opts = await this.sheet.loadOptions();
         const user = opts.users[0];
-        const inPunch = Punch.parse(user, 'vacation 6/8-6/12', 'vacation');
+        const inPunch = Punch.parse(org, user, 'vacation 6/8-6/12', 'vacation');
         await this.sheet.enterPunch(inPunch, user);
         assert.isOk(true);
       } catch (err) {
-        console.log(err);
+        console.error(err);
         assert.fail('success', err);
       }
     });
     it('should enter block punch for user', async () => {
       try {
-        const opts = this.sheet.loadOptions;
+        const opts = await this.sheet.loadOptions();
         const user = opts.users[0];
-        const blockPunch = Punch.parse(user, '4.5 hours');
+        const blockPunch = Punch.parse(org, user, '4.5 hours');
         await this.sheet.enterPunch(blockPunch, user);
         assert.isOk(true);
       } catch (err) {
-        console.log(err);
         assert.fail('success', err);
       }
     });
@@ -148,7 +149,6 @@ describe('Sheet', () => {
         const numberDone = await this.sheet.generateReport(opts.users, start, end);
         expect(numberDone).to.equal(userCount);
       } catch (err) {
-        console.log(err);
         assert.fail('success', err);
       }
     });

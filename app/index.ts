@@ -21,7 +21,6 @@ export class App {
         this.config = config;
     }
     start() {
-        console.log(this.config);
         this.controller = Botkit.slackbot({
             storage: FirebaseStorage({
                 firebase_uri: this.config.storageUri

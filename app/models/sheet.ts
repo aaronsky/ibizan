@@ -10,9 +10,9 @@ import { Project } from './project';
 import { Punch } from './punch';
 import { User } from './user';
 
-export interface GoogleAuth { 
+export interface GoogleAuth {
   client_email: string;
-  private_key: string 
+  private_key: string
 };
 
 export class Spreadsheet {
@@ -58,8 +58,8 @@ export class Spreadsheet {
       opts = await this.loadEmployees(opts);
       opts = await this.loadEvents(opts);
       opts = await this.loadPunches(opts);
-    } catch (error) {
-      throw `Couldn't download sheet data: ${error}`;
+    } catch (err) {
+      throw err;
     }
     this.initialized = true;
     return opts;
@@ -127,102 +127,102 @@ export class Spreadsheet {
     });
   }
   async enterPunch(punch: Punch, user: User) {
-      const valid = punch.isValid(user);
-      if (!punch || !user) {
-        throw 'Invalid parameters passed: Punch or user is undefined';
-      } else if (typeof valid === 'string') {
-        throw valid;
-      } else {
-        if (punch.mode === 'out') {
-          if (user.punches && user.punches.length > 0) {
-            const len = user.punches.length;
-            let last;
-            for (let i = len - 1; i >= 0; i--) {
-              last = user.punches[i];
-              if (last.mode === 'in') {
-                break;
-              } else if (last.mode === 'out') {
-                continue;
-              } else if (last.times.length === 2) {
-                continue;
-              }
-            }
-            if (!last) {
-              throw 'You haven\'t punched out yet.';
-            }
-            last.out(punch);
-            const row = last.toRawRow(user.name);
-            try {
-              await this.saveRow(row, `punch for ${user.name}`);
-              // add hours to project in projects
-              let elapsed;
-              if (last.times.block) {
-                elapsed = last.times.block;
-              } else {
-                elapsed = last.elapsed;
-              }
-              const logged = user.timetable.loggedTotal;
-              user.timetable.loggedTotal = logged + elapsed;
-              // calculate project times
-              for (let project of last.projects) {
-                project.total += elapsed;
-                try {
-                  await project.updateRow();
-                } catch (err) {
-                  throw err;
-                }
-              }
-              return last;
-            } catch (err) {
-              throw err;
+    const valid = punch.isValid(user);
+    if (!punch || !user) {
+      throw 'Invalid parameters passed: Punch or user is undefined';
+    } else if (typeof valid === 'string') {
+      throw valid;
+    } else {
+      if (punch.mode === 'out') {
+        if (user.punches && user.punches.length > 0) {
+          const len = user.punches.length;
+          let last;
+          for (let i = len - 1; i >= 0; i--) {
+            last = user.punches[i];
+            if (last.mode === 'in') {
+              break;
+            } else if (last.mode === 'out') {
+              continue;
+            } else if (last.times.length === 2) {
+              continue;
             }
           }
-        } else {
-          const row = punch.toRawRow(user.name);
+          if (!last) {
+            throw 'You haven\'t punched out yet.';
+          }
+          last.out(punch);
+          const row = last.toRawRow(user.name);
           try {
-            const newRow = await this.newRow(this.rawData, row);
-            this.rawData.getRows({}, async (err, rows) => {
-              if (err || !rows) {
-                throw `Could not get rawData rows: ${err}`;
-              } else {
-                const rowMatches = rows.filter(r => r.id === row.id);
-                const rowMatch = rowMatches[0];
-                punch.assignRow(rowMatch);
-                user.punches.push(punch);
-                if (punch.mode === 'vacation' || punch.mode === 'sick' || punch.mode === 'unpaid') {
-                  let elapsed;
-                  if (punch.times.block) {
-                    elapsed = punch.times.block;
-                  } else {
-                    elapsed = punch.elapsed;
-                  }
-                  const elapsedDays = user.toDays(elapsed);
-                  if (punch.mode === 'vacation') {
-                    const total = user.timetable.vacationTotal;
-                    const available = user.timetable.vacationAvailable;
-                    user.timetable.setVacation(total + elapsedDays, available - elapsedDays);
-                  } else if (punch.mode === 'sick') {
-                    const total = user.timetable.sickTotal;
-                    const available = user.timetable.sickAvailable;
-                    user.timetable.setSick(total + elapsedDays, available - elapsedDays);
-                  } else if (punch.mode === 'unpaid') {
-                    const total = user.timetable.unpaidTotal;
-                    user.timetable.unpaidTotal = total + elapsedDays;
-                  }
-                  try {
-                    await user.updateRow();
-                  } catch (err) {
-                    throw `Could not update user row: ${err}`;
-                  }
-                  return punch;
-                }
+            await this.saveRow(row, `punch for ${user.name}`);
+            // add hours to project in projects
+            let elapsed;
+            if (last.times.block) {
+              elapsed = last.times.block;
+            } else {
+              elapsed = last.elapsed;
+            }
+            const logged = user.timetable.loggedTotal;
+            user.timetable.loggedTotal = logged + elapsed;
+            // calculate project times
+            for (let project of last.projects) {
+              project.total += elapsed;
+              try {
+                await project.updateRow();
+              } catch (err) {
+                throw err;
               }
-            });
+            }
+            return last;
           } catch (err) {
-            throw `Could not add row: ${err}`;
+            throw err;
           }
         }
+      } else {
+        const row = punch.toRawRow(user.name);
+        try {
+          const newRow = await this.newRow(this.rawData, row);
+          this.rawData.getRows({}, async (err, rows) => {
+            if (err || !rows) {
+              throw `Could not get rawData rows: ${err}`;
+            } else {
+              const rowMatches = rows.filter(r => r.id === row.id);
+              const rowMatch = rowMatches[0];
+              punch.assignRow(rowMatch);
+              user.punches.push(punch);
+              if (punch.mode === 'vacation' || punch.mode === 'sick' || punch.mode === 'unpaid') {
+                let elapsed;
+                if (punch.times.block) {
+                  elapsed = punch.times.block;
+                } else {
+                  elapsed = punch.elapsed;
+                }
+                const elapsedDays = user.toDays(elapsed);
+                if (punch.mode === 'vacation') {
+                  const total = user.timetable.vacationTotal;
+                  const available = user.timetable.vacationAvailable;
+                  user.timetable.setVacation(total + elapsedDays, available - elapsedDays);
+                } else if (punch.mode === 'sick') {
+                  const total = user.timetable.sickTotal;
+                  const available = user.timetable.sickAvailable;
+                  user.timetable.setSick(total + elapsedDays, available - elapsedDays);
+                } else if (punch.mode === 'unpaid') {
+                  const total = user.timetable.unpaidTotal;
+                  user.timetable.unpaidTotal = total + elapsedDays;
+                }
+                try {
+                  await user.updateRow();
+                } catch (err) {
+                  throw `Could not update user row: ${err}`;
+                }
+                return punch;
+              }
+            }
+          });
+        } catch (err) {
+          throw `Could not add row: ${err}`;
+        }
       }
+    }
   }
   async generateReport(reports) {
     return new Promise<number>((resolve, reject) => {
@@ -290,7 +290,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const variableRows = rows as Rows.VariablesRow[];
+          const variableRows = rows.map((row, index, arr) => new Rows.VariablesRow(row));
           const opts = {
             vacation: 0,
             sick: 0,
@@ -343,8 +343,8 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const projectRows = rows as Rows.ProjectsRow[];
-          const projects = [];
+          const projectRows = rows.map((row, index, arr) => new Rows.ProjectsRow(row));
+          let projects: Project[] = [];
           for (let row of projectRows) {
             const project = Project.parse(row);
             if (project) {
@@ -365,9 +365,9 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const userRows = rows as Rows.UsersRow[];
-          const users = [];
-          for (let row of rows) {
+          const userRows = rows.map((row, index, arr) => new Rows.UsersRow(row));
+          let users: User[] = [];
+          for (let row of userRows) {
             const user = User.parse(row);
             if (user) {
               users.push(user);
@@ -387,8 +387,8 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const eventsRows = rows as Rows.EventsRow[];
-          const events = [];
+          const eventsRows: Rows.EventsRow[] = rows.map((row, index, arr) => new Rows.EventsRow(row));
+          let events: CalendarEvent[] = [];
           for (let row of eventsRows) {
             const calendarEvent = CalendarEvent.parse(row);
             if (calendarEvent) {
@@ -409,14 +409,14 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const punchRows = rows as Rows.RawDataRow[];
-          for (let row of punchRows) {
-            const user = opts.users.filter((item, index, arr) => item.name === row.name)[0];
+          const punchRows = rows.map((row, index, arr) => new Rows.RawDataRow(row));
+          punchRows.forEach((row, index, arr) => {
+            const user: User = opts.users.filter((item, index, arr) => item.name === row.name)[0];
             const punch = Punch.parseRaw(user, row, this, opts.projects);
             if (punch && user) {
               user.punches.push(punch);
             }
-          }
+          });
           Logger.Console.fun(`Loaded ${rows.length} punches for ${opts.users.length} users`);
           Logger.Console.fun('----------------------------------------');
           resolve(opts);
