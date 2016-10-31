@@ -59,7 +59,7 @@ let config;
 try {
     config = ConfigFactory.loadConfiguration(argv.config, argv.opts, argv);
 } catch (err) {
-    Logger.Console.error(err.message);
+    Logger.Console.error(err.message, err);
     yargs.showHelp();
     return;
 }
