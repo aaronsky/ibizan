@@ -195,7 +195,7 @@ function calculateElapsed(start: moment.Moment, end: moment.Moment, mode: string
   }
   return +elapsed.toFixed(2);
 }
-function parseProjects(command: string): [Project[], string] {
+function parseProjects(command: string, organization: Organization): [Project[], string] {
   const projects: Project[] = [];
   command = command.replace(/^\s+/, '') || '';
   if (command.indexOf('in') === 0) {
@@ -205,8 +205,7 @@ function parseProjects(command: string): [Project[], string] {
   const commandCopy = command.split(' ').slice();
   for (let word of commandCopy) {
     let project;
-    const org = new Organization();
-    if (project = org.getProjectByName(word)) {
+    if (project = organization.getProjectByName(word)) {
       projects.push(project);
       const pattern = new RegExp(word + ' ?', 'i');
       command = command.replace(pattern, '');
@@ -231,7 +230,7 @@ export class Punch {
     this.projects = projects;
     this.notes = notes;
   }
-  static parse(user: User, command: string, mode: string = 'none', timezone?: any) {
+  static parse(organization: Organization, user: User, command: string, mode: string = 'none', timezone?: any) {
     if (!user) {
       Logger.Console.error('No user passed', new Error(command));
       return;
@@ -302,7 +301,7 @@ export class Punch {
       }
     }
 
-    const [projects, commandWithoutProject] = parseProjects(command);
+    const [projects, commandWithoutProject] = parseProjects(command, organization);
     command = commandWithoutProject;
     const notes = command.trim();
 
@@ -314,15 +313,14 @@ export class Punch {
     }
     return punch;
   }
-  static parseRaw(user: User, row: Rows.RawDataRow, projects: Project[] = []) {
+  static parseRaw(user: User, row: Rows.RawDataRow, spreadsheet: { saveRow: (row: Rows.RawDataRow) => Promise<void> }, projects: Project[] = []) {
     const date = moment.tz(row.today, 'MM/DD/YYYY', TIMEZONE);
 
     // UUID sanity check
     if (row.id.length != 36) {
       Logger.Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
       row.id = uuid.v1();
-      const org = new Organization();
-      org.spreadsheet.saveRow(row);
+      spreadsheet.saveRow(row);
     }
 
     let mode;
@@ -385,26 +383,22 @@ export class Punch {
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
         row.totalTime = `${hours}:${minute_str}:00.000`;
-        const org = new Organization();
-        org.spreadsheet.saveRow(row).catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
+        spreadsheet.saveRow(row).catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
       }
     }
 
     const foundProjects = []
-    for (let i = 1; i < 7; i++) {
+    for (let i = 1; i <= 6; i++) {
       const projectStr = row['project' + i];
       if (!projectStr) {
         break;
       } else if (projectStr === 'vacation' || projectStr === 'sick' || projectStr === 'unpaid') {
         break;
       } else {
-        let project;
-        const org = new Organization();
-        if (org.ready() && projects.length === 0) {
-          project = org.getProjectByName(projectStr);
-        } else if (projects.length > 0) {
-          project = projects.filter((item, index, arr) => `#${item.name}` === projectStr || item.name === projectStr)[0];
-        }
+        let project = projects.filter((item, index, arr) => `#${item.name}` === projectStr || item.name === projectStr)[0];
+        // if (organization.ready() && projects.length === 0) {
+        //   project = organization.getProjectByName(projectStr);
+        // } else if (projects.length > 0) {
         if (project) {
           foundProjects.push(project);
           continue;
@@ -424,7 +418,7 @@ export class Punch {
     punch.assignRow(row);
     return punch;
   }
-  appendProjects(projects: string[] | Project[] = []) {
+  appendProjects(organization: Organization, projects: string[] | Project[] = []) {
     const extraProjectCount = this.projects.length;
     if (extraProjectCount >= 6) {
       return;
@@ -439,12 +433,11 @@ export class Punch {
       } else {
         projectStr = project;
       }
-      const org = new Organization();
       let projectObject;
       if (projectStr.charAt(0) === '#') {
-        projectObject = org.getProjectByName(projectStr);
+        projectObject = organization.getProjectByName(projectStr);
       } else {
-        projectObject = org.getProjectByName(`#${project}`);
+        projectObject = organization.getProjectByName(`#${project}`);
       }
       if (!project) {
         continue;
@@ -460,7 +453,7 @@ export class Punch {
     }
     this.notes += notes;
   }
-  out(punch: Punch) {
+  out(organization: Organization, punch: Punch) {
     if (this.mode === 'out') {
       return;
     }
@@ -478,7 +471,7 @@ export class Punch {
       this.times.push(newTime);
     }
     if (punch.projects) {
-      this.appendProjects(punch.projects);
+      this.appendProjects(organization, punch.projects);
     }
     if (punch.notes) {
       this.appendNotes(punch.notes);

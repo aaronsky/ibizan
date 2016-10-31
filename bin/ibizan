@@ -2,63 +2,42 @@
 
 const path = require('path');
 const fs = require('fs');
-const { App } = require('../build');
+const { ConfigFactory } = require('../build/config');
 const Logger = require('../build/logger');
-const { Config } = require('../build/config');
+const { App } = require('../build');
 
 const yargs = require('yargs')
                 .usage('Usage: $0 [options]')
                 .string([
                     'config', 
                     'opts',
-                    'slackClientId', 
-                    'slackClientSecret', 
                     'port',
                     'storageUri',
-                    'googleSheetId', 
-                    'googleClientEmail', 
-                    'googlePrivateKey'
+                    'slackClientId', 
+                    'slackClientSecret',
+                    'slackVerificationToken' 
                 ])
-                .array('admins')
+                .array('scopes')
                 .count('verbose')
                 .alias('config', 'c')
                 .nargs('config', 1)
                 .describe('config', 'Use configuration from this file')
-                .config('config', (configPath) => {
-                    return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-                })
                 .nargs('opts', 1)
                 .describe('opts', 'Specify opts path')
-                .coerce('opts', (optsPath) => {
-                    const opts = fs.readFileSync(optsPath, 'utf-8')
-                                    .replace(/\\\s/g, '%20')
-                                    .split(/\s/)
-                                    .filter(Boolean)
-                                    .map(value => value.replace(/%20/g, ' '));
-                    return opts;
-                })
+                .nargs('port', 1)
+                .describe('port', 'Port to use with bot webserver')
+                .alias('store' ,'storageUri')
+                .nargs('store', 1)
+                .describe('store', 'URI address of Firebase storage endpoint')
                 .alias('id', 'slackClientId')
                 .nargs('id', 1)
                 .describe('slackClientId', 'Slack Bot client id')
                 .alias('secret', 'slackClientSecret')
                 .nargs('secret', 1)
                 .describe('slackClientSecret', 'Slack Bot client secret key')
-                .nargs('port', 1)
-                .describe('port', 'Port to use with bot webserver')
-                .alias('store' ,'storageUri')
-                .nargs('store', 1)
-                .describe('store', 'URI address of Firebase storage endpoint')
-                .alias('sheet', 'googleSheetId')
-                .nargs('sheet', 1)
-                .describe('sheet', 'Google spreadsheet id')
-                .alias('email', 'googleClientEmail')
-                .nargs('email', 1)
-                .describe('email', 'Google project client email')
-                .alias('key', 'googlePrivateKey')
-                .nargs('key', 1)
-                .describe('key', 'Google project private key')
-                .alias('admins', 'A')
-                .describe('admins', 'List of admin slack user names that should have Ibizan diagnostic priviliges')
+                .alias('token', 'slackVerificationToken')
+                .nargs('token', 1)
+                .describe('slackVerificationToken', 'Slack Bot verification token')
                 .alias('verbose', 'v')
                 .describe('verbose', 'Verbosity of logs')
                 .alias('help', 'h')
@@ -67,13 +46,18 @@ const yargs = require('yargs')
                 .describe('version', 'Outputs the version of Ibizan')
                 .help('help')
                 .epilog('For more information, check out http://ibizan.github.io/ or https://github.com/ibizan/ibizan')
-                .showHelpOnFail(true);
+                .showHelpOnFail(false);
 const argv = yargs.argv;
+
+if (argv.version) {
+    let version = process.env.npm_package_version || JSON.parse(fs.readFileSync('../package.json')).version;
+    console.log('Ibizan v' + version);
+    return;
+}
 
 let config;
 try {
-    config = new Config(argv);
-    config.loadOptions(argv);
+    config = ConfigFactory.loadConfiguration(argv.config, argv.opts, argv);
 } catch (err) {
     Logger.Console.error(err.message);
     yargs.showHelp();
