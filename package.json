@@ -58,7 +58,7 @@
     "build": "./node_modules/.bin/tsc && echo \"Built TypeScript successfully!\"",
     "prepublish": "npm build",
     "test": "TEST=true mocha",
-    "test:cover": "TEST=true nyc --require ts-node/register ./node_modules/.bin/_mocha",
+    "test:cover": "nyc --reporter=html -x **/*.spec.ts npm test",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "nyc": {
