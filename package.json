@@ -2,6 +2,9 @@
   "name": "ibizan",
   "version": "0.9.3",
   "description": "Dog-themed Employee Time Tracking Slack Bot",
+  "bin": {
+    "ibizan": "bin/ibizan"
+  },
   "keywords": [
     "ibizan",
     "dog",
@@ -42,8 +45,8 @@
     "@types/node-uuid": "0.0.28",
     "chai": "^3.5.0",
     "coveralls": "^2.11.14",
-    "istanbul": "^0.4.5",
     "mocha": "^3.1.0",
+    "nyc": "^8.3.2",
     "request": "^2.75.0",
     "sinon": "^1.17.6",
     "ts-node": "^1.6.0",
@@ -54,10 +57,29 @@
     "start": "./bin/ibizan",
     "build": "./node_modules/.bin/tsc && echo \"Built TypeScript successfully!\"",
     "prepublish": "npm build",
-    "test": "TEST=true ./node_modules/.bin/mocha --opts test/mocha.opts ",
-    "coverage": "TEST=true ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --opts test/mocha.opts"
+    "test": "TEST=true mocha",
+    "test:cover": "TEST=true nyc --require ts-node/register ./node_modules/.bin/_mocha",
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
-  "bin": {
-    "ibizan": "bin/ibizan"
+  "nyc": {
+    "include": [
+      "app/**/*.ts"
+    ],
+    "exclude": [
+      "node_modules/",
+      "dist/"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "sourceMap": true,
+    "instrument": true
   }
 }

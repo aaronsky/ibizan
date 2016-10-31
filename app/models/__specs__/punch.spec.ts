@@ -108,7 +108,7 @@ describe('Punch', () => {
       expect(punch).to.have.deep.property('times[0]');
       const now = moment();
       const amPm = now.format('A');
-      const expectedTime = moment(`9:15 #{amPm}`, 'h:mm A');
+      const expectedTime = moment(`9:15 ${amPm}`, 'h:mm A');
       if (expectedTime.isAfter(now) && expectedTime.diff(now, 'hours', true) > 6) {
         expectedTime.subtract(12, 'hours');
       }
@@ -342,7 +342,7 @@ describe('Punch', () => {
       const [start, end] = this.user.activeHours;
       const punch = Punch.parse(org, this.user, `in ${start.format('hh:mma')} #production`, 'in');
       const outPunch = Punch.parse(org, this.user, `out ${end.format('hh:mma')} #camp-fangamer`, 'out');
-      punch.out(org, outPunch);
+      punch.out(outPunch, org);
       expect(punch.times).to.have.lengthOf(2);
       expect(punch.times[0].format()).to.equal(start.format());
       expect(punch.times[1].format()).to.equal(end.format());
@@ -382,7 +382,7 @@ describe('Punch', () => {
     it('should return a raw object for an out punch', () => {
       const punch = Punch.parse(org, this.user, 'in 9:00am', 'in');
       const outPunch = Punch.parse(org, this.user, 'out 10:30am', 'out');
-      punch.out(org, outPunch);
+      punch.out(outPunch, org);
       const raw = punch.toRawRow(this.user.name);
       expect(raw).to.exist
     });

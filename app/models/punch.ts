@@ -451,7 +451,7 @@ export class Punch {
     }
     this.notes += notes;
   }
-  out(organization: Organization, punch: Punch) {
+  out(punch: Punch, organization: Organization) {
     if (this.mode === 'out') {
       return;
     }

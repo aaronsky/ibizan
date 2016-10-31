@@ -9,6 +9,7 @@ import { CalendarEvent } from './calendar';
 import { Project } from './project';
 import { Punch } from './punch';
 import { User } from './user';
+import { Organization } from './organization';
 
 export interface GoogleAuth {
   client_email: string;
@@ -126,7 +127,7 @@ export class Spreadsheet {
       }
     });
   }
-  async enterPunch(punch: Punch, user: User) {
+  async enterPunch(punch: Punch, user: User, organization: Organization) {
     const valid = punch.isValid(user);
     if (!punch || !user) {
       throw 'Invalid parameters passed: Punch or user is undefined';
@@ -136,7 +137,7 @@ export class Spreadsheet {
       if (punch.mode === 'out') {
         if (user.punches && user.punches.length > 0) {
           const len = user.punches.length;
-          let last;
+          let last: Punch;
           for (let i = len - 1; i >= 0; i--) {
             last = user.punches[i];
             if (last.mode === 'in') {
@@ -150,7 +151,7 @@ export class Spreadsheet {
           if (!last) {
             throw 'You haven\'t punched out yet.';
           }
-          last.out(punch);
+          last.out(punch, organization);
           const row = last.toRawRow(user.name);
           try {
             await this.saveRow(row, `punch for ${user.name}`);
