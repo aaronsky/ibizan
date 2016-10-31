@@ -3,7 +3,7 @@ import * as moment from 'moment';
 
 import { Rows } from '../shared/rows';
 import * as Logger from '../logger';
-import { Config } from '../config';
+import { TeamConfig } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
 import { Spreadsheet, GoogleAuth } from './sheet';
 import { Project } from './project';
@@ -12,7 +12,7 @@ import { User, Settings } from './user';
 let AUTH: GoogleAuth;
 
 export class Organization {
-    name: string = 'Unnamed organization';
+    readonly name: string = 'Unnamed organization';
     spreadsheet: Spreadsheet;
     initTime: moment.Moment;
     houndFrequency: number;
@@ -24,34 +24,25 @@ export class Organization {
     shouldHound: boolean;
     shouldResetHound: boolean;
 
-    private static instance: Organization;
+    constructor(config: TeamConfig) {
+        this.name = config.name;
+        Logger.Console.fun(`Welcome to ${this.name}!`);
+        this.initTime = moment();
+        this.spreadsheet = new Spreadsheet(config.google.sheetId);
 
-    constructor(config?: Config) {
-        if (!Organization.instance) {
-            Organization.instance = this;
-            if (config) {
-                this.name = config.name;
-                Logger.Console.fun(`Welcome to ${this.name}!`);
-                this.initTime = moment();
-
-                const sheetId = config.google.sheetId;
-                if (sheetId) {
-                    this.spreadsheet = new Spreadsheet(sheetId);
-                    if (config.google.clientEmail && config.google.privateKey) {
-                        AUTH = {
-                            client_email: config.google.clientEmail,
-                            private_key: config.google.privateKey
-                        };
-                    }
-                    if (this.spreadsheet.sheet) {
-                        this.sync(AUTH).then(() => Logger.Console.log('Options loaded'));
-                    } else {
-                        Logger.Console.warn('Sheet not initialized, no spreadsheet ID was provided');
-                    }
-                }
-            }
+        if (config.google.clientEmail && config.google.privateKey) {
+            AUTH = {
+                client_email: config.google.clientEmail,
+                private_key: config.google.privateKey
+            };
         }
-        return Organization.instance;
+        if (this.spreadsheet.sheet && AUTH) {
+            this.sync(AUTH)
+                .then(() => Logger.Console.log('Options loaded'))
+                .catch((err) => Logger.Console.error("Failed to sync", err));
+        } else {
+            Logger.Console.warn('Sheet not initialized, no spreadsheet ID was provided');
+        }
     }
     ready() {
         if (this.spreadsheet) {

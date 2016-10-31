@@ -43,8 +43,8 @@ export class Calendar {
 }
 
 export class CalendarEvent {
-  date: moment.Moment;
-  name: any;
+  readonly date: moment.Moment;
+  readonly name: any;
   row: any;
   constructor(date: moment.Moment, name: any, row?: any) {
     this.date = date;

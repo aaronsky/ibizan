@@ -3,7 +3,7 @@ import 'mocha';
 const { expect } = require('chai');
 import * as moment from 'moment';
 
-const { MockSheet } = require('../../../test/mocks');
+const { MockConfig, MockSheet } = require('../../../test/mocks');
 
 import { Rows } from '../../shared/rows';
 import { Organization } from '../organization';
@@ -11,7 +11,7 @@ import { Project } from '../project';
 import { User, Timetable } from '../user';
 import { Punch } from '../punch';
 
-const org = new Organization();
+const org = new Organization(MockConfig);
 org.projects = [
   new Project('#production', moment(), 0),
   new Project('#camp-fangamer', moment(), 0)
@@ -304,7 +304,7 @@ describe('Punch', () => {
       expect(punch.notes).to.be.empty;
     });
   });
-  describe('.parseRaw(user, row, projects)', () => {
+  describe('.parseRaw(user, row, spreadsheet, projects)', () => {
 
   });
   describe('#appendProjects(projects)', () => {

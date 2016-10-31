@@ -4,8 +4,8 @@ import * as moment from 'moment';
 import { Rows } from '../shared/rows';
 
 export class Project {
-  name: string;
-  start: any;
+  readonly name: string;
+  readonly start: any;
   total: any;
   row: Rows.ProjectsRow;
   constructor(name: string, start: any, total: any, row: Rows.ProjectsRow = null) {

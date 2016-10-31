@@ -11,8 +11,6 @@ const strings = STRINGS.access;
 import * as Logger from '../logger';
 import { Organization } from '../models/organization';
 
-const org = new Organization();
-
 export default function (controller) {
   Logger.Slack.setController(controller);
 

@@ -412,7 +412,7 @@ export class Spreadsheet {
           const punchRows = rows as Rows.RawDataRow[];
           for (let row of punchRows) {
             const user = opts.users.filter((item, index, arr) => item.name === row.name)[0];
-            const punch = Punch.parseRaw(user, row, opts.projects);
+            const punch = Punch.parseRaw(user, row, this, opts.projects);
             if (punch && user) {
               user.punches.push(punch);
             }
