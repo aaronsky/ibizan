@@ -157,7 +157,7 @@ export default function (controller: Controller) {
       return;
     }
     try {
-      const enteredPunch = await organization.spreadsheet.enterPunch(punch, user);
+      const enteredPunch = await organization.spreadsheet.enterPunch(punch, user, organization);
       Logger.Console.log(`@${user.slack}'s punch was successfully entered into the spreadsheet.`);
       const punchEnglish = `Punched you *${enteredPunch.description(user)}*.`;
       if (enteredPunch.mode === 'in') {

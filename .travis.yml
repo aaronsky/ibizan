@@ -6,6 +6,5 @@ node_js:
 env:
   matrix:
   - NODE_ENV=development
-script: npm run coverage
-after_success:
-  - cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
+script: npm test
+after_success: npm run coverage

@@ -1,9 +1,14 @@
-node_modules
+# OS X
 .DS_Store*
-build
-config
-data
-coverage
-typings
+
+# Node.js
+node_modules
 *.log
+
+# Ibizan
+build
 .ibizanrc.json
+
+# CI
+.nyc_output
+coverage
