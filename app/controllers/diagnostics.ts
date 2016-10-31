@@ -159,6 +159,7 @@ export default function (controller) {
     }
   });
 
+/*
   controller.webserver.post('/diagnostics/sync', async (req, res) => {
     const body = req.body;
     if (!organization.ready()) {
@@ -210,6 +211,7 @@ export default function (controller) {
       }
     }
   });
+  */
 
   // respond
   // diagnostics.help

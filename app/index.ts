@@ -21,6 +21,7 @@ export class App {
         this.config = config;
     }
     start() {
+        console.log(this.config);
         this.controller = Botkit.slackbot({
             storage: FirebaseStorage({
                 firebase_uri: this.config.storageUri
@@ -31,11 +32,11 @@ export class App {
             scopes: this.config.slack.scopes
         });
 
-        this.controller.setupWebserver(this.config.port, this.onSetupWebserver);
-        this.controller.on('create_bot', this.onCreateBot);
-        this.controller.on('create_team', this.onCreateTeam);
-        this.controller.middleware.receive.use(this.onReceiveSetOrganization);
-        this.controller.storage.teams.all(this.connectTeamsToSlack);
+        this.controller.setupWebserver(this.config.port, this.onSetupWebserver.bind(this));
+        this.controller.on('create_bot', this.onCreateBot.bind(this));
+        this.controller.on('create_team', this.onCreateTeam.bind(this));
+        this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
+        this.controller.storage.teams.all(this.connectTeamsToSlack.bind(this));
         this.loadScripts();
     }
     onSetupWebserver(err: Error, webserver) {
@@ -113,7 +114,7 @@ export class App {
         }
     }
     loadScripts() {
-        const scriptsDirectory = path.resolve('controllers');
+        const scriptsDirectory = path.resolve('build', 'controllers');
         const scriptFiles = fs.readdirSync(scriptsDirectory).sort();
         for (let file of scriptFiles) {
             const scriptExtension = path.extname(file);
@@ -123,14 +124,11 @@ export class App {
             }
             try {
                 this.controller.log('Loading script:', file);
-                const script = require(scriptPath);
-                if (typeof script.init === 'function') {
-                    script.init(this.controller);
+                const script = require(scriptPath).default;
+                if (typeof script === 'function') {
+                    script(this.controller);
                 } else {
-                    this.controller.log.error('Expected init to be a function, instead was a ' + typeof script.init);
-                }
-                if (script.help) {
-                    this.helpEntries = this.helpEntries.concat(script.help);
+                    this.controller.log.error('Expected script to be a function, instead was a ' + typeof script);
                 }
             } catch (err) {
                 this.controller.log.error('Couldn\'t load', file, '\n', err);

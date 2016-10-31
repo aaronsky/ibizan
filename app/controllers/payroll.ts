@@ -19,57 +19,57 @@ import { Organization } from '../models/organization';
 export default function (controller) {
   Logger.Slack.setController(controller);
 
-  const generateDailyReportJob = schedule.scheduleJob('0 9 * * *', async () => {
-    if (!organization.ready()) {
-      Logger.Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
-      return;
-    }
-    const yesterday = moment.tz({
-      hour: 0,
-      minute: 0,
-      second: 0
-    }, TIMEZONE).subtract(1, 'days');
-    const today = moment.tz({
-      hour: 0,
-      minute: 0,
-      second: 0
-    }, TIMEZONE);
-    try {
-      const reports = await organization.generateReport(yesterday, today);
-      if (typeof reports === 'number') {
-        throw new Error(`Daily reporting was cut short. Only completed ${reports}/${organization.users.length} reports`);
-      }
-      const numberDone = reports.length;
-      const report = organization.dailyReport(reports, today, yesterday);
-      Logger.Slack.logToChannel(report, 'bizness-time');
-      Logger.Slack.logToChannel(`Daily report generated for ${numberDone} employees`, 'ibizan-diagnostics'); 
-    } catch(err) {
-      Logger.Slack.errorToSlack('Failed to produce a daily report', err);
-    }
-  });
+  // const generateDailyReportJob = schedule.scheduleJob('0 9 * * *', async () => {
+  //   if (!organization.ready()) {
+  //     Logger.Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+  //     return;
+  //   }
+  //   const yesterday = moment.tz({
+  //     hour: 0,
+  //     minute: 0,
+  //     second: 0
+  //   }, TIMEZONE).subtract(1, 'days');
+  //   const today = moment.tz({
+  //     hour: 0,
+  //     minute: 0,
+  //     second: 0
+  //   }, TIMEZONE);
+  //   try {
+  //     const reports = await organization.generateReport(yesterday, today);
+  //     if (typeof reports === 'number') {
+  //       throw new Error(`Daily reporting was cut short. Only completed ${reports}/${organization.users.length} reports`);
+  //     }
+  //     const numberDone = reports.length;
+  //     const report = organization.dailyReport(reports, today, yesterday);
+  //     Logger.Slack.logToChannel(report, 'bizness-time');
+  //     Logger.Slack.logToChannel(`Daily report generated for ${numberDone} employees`, 'ibizan-diagnostics'); 
+  //   } catch(err) {
+  //     Logger.Slack.errorToSlack('Failed to produce a daily report', err);
+  //   }
+  // });
 
   // Ibizan will export a Payroll Report every other Sunday night.
-  const generatePayrollReportJob = schedule.scheduleJob('0 20 * * 0', async () => {
-    if (!organization.ready()) {
-      Logger.Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
-      return;
-    } else if (!organization.calendar.isPayWeek()) {
-      Logger.Console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
-      return;
-    }
-    const twoWeeksAgo = moment().subtract(2, 'weeks');
-    const today = moment();
-    try {
-      const reports = await organization.generateReport(twoWeeksAgo, today, true);
-      if (typeof reports === 'number') {
-        throw new Error(`Payroll reporting was cut short. Only completed ${reports}/${organization.users.length} reports`);
-      }
-      const numberDone = reports.length;
-      Logger.Slack.logToChannel(`Salary report generated for ${numberDone} employees`, 'ibizan-diagnostics');
-    } catch (err) {
-      Logger.Slack.errorToSlack('Failed to produce a salary report', err);
-    }
-  });
+  // const generatePayrollReportJob = schedule.scheduleJob('0 20 * * 0', async () => {
+  //   if (!organization.ready()) {
+  //     Logger.Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+  //     return;
+  //   } else if (!organization.calendar.isPayWeek()) {
+  //     Logger.Console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
+  //     return;
+  //   }
+  //   const twoWeeksAgo = moment().subtract(2, 'weeks');
+  //   const today = moment();
+  //   try {
+  //     const reports = await organization.generateReport(twoWeeksAgo, today, true);
+  //     if (typeof reports === 'number') {
+  //       throw new Error(`Payroll reporting was cut short. Only completed ${reports}/${organization.users.length} reports`);
+  //     }
+  //     const numberDone = reports.length;
+  //     Logger.Slack.logToChannel(`Salary report generated for ${numberDone} employees`, 'ibizan-diagnostics');
+  //   } catch (err) {
+  //     Logger.Slack.errorToSlack('Failed to produce a salary report', err);
+  //   }
+  // });
   
   // { id: 'payroll.payroll', userRequired: true, adminOnly: true }
   controller.hears('payroll\s*(.*)?$', async (bot, message) => {
@@ -110,16 +110,16 @@ export default function (controller) {
   // Users should receive a DM "chime" every other Friday afternoon to
   // inform them that payroll runs on Monday, and that unaccounted-for
   // time will not be paid.
-  const reminderJob = schedule.scheduleJob('0 13 * * 5', () => {
-    if (!organization.ready()) {
-      Logger.Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
-      return;
-    } else if (!organization.calendar.isPayWeek()) {
-      Logger.Console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
-      return;
-    }
-    for (let user of organization.users) {
-      user.directMessage('As a reminder, payroll will run on Monday. Unrecorded time will not be paid.\nYou can use `period?` to check your hours for this pay period.', Logger);
-    }
-  });
+  // const reminderJob = schedule.scheduleJob('0 13 * * 5', () => {
+  //   if (!organization.ready()) {
+  //     Logger.Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+  //     return;
+  //   } else if (!organization.calendar.isPayWeek()) {
+  //     Logger.Console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
+  //     return;
+  //   }
+  //   for (let user of organization.users) {
+  //     user.directMessage('As a reminder, payroll will run on Monday. Unrecorded time will not be paid.\nYou can use `period?` to check your hours for this pay period.', Logger);
+  //   }
+  // });
 };

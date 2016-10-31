@@ -136,7 +136,7 @@ export default function (controller: Controller) {
             name: 'DM'
           };
         }
-        hound(user, channel, organization, false);
+        //hound(user, channel, organization, false);
       });
     });
   });
@@ -144,32 +144,32 @@ export default function (controller: Controller) {
   controller.on('presence_change', (bot, message) => {
     if (message.presence === 'active') {
       bot.storage.users.get(message.user, (err, user) => {
-        hound(user, { private: null, name: '' }, organization, false, true);
+        //hound(user, { private: null, name: '' }, organization, false, true);
       });
     }
   });
 
   // Every five minutes, attempt to hound non-salaried users
-  const autoHoundJob = schedule.scheduleJob('*/5 * * * *', () => {
-    if (!organization.ready()) {
-      Logger.Console.warn('Don\'t autohound, Organization isn\'t ready yet');
-      return;
-    }
-    for (let user of organization.users) {
-      hound({ name: user.slack }, { private: null, name: '' }, organization, true, true);
-    }
-  });
+  // const autoHoundJob = schedule.scheduleJob('*/5 * * * *', () => {
+  //   if (!organization.ready()) {
+  //     Logger.Console.warn('Don\'t autohound, Organization isn\'t ready yet');
+  //     return;
+  //   }
+  //   for (let user of organization.users) {
+  //     hound({ name: user.slack }, { private: null, name: '' }, organization, true, true);
+  //   }
+  // });
 
   // Every morning, reset hound status for each user
-  const resetHoundJob = schedule.scheduleJob('0 9 * * 1-5', () => {
-    if (!organization.ready()) {
-      Logger.Console.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
-      return;
-    }
-    const count = organization.resetHounding();
-    const response = `Reset ${count} ${count === 1 ? 'person\'s' : 'peoples\''} hound status for the morning`;
-    Logger.Slack.logToChannel(response, 'ibizan-diagnostics');
-  });
+  // const resetHoundJob = schedule.scheduleJob('0 9 * * 1-5', () => {
+  //   if (!organization.ready()) {
+  //     Logger.Console.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
+  //     return;
+  //   }
+  //   const count = organization.resetHounding();
+  //   const response = `Reset ${count} ${count === 1 ? 'person\'s' : 'peoples\''} hound status for the morning`;
+  //   Logger.Slack.logToChannel(response, 'ibizan-diagnostics');
+  // });
 
 
   // Check/adjust hounding settings
