@@ -63,9 +63,7 @@ export class ConfigFactory {
         for (let key in temp) {
             if (key === 'slack') {
                 for (let slackKey in temp.slack) {
-                    if (rcConfig[key]) {
-                        config[key][slackKey] = rcConfig[key][slackKey];
-                    }
+                    config[key][slackKey] = rcConfig && rcConfig[key] && (rcConfig[key][slackKey] || '');
                     if (shouldCheckOpts && optsConfig[key] && optsConfig[key][slackKey]) {
                         config[key][slackKey] = optsConfig[key][slackKey];
                     }
@@ -74,7 +72,7 @@ export class ConfigFactory {
                     }
                 }
             } else {
-                config[key] = rcConfig[key];
+                config[key] = rcConfig && (rcConfig[key] || null);
                 if (shouldCheckOpts && optsConfig[key]) {
                     config[key] = optsConfig[key];
                 }
