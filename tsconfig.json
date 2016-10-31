@@ -5,6 +5,10 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "sourceMap": false,
+    "noEmitOnError": true,
+    "diagnostics": true,
+    "listEmittedFiles": true,
+    "pretty": true,
     "outDir": "build",
     "types": [
       "node"

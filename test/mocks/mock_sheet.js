@@ -67,8 +67,8 @@ const createProjectsSheet = function () { return createDataSheet('Projects', 'pr
 const createEventsSheet = function () { return createDataSheet('Events', 'events', HEADERS.events); };
 
 const mockSpreadsheet = {
-  title: '',
-  id: '',
+  title: 'test sheet',
+  id: 'test',
   worksheets: [
     createRawDataSheet(),
     createPayrollReportSheet(),

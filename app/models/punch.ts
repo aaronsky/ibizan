@@ -30,8 +30,11 @@ function mergeDateTime(date: moment.Moment, time: any, tz: any = TIMEZONE) {
 function parseMode(command: string): [string, string] {
   const comps = command.split(' ');
   let [mode, commandWithoutMode] = [comps.shift(), comps.join(' ')];
-  mode = (mode || '').toLowerCase().trim()
-  commandWithoutMode = (commandWithoutMode || '').trim()
+  mode = mode || '';
+  mode = mode.toLowerCase();
+  mode = mode.trim();
+  commandWithoutMode = commandWithoutMode || '';
+  commandWithoutMode = commandWithoutMode.trim();
   if (MODES.indexOf(mode) !== -1) {
     return [mode, commandWithoutMode];
   }
@@ -427,25 +430,20 @@ export class Punch {
       if (this.projects.length > 6) {
         return;
       }
-      let projectStr;
-      if (project instanceof Project) {
-        projectStr = project.name;
+      let projectName: string;
+      if (typeof project === 'string') {
+        projectName = project;
+        project = organization.getProjectByName(projectName);
       } else {
-        projectStr = project;
+        projectName = project.name;
       }
-      let projectObject;
-      if (projectStr.charAt(0) === '#') {
-        projectObject = organization.getProjectByName(projectStr);
-      } else {
-        projectObject = organization.getProjectByName(`#${project}`);
-      }
+      
       if (!project) {
         continue;
-      } else if (this.projects.indexOf(projectObject) === -1) {
-        this.projects.push(projectObject);
+      } else if (this.projects.indexOf(project) === -1) {
+        this.projects.push(project);
       }
     }
-    return projects.join(' ');
   }
   appendNotes(notes: string = '') {
     if (this.notes && this.notes.length > 0) {
@@ -518,7 +516,7 @@ export class Punch {
         }
       }
     }
-    return row;
+    return row.raw;
   }
   assignRow(row: Rows.RawDataRow) {
     this.row = row;

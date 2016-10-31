@@ -67,34 +67,38 @@ export const HEADERS = {
 };
 
 export namespace Rows {
-    interface RawGoogleRow { 
-        [props: string]: any; 
+    interface RawGoogleRow {
+        [props: string]: any;
         save: (cb: (err: Error) => void) => void;
         del: (cb: (err: Error) => void) => void;
     }
 
-    enum RowKind {
-        Variables,
-        Projects,
-        Users,
-        RawData,
-        PayrollReports,
-        Events
-    }
+    type RowKind = 'variables' | 'projects' | 'users' | 'rawdata' | 'payrollreports' | 'events';
+
     abstract class Row {
         kind: RowKind;
-        protected raw: any;
-        save: (cb: (err: Error) => void) => void;
-        del: (cb: (err: Error) => void) => void;
+        protected _raw: any;
 
-        constructor(kind: string, raw: RawGoogleRow) {
+        constructor(kind: RowKind, raw: RawGoogleRow) {
+            this.kind = kind;
             const headers = HEADERS[kind];
             for (let key in headers) {
                 this[key] = raw[headers[key]];
             }
-            this.raw = raw;
-            this.save = raw.save;
-            this.del = raw.del;
+            this._raw = raw;
+        }
+        get raw(): any {
+            const headers = HEADERS[this.kind];
+            for (let key in headers) {
+                this._raw[headers[key]] = this[key];
+            }
+            return this._raw;
+        }
+        save(cb: (err: Error) => void) {
+            this._raw.save(cb);
+        }
+        del(cb: (err: Error) => void) {
+            this._raw.del(cb);
         }
     }
     export class VariablesRow extends Row {

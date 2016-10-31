@@ -7,17 +7,15 @@ import { holidayForMoment } from '../shared/moment-holiday';
 import * as Logger from '../logger';
 import { Punch } from './punch';
 
-function getPositiveNumber(input?: number, current: number = 0) {
-  if (!input) {
+function getPositiveNumber(input?: number | any, current: number = 0) {
+  if (!input && input !== 0) {
     return current;
   }
-  if (!isNaN(input)) {
-    if (input >= 0) {
-      return input;
-    }
-    return 0;
+  const inputNum = +input;
+  if (isNaN(input) || inputNum < 0) {
+    return current;
   }
-  return current;
+  return input;
 }
 
 export class Timetable {
@@ -49,34 +47,50 @@ export class Timetable {
     return this._timezone;
   }
   set timezone(newTimezone) {
-    this.timezone = newTimezone;
+    this._timezone = newTimezone;
     this._start = moment.tz(this._start.format('hh:mm a'), 'hh:mm a', this.timezone.name);
     this._end = moment.tz(this._end.format('hh:mm a'), 'hh:mm a', this.timezone.name);
+  }
+  get unpaidTotal(): number {
+    return this._unpaidTotal;
   }
   set unpaidTotal(newTotal) {
     this._unpaidTotal = getPositiveNumber(newTotal, this._unpaidTotal);
   }
+  get loggedTotal(): number {
+    return this._loggedTotal;
+  }
   set loggedTotal(newTotal) {
     this._loggedTotal = getPositiveNumber(newTotal, this._loggedTotal);
+  }
+  get averageLogged(): number {
+    return this._averageLoggedTotal;
   }
   set averageLogged(newTotal) {
     this._averageLoggedTotal = getPositiveNumber(newTotal, this._averageLoggedTotal);
   }
 
   constructor(start: string | moment.Moment, end: string | moment.Moment, timezone) {
-    this.timezone = timezone;
+    let timezoneName = '';
+    if (typeof timezone === 'string') {
+      this._timezone = moment.tz.zone(timezone);
+      timezoneName = timezone;
+    } else if (typeof timezone === 'object' && timezone.name) {
+      this._timezone = moment.tz.zone(timezone.name);
+      timezoneName = timezone.name;
+    }
+
     if (typeof start === 'string') {
-      this._start = moment.tz(start, 'hh:mm a', this.timezone.name);
+      if (timezone)
+      this._start = moment.tz(start, 'hh:mm a', timezoneName);
     } else {
-      this._start = moment.tz(start, timezone);
+      this._start = moment.tz(start, timezoneName);
     }
+
     if (typeof end === 'string') {
-      this._end = moment.tz(end, 'hh:mm a', this.timezone.name);
+      this._end = moment.tz(end, 'hh:mm a', timezoneName);
     } else {
-      this._end = moment.tz(end, timezone);
-    }
-    if (typeof this.timezone === 'string') {
-      this.timezone = moment.tz.zone(this.timezone);
+      this._end = moment.tz(end, timezoneName);
     }
   }
   setVacation(total, available) {
@@ -114,14 +128,14 @@ export class Settings {
   lastMessage: LastMessage;
   lastPing: moment.Moment;
 
-  constructor() {
+  private constructor() {
     this.shouldHound = true
     this.shouldResetHound = true
     this.houndFrequency = -1
     this.lastMessage = null
     this.lastPing = null
   }
-  static fromSettings(settings) {
+  static fromSettings(settings?: any) {
     const newSetting = new Settings();
     newSetting.fromSettings(settings);
     return newSetting;
@@ -130,7 +144,7 @@ export class Settings {
     if (!opts || typeof opts !== 'object') {
       return;
     }
-    for (let setting of opts) {
+    for (let setting in opts) {
       const value = opts[setting];
       this[setting] = value;
     }
@@ -153,14 +167,15 @@ export class User {
     this.timetable = timetable;
     this.row = row;
     this.punches = [];
+    this.settings = Settings.fromSettings();
   }
   static parse(row: Rows.UsersRow) {
     const timetable = new Timetable(row.start, row.end, row.timezone);
     timetable.setVacation(row.vacationLogged, row.vacationAvailable);
     timetable.setSick(row.sickLogged, row.sickAvailable);
-    timetable.unpaidTotal = row.unpaidLogged;
-    timetable.loggedTotal = row.totalLogged;
-    timetable.averageLogged = row.averageLogged;
+    timetable.unpaidTotal = +row.unpaidLogged;
+    timetable.loggedTotal = +row.totalLogged;
+    timetable.averageLogged = +row.averageLogged;
     const user = new User(row.name, row.slackname, (row.salary === 'Y'), timetable, row);
     user.settings = Settings.fromSettings({
       shouldHound: row.shouldHound,
@@ -315,7 +330,7 @@ export class User {
     });
   }
   toRawPayroll(start, end) {
-    let row: Rows.PayrollReportsRow;
+    let row = new Rows.PayrollReportsRow({ save: null, del: null });
 
     row.date = moment.tz(TIMEZONE).format('M/DD/YYYY');
     row.name = this.name;
@@ -389,7 +404,7 @@ export class User {
       slack: this.slack,
       projects: projectsForPeriod
     };
-    return row;
+    return row.raw;
   }
   updateRow() {
     return new Promise<boolean>((resolve, reject) => {
@@ -405,8 +420,8 @@ export class User {
         this.row.sickLogged = this.timetable.sickTotal.toString();
         this.row.unpaidLogged = this.timetable.unpaidTotal.toString();
         this.row.overtime = Math.max(0, this.timetable.loggedTotal - 80).toString();
-        this.row.totalLogged = this.timetable.loggedTotal;
-        this.row.averageLogged = this.timetable.averageLogged;
+        this.row.totalLogged = this.timetable.loggedTotal.toString();
+        this.row.averageLogged = this.timetable.averageLogged.toString();
         if (this.settings.lastPing) {
           this.row.lastPing = moment.tz(this.settings.lastPing, this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
         } else {
@@ -500,6 +515,6 @@ export class User {
     return attachment;
   }
   description() {
-    return `User: ${this.name} (${this.slack})\nThey have ${(this.punches || []).length} punches on record\nLast punch was ${this.lastPunchTime()}\nTheir active hours are from ${this.timetable.start.format('h:mm a')} to ${this.timetable.end.format('h:mm a')}\nThey are in ${this.timetable.timezone.name}\nThe last time they sent a message was ${+(moment.tz(TIMEZONE).diff(this.settings.lastMessage.time, 'hours', true).toFixed(2))} hours ago`;
+    return `User: ${this.name} (${this.slack})\nThey have ${(this.punches || []).length} punches on record\nLast punch was ${this.lastPunchTime()}\nTheir active hours are from ${this.timetable.start.format('h:mm a')} to ${this.timetable.end.format('h:mm a')}\nThey are in ${this.timetable.timezone.name}\nThe last time they sent a message was ${+(moment.tz(TIMEZONE).diff(this.settings.lastMessage && this.settings.lastMessage.time, 'hours', true).toFixed(2))} hours ago`;
   }
 }

@@ -1,17 +1,24 @@
 
-const { Config } = require('../../app/config');
+const { ConfigFactory } = require('../../app/config');
 
-const mockConfig = {
-    name: "Extreme Dog",
+const mockIbizanConfig = {
     port: "8080",
     storageUri: "",
 
     slackClientId: "",
-    slackClientSecret: "",
-
-    googleSheetId: "test",
-    googleClientEmail: "",
-    googlePrivateKey: ""
+    slackClientSecret: ""
 };
+const mockTeamConfig = {
+    name: 'test team',
+    admins: ['aaronsky', 'briancoia'],
+    google: {
+        sheetId: 'test',
+        clientEmail: 'bad@email.com',
+        privateKey: 'BAD KEY'
+    }
+}
 
-module.exports = new Config(mockConfig);
+module.exports = {
+    ibizan: ConfigFactory.loadConfiguration(null, null, mockIbizanConfig),
+    team: mockTeamConfig
+};

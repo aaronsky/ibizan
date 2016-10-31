@@ -6,13 +6,6 @@ import * as moment from 'moment-timezone';
 import { User, Timetable } from '../user';
 
 describe('Timetable', () => {
-  function testValidateSetValues(timetable: Timetable, mode: string, total: number, expectedTotal: number, available?: number, expectedAvailable?: number) {
-    timetable['set' + mode.charAt(0).toUpperCase() + mode.substring(1)](total, available);
-    expect(timetable[mode + 'Total']).to.equal(expectedTotal);
-    if (available && expectedAvailable) {
-      expect(timetable[mode + 'Available']).to.equal(expectedAvailable);
-    }
-  };
   beforeEach(() => {
     const start = moment({
       day: 3,
@@ -25,39 +18,99 @@ describe('Timetable', () => {
     this.timetable = new Timetable(start, end, 'America/New_York');
   });
   describe('#setVacation(total, available)', () => {
-    const mode = 'vacation';
-    it('should change the underlying values', () => testValidateSetValues(this.timetable, mode, 85, 85));
-    it('should only take numbers', () => testValidateSetValues(this.timetable, mode, 'ghosts', 0));
-    it('should only take positive numbers', () => testValidateSetValues(this.timetable, mode, -85, 0));
-    it('should handle less than two arguments gracefully', () => testValidateSetValues(this.timetable, mode, null, 0));
+    it('should change the underlying values', () => {
+      this.timetable.setVacation(85);
+      expect(this.timetable.vacationTotal).to.equal(85);
+    });
+    it('should only take numbers', () => {
+      const notNumber: any = 'ghosts';
+      this.timetable.setVacation(notNumber);
+      expect(this.timetable.vacationTotal).to.equal(0);
+    });
+    it('should only take positive numbers', () => {
+      this.timetable.setVacation(-85);
+      expect(this.timetable.vacationTotal).to.equal(0);
+    });
+    it('should handle less than two arguments gracefully', () => {
+      this.timetable.setVacation(null);
+      expect(this.timetable.vacationTotal).to.equal(0);
+    });
   });
   describe('#setSick(total, available)', () => {
-    const mode = 'sick';
-    it('should change the underlying values', () => testValidateSetValues(this.timetable, mode, 85, 85));
-    it('should only take numbers', () => testValidateSetValues(this.timetable, mode, 'ghosts', 0));
-    it('should only take positive numbers', () => testValidateSetValues(this.timetable, mode, -85, 0));
-    it('should handle less than two arguments gracefully', () => testValidateSetValues(this.timetable, mode, null, 0));
+    it('should change the underlying values', () => {
+      this.timetable.setSick(85);
+      expect(this.timetable.sickTotal).to.equal(85);
+    });
+    it('should only take numbers', () => {
+      const notNumber: any = 'ghosts';
+      this.timetable.setSick(notNumber);
+      expect(this.timetable.sickTotal).to.equal(0);
+    });
+    it('should only take positive numbers', () => {
+      this.timetable.setSick(-85);
+      expect(this.timetable.sickTotal).to.equal(0);
+    });
+    it('should handle less than two arguments gracefully', () => {
+      this.timetable.setSick(null);
+      expect(this.timetable.sickTotal).to.equal(0);
+    });
   });
-  describe('#setUnpaid(total)', () => {
-    const mode = 'unpaid';
-    it('should change the underlying values', () => testValidateSetValues(this.timetable, mode, 85, 85));
-    it('should only take numbers', () => testValidateSetValues(this.timetable, mode, 'ghosts', 0));
-    it('should only take positive numbers', () => testValidateSetValues(this.timetable, mode, -85, 0));
-    it('should handle less than two arguments gracefully', () => testValidateSetValues(this.timetable, mode, null, 0));
+  describe('#set unpaidTotal(total)', () => {
+    it('should change the underlying values', () => {
+      this.timetable.unpaidTotal = 85;
+      expect(this.timetable.unpaidTotal).to.equal(85);
+    });
+    it('should only take numbers', () => {
+      const notNumber: any = 'ghosts';
+      this.timetable.unpaidTotal = notNumber;
+      expect(this.timetable.unpaidTotal).to.equal(0);
+    });
+    it('should only take positive numbers', () => {
+      this.timetable.unpaidTotal = -85;
+      expect(this.timetable.unpaidTotal).to.equal(0);
+    });
+    it('should handle less than two arguments gracefully', () => {
+      this.timetable.unpaidTotal = null;
+      expect(this.timetable.unpaidTotal).to.equal(0);
+    });
   });
-  describe('#setLogged(total)', () => {
-    const mode = 'logged';
-    it('should change the underlying values', () => testValidateSetValues(this.timetable, mode, 85, 85));
-    it('should only take numbers', () => testValidateSetValues(this.timetable, mode, 'ghosts', 0));
-    it('should only take positive numbers', () => testValidateSetValues(this.timetable, mode, -85, 0));
-    it('should handle less than two arguments gracefully', () => testValidateSetValues(this.timetable, mode, null, 0));
+  describe('#set loggedTotal(total)', () => {
+    it('should change the underlying values', () => {
+      this.timetable.loggedTotal = 85;
+      expect(this.timetable.loggedTotal).to.equal(85);
+    });
+    it('should only take numbers', () => {
+      const notNumber: any = 'ghosts';
+      this.timetable.loggedTotal = notNumber;
+      expect(this.timetable.loggedTotal).to.equal(0);
+    });
+    it('should only take positive numbers', () => {
+      this.timetable.loggedTotal = -85;
+      expect(this.timetable.loggedTotal).to.equal(0);
+    });
+    it('should handle less than two arguments gracefully', () => {
+      this.timetable.loggedTotal = null;
+      expect(this.timetable.loggedTotal).to.equal(0);
+    });
   });
-  describe('#setAverageLogged(total)', () => {
-    const mode = 'averageLogged';
-    it('should change the underlying values', () => testValidateSetValues(this.timetable, mode, 85, 85));
-    it('should only take numbers', () => testValidateSetValues(this.timetable, mode, 'ghosts', 0));
-    it('should only take positive numbers', () => testValidateSetValues(this.timetable, mode, -85, 0));
-    it('should handle less than two arguments gracefully', () => testValidateSetValues(this.timetable, mode, null, 0));
+  describe('#set averageLogged(total)', () => {
+    it('should change the underlying values', () => {
+      this.timetable.averageLogged = 85;
+      expect(this.timetable.averageLogged).to.equal(85);
+    });
+    it('should only take numbers', () => {
+      const notNumber: any = 'ghosts';
+      this.timetable.averageLogged = notNumber;
+      expect(this.timetable.averageLogged).to.equal(0);
+    });
+    it('should only take positive numbers', () => {
+      this.timetable.averageLogged = -85;
+      expect(this.timetable.averageLogged).to.equal(0);
+    });
+    it('should handle less than two arguments gracefully', () => {
+      this.timetable.averageLogged = null;
+      expect(this.timetable.averageLogged).to.equal(0);
+    });
   });
 });
 
@@ -89,8 +142,12 @@ describe('User', () => {
     it('should return an array of two dates', () => {
       const dates = this.user.activeHours;
       expect(dates).to.have.length(2);
-      expect(dates).to.have.deep.property('[0]').that.is.an.instanceof(moment.Moment);
-      expect(dates).to.have.deep.property('[1]').that.is.an.instanceof(moment.Moment);
+      const date0 = dates[0];
+      expect(date0).to.exist;
+      expect(date0.toDate()).to.be.an.instanceof(Date);
+      const date1 = dates[1];
+      expect(date1).to.exist;
+      expect(date1.toDate()).to.be.an.instanceof(Date);
     });
     it('should return the start and end times', () => {
       const dates = this.user.activeHours;

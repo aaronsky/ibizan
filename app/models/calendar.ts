@@ -1,8 +1,8 @@
-'use strict';
 
 import * as moment from 'moment';
 
 import { TIMEZONE } from '../shared/constants';
+import { Rows } from '../shared/rows';
 import * as Logger from '../logger';
 
 export class Calendar {
@@ -45,8 +45,8 @@ export class Calendar {
 export class CalendarEvent {
   readonly date: moment.Moment;
   readonly name: any;
-  row: any;
-  constructor(date: moment.Moment, name: any, row?: any) {
+  row: Rows.EventsRow;
+  constructor(date: moment.Moment, name: any, row?: Rows.EventsRow) {
     this.date = date;
     this.name = name;
     this.row = row;
@@ -69,10 +69,10 @@ export class CalendarEvent {
     return this.date.diff(moment(), 'days');
   }
   toEventRow() {
-    const row = this.row || {};
+    const row = this.row || new Rows.EventsRow({ save: null, del: null });
     row.date = row.date || this.date.format('MM/DD/YYYY');
     row.name = row.name || this.name;
-    return row;
+    return row.raw;
   }
   async updateRow() {
     return new Promise<void>((resolve, reject) => {
