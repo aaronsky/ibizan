@@ -5,5 +5,5 @@ node_js:
 env:
   matrix:
   - NODE_ENV=development
-script: npm test
+script: npm run test:cover
 after_success: npm run coverage
