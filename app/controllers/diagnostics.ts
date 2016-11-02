@@ -1,4 +1,3 @@
-import { NONAME } from 'dns';
 // Description:
 //   Your dog friend makes sure everything's in order
 //
