@@ -54,8 +54,8 @@
   "scripts": {
     "clean": "rm -rf ./bin",
     "build": "npm run build:dev",
-    "build:dev": "tsc",
-    "build:prod": "tsc --diagnostics=false --sourceMap=false",
+    "build:dev": "tsc -p ./tsconfig.debug.json",
+    "build:prod": "npm run clean && tsc -p ./tsconfig.production.json",
     "heroku-postbuild": "npm run build:prod",
     "start": "node bin/ibizan.js",
     "prepublish": "npm run build:prod",

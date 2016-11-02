@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "diagnostics": true,
+    "listEmittedFiles": true,
+    "pretty": true,
+    "outDir": "bin",
+    "types": [
+      "node",
+      "node-uuid",
+      "moment-timezone"
+    ]
+  },
+  "include": [
+    "app/**/*.ts"
+  ],
+  "exclude": [
+    ".github",
+    "bin",
+    "node_modules",
+    "tests",
+    "app/**/*.spec.ts"
+  ]
+}

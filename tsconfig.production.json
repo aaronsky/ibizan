@@ -4,10 +4,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
     "noEmitOnError": true,
-    "diagnostics": true,
-    "listEmittedFiles": true,
     "pretty": true,
     "outDir": "bin",
     "types": [
