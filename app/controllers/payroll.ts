@@ -97,7 +97,7 @@ export default function (controller) {
         const numberDone = reports.length;
         const response = `Payroll has been generated for ${numberDone} employees from ${start.format('dddd, MMMM D, YYYY')} to ${end.format('dddd, MMMM D, YYYY')}`;
         user.directMessage(response, Logger);
-        Logger.Console.log(response);
+        Logger.Console.info(response);
       } catch (err) {
         const response = `Failed to produce a salary report: ${err}`;
         user.directMessage(response, Logger);

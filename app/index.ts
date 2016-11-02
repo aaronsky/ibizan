@@ -4,7 +4,7 @@ const Botkit = require('botkit');
 const FirebaseStorage = require('botkit-storage-firebase');
 
 import { Bot, Controller, Team } from './shared/common';
-import * as Logger from './logger';
+import { Console } from './logger';
 import { IbizanConfig, TeamConfig } from './config';
 import { Organization } from './models/organization';
 
@@ -24,7 +24,8 @@ export class App {
         this.controller = Botkit.slackbot({
             storage: FirebaseStorage({
                 firebase_uri: this.config.storageUri
-            })
+            }),
+            logger: Console
         }).configureSlackApp({
             clientId: this.config.slack.clientId,
             clientSecret: this.config.slack.clientSecret,
@@ -60,7 +61,7 @@ export class App {
                 user: team.createdBy
             }, (err, convo) => {
                 if (err) {
-                    Logger.Console.error(err.message, err);
+                    this.controller.log.error(err.message, err);
                 } else {
                     convo.say('I am a bot that has just joined your team');
                     convo.say('You must now /invite me to a channel so that I can be of use!');
@@ -104,7 +105,7 @@ export class App {
             if (team.bot) {
                 this.controller.spawn(team).startRTM((err, bot) => {
                     if (err) {
-                        Logger.Console.error('Error connecting bot to Slack:', err);
+                        this.controller.log.error('Error connecting bot to Slack:', err);
                     } else {
                         this.trackBot(bot, team);
                     }
@@ -130,7 +131,7 @@ export class App {
                     this.controller.log.error('Expected script to be a function, instead was a ' + typeof script);
                 }
             } catch (err) {
-                this.controller.log.error('Couldn\'t load', file, '\n', err);
+                this.controller.log.error(`Couldn't load ${file}\n`, err);
             }
         }
     }

@@ -43,11 +43,11 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          Logger.Console.log('Authorized successfully');
+          Logger.Console.info('Authorized successfully');
           resolve();
         }
       });
-      Logger.Console.log('Waiting for authorization');
+      Logger.Console.info('Waiting for authorization');
     });
   }
   async loadOptions() {
@@ -278,7 +278,7 @@ export class Spreadsheet {
           if (!(this.rawData && this.payroll && this.variables && this.projects && this.employees && this.events)) {
             reject('Worksheets failed to be associated properly');
           } else {
-            Logger.Console.fun('----------------------------------------');
+            Logger.Console.log('silly', '----------------------------------------');
             resolve({});
           }
         }
@@ -331,8 +331,8 @@ export class Spreadsheet {
               opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
             }
           }
-          Logger.Console.fun('Loaded organization settings');
-          Logger.Console.fun('----------------------------------------');
+          Logger.Console.log('silly', 'Loaded organization settings');
+          Logger.Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
@@ -353,8 +353,8 @@ export class Spreadsheet {
             }
           }
           opts.projects = projects;
-          Logger.Console.fun(`Loaded ${projects.length} projects`);
-          Logger.Console.fun('----------------------------------------');
+          Logger.Console.log('silly', `Loaded ${projects.length} projects`);
+          Logger.Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
@@ -375,8 +375,8 @@ export class Spreadsheet {
             }
           }
           opts.users = users;
-          Logger.Console.fun(`Loaded ${users.length} users`);
-          Logger.Console.fun('----------------------------------------');
+          Logger.Console.log('silly', `Loaded ${users.length} users`);
+          Logger.Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
@@ -397,8 +397,8 @@ export class Spreadsheet {
             }
           }
           opts.events = events;
-          Logger.Console.fun(`Loaded ${events.length} calendar events`);
-          Logger.Console.fun('----------------------------------------');
+          Logger.Console.log('silly', `Loaded ${events.length} calendar events`);
+          Logger.Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       })
@@ -418,8 +418,8 @@ export class Spreadsheet {
               user.punches.push(punch);
             }
           });
-          Logger.Console.fun(`Loaded ${rows.length} punches for ${opts.users.length} users`);
-          Logger.Console.fun('----------------------------------------');
+          Logger.Console.log('silly', `Loaded ${rows.length} punches for ${opts.users.length} users`);
+          Logger.Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
