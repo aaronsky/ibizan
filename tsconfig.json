@@ -9,9 +9,11 @@
     "diagnostics": true,
     "listEmittedFiles": true,
     "pretty": true,
-    "outDir": "build",
+    "outDir": "bin",
     "types": [
-      "node"
+      "node",
+      "node-uuid",
+      "moment-timezone"
     ]
   },
   "include": [
@@ -20,7 +22,6 @@
   "exclude": [
     ".github",
     "bin",
-    "build",
     "node_modules",
     "tests",
     "app/**/*.spec.ts"
