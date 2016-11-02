@@ -1,5 +1,5 @@
 
-import ConsoleLogger from './console-logger';
+import * as ConsoleLogger from './console-logger';
 import { STRINGS } from '../shared/constants';
 const strings = STRINGS.logger;
 import { typeIsArray, Bot, Controller } from '../shared/common';
