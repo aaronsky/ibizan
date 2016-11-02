@@ -19,6 +19,8 @@ export class App {
 
     constructor(config: IbizanConfig) {
         this.config = config;
+        this.bots = {};
+        this.orgs = {};
     }
     start() {
         this.controller = Botkit.slackbot({
@@ -72,6 +74,7 @@ export class App {
     }
     onCreateTeam(bot: Bot, team: Team) {
         // create config
+        // TODO: This variable being undefined crashes ibizan. The todo is to work on the solution for per-team sheets, or use a hack job in the interim.
         let newConfig: TeamConfig;
 
         this.controller.storage.teams.save({ 
@@ -115,7 +118,7 @@ export class App {
         }
     }
     loadScripts() {
-        const scriptsDirectory = path.resolve('build', 'controllers');
+        const scriptsDirectory = path.resolve(__dirname, 'controllers');
         const scriptFiles = fs.readdirSync(scriptsDirectory).sort();
         for (let file of scriptFiles) {
             const scriptExtension = path.extname(file);
