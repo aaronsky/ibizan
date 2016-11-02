@@ -2,9 +2,9 @@
   "name": "ibizan",
   "version": "0.9.3",
   "description": "Dog-themed Employee Time Tracking Slack Bot",
-  "main": "./bin/ibizan.js",
+  "main": "./bin/index.js",
   "bin": {
-    "ibizan": "./bin/ibizan.js"
+    "ibizan": "./bin/index.js"
   },
   "keywords": [
     "ibizan",
@@ -58,7 +58,7 @@
     "build:prod": "npm run clean && tsc -p ./tsconfig.prod.json",
     "heroku-prebuild": "npm i --only=dev",
     "heroku-postbuild": "npm run build:prod",
-    "start": "node bin/ibizan.js",
+    "start": "node ./bin/index.js",
     "prepublish": "npm run build:prod",
     "test": "mocha",
     "test:cover": "nyc --reporter=html -x **/*.spec.ts npm test",
