@@ -112,7 +112,7 @@ export default function (controller: Controller) {
   function parse(bot: Bot, message: any, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
     const user = organization.getUserBySlackName(message.user.name);
-    Logger.Console.log(`Parsing '${message.text} for @${user.slack}.`);
+    Logger.Console.info(`Parsing '${message.text} for @${user.slack}.`);
     canPunchHere(bot, message.room, organization, (isAllowed) => {
       if (isAllowed) {
         Logger.Slack.addReaction('clock4', message);
@@ -137,7 +137,7 @@ export default function (controller: Controller) {
           } else {
             article = 'an';
           }
-          Logger.Console.log(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slack}: ${punch.description(user)}`);
+          Logger.Console.info(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slack}: ${punch.description(user)}`);
           sendPunch(punch, user, message, organization);
         });
       } else {
@@ -158,7 +158,7 @@ export default function (controller: Controller) {
     }
     try {
       const enteredPunch = await organization.spreadsheet.enterPunch(punch, user, organization);
-      Logger.Console.log(`@${user.slack}'s punch was successfully entered into the spreadsheet.`);
+      Logger.Console.info(`@${user.slack}'s punch was successfully entered into the spreadsheet.`);
       const punchEnglish = `Punched you *${enteredPunch.description(user)}*.`;
       if (enteredPunch.mode === 'in') {
         user.directMessage(punchEnglish, Logger);
@@ -361,7 +361,7 @@ export default function (controller: Controller) {
     const tz = user.timetable.timezone.name;
     const date = moment(message.match[1], 'MM/DD/YYYY');
     if (!date.isValid()) {
-      Logger.Console.log(`hours: ${message.match[1]} is an invalid date`);
+      Logger.Console.info(`hours: ${message.match[1]} is an invalid date`);
       user.directMessage(`${message.match[1]} is not a valid date`, Logger);
       Logger.Slack.addReaction('x', message);
       return;

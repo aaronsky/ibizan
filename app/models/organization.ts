@@ -2,7 +2,7 @@
 import * as moment from 'moment';
 
 import { Rows } from '../shared/rows';
-import * as Logger from '../logger';
+import { Console } from '../logger';
 import { TeamConfig } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
 import { Spreadsheet, GoogleAuth } from './sheet';
@@ -26,7 +26,7 @@ export class Organization {
     constructor(config: TeamConfig) {
         this.config = config;
         this.name = config.name;
-        Logger.Console.fun(`Welcome to ${this.name}!`);
+        Console.log('silly', `Welcome to ${this.name}!`);
         this.initTime = moment();
         this.spreadsheet = new Spreadsheet(config.google.sheetId);
 
@@ -35,10 +35,10 @@ export class Organization {
                 client_email: config.google.clientEmail,
                 private_key: config.google.privateKey
             })
-                .then(() => Logger.Console.log('Options loaded'))
-                .catch((err) => Logger.Console.error("Failed to sync", err));
+                .then(() => Console.info('Options loaded'))
+                .catch((err) => Console.error("Failed to sync", err));
         } else {
-            Logger.Console.warn('Sheet not initialized, no spreadsheet ID was provided');
+            Console.warn('Sheet not initialized, no spreadsheet ID was provided');
         }
     }
     ready() {
@@ -90,7 +90,7 @@ export class Organization {
                 }
             }
         }
-        Logger.Console.debug(`User ${name} could not be found`);
+        Console.debug(`User ${name} could not be found`);
     }
     getUserByRealName(name: string, users?: User[]) {
         if (!users) {
@@ -103,7 +103,7 @@ export class Organization {
                 }
             }
         }
-        Logger.Console.debug(`Person ${name} could not be found`);
+        Console.debug(`Person ${name} could not be found`);
     }
     getProjectByName(name: string, projects?: Project[]) {
         if (!projects) {
@@ -117,7 +117,7 @@ export class Organization {
                 }
             }
         }
-        Logger.Console.debug(`Project ${name} could not be found`);
+        Console.debug(`Project ${name} could not be found`);
     }
     async addEvent(date: string | moment.Moment, name: string) {
         let dateObject;
@@ -147,7 +147,7 @@ export class Organization {
         } else if (!start || !end) {
             throw 'No start or end date were passed as arguments';
         }
-        Logger.Console.log(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
+        Console.info(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
 
         const reports = [];
 

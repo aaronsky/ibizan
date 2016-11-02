@@ -11,7 +11,7 @@ describe('Logger', () => {
     });
     describe('#log', () => {
       it('should run without issue', () => {
-        Logger.Console.log('This is test output');
+        Logger.Console.log('info', 'This is test output');
       });
     });
     describe('#warn', () => {
@@ -28,7 +28,7 @@ describe('Logger', () => {
     });
     describe('#fun', () => {
       it('should run without issue', () => {
-        Logger.Console.fun('This is test output :D');
+        Logger.Console.log('silly', 'This is test output :D');
       });
     });
   });

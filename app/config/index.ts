@@ -1,7 +1,7 @@
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as Logger from '../logger';
+import { Console } from '../logger';
 
 export interface IbizanConfig {
     port: number;
@@ -29,7 +29,6 @@ export class ConfigFactory {
 
     }
     static loadConfiguration(rcPathOverride?: string, optsPath?: string, args?: any): IbizanConfig {
-        Logger.Console.setLogLevel(args.verbose || 0);
         // load rc
         const rcConfig = ConfigFactory.loadIbizanRc(rcPathOverride);
         // load opts
@@ -99,14 +98,14 @@ export class ConfigFactory {
         }
         if (!pathToLoad) {
             const warning = '.ibizanrc.json not found in any of the default locations' + (overridePath ? ', or in the override location.' : '.');
-            Logger.Console.warn(warning);
+            Console.warn(warning);
             return;
         }
-        Logger.Console.log('Loading .ibizanrc.json from ' + pathToLoad);
+        Console.info('Loading .ibizanrc.json from ' + pathToLoad);
         try {
             return ConfigFactory.loadJSON(pathToLoad) as IbizanConfig;
         } catch (err) {
-            Logger.Console.error('Invalid .ibizanrc.json file', err);
+            Console.error('Invalid .ibizanrc.json file', err);
         }
         return;
     }

@@ -279,7 +279,7 @@ export class User {
   async undoPunch() {
     return new Promise((resolve, reject) => {
       const lastPunch = this.lastPunch();
-      Logger.Console.log(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
+      Logger.Console.info(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
       let elapsed;
       if (lastPunch.times.block) {
         elapsed = lastPunch.times.block;
@@ -449,7 +449,7 @@ export class User {
       msg = `You have been on the clock for ${this.settings.houndFrequency} hours.\n` + msg;
     }
     setTimeout(() => this.directMessage(msg, logger), 1000 * (Math.floor(Math.random() * 3) + 1));
-    Logger.Console.log(`Hounded ${this.slack} with '${msg}'`);
+    Logger.Console.info(`Hounded ${this.slack} with '${msg}'`);
     this.updateRow();
   }
   hexColor() {
