@@ -3,7 +3,7 @@ import 'mocha';
 const { expect, assert } = require('chai');
 import * as moment from 'moment';
 
-const { MockSheetService, MockConfig } = require('../../../test/mocks');
+const { MockSheet, MockConfig } = require('../../../test/mocks');
 
 import { Organization } from '../organization';
 import { Spreadsheet } from '../sheet';
@@ -15,7 +15,8 @@ describe('Sheet', () => {
   beforeEach(() => {
     const sheetId = 'test';
     this.sheet = new Spreadsheet(sheetId);
-    this.sheet.service = MockSheetService;
+    this.sheet.service = MockSheet.Service;
+    this.sheet.auth = MockSheet.Auth;
   });
   describe('#authorize(clientId, clientSecret, redirectUri, token?)', () => {
     it('should authorize', async () => {

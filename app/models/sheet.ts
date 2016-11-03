@@ -38,7 +38,7 @@ export class Spreadsheet {
   async authorize(clientId: string, clientSecret: string, redirectUri: string, token?: string) {
     return new Promise((resolve, reject) => {
       const auth = new googleAuth();
-      const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUri);
+      const oauth2Client = this.auth || new auth.OAuth2(clientId, clientSecret, redirectUri);
       Logger.Console.info('Waiting for authorization');
       if (token) {
         oauth2Client.credentials = token;
@@ -150,12 +150,13 @@ export class Spreadsheet {
     });
   }
   async enterPunch(punch: Punch, user: User, organization: Organization) {
-    const valid = punch.isValid(user);
+    let valid;
     if (!punch || !user) {
       throw 'Invalid parameters passed: Punch or user is undefined';
-    } else if (typeof valid === 'string') {
+    } else if (valid = punch.isValid(user) && typeof valid === 'string') {
       throw valid;
-    } else {
+    }
+    return new Promise<Punch>(async (resolve, reject) => {
       if (punch.mode === 'out') {
         if (user.punches && user.punches.length > 0) {
           const len = user.punches.length;
@@ -171,7 +172,7 @@ export class Spreadsheet {
             }
           }
           if (!last) {
-            throw 'You haven\'t punched out yet.';
+            reject('You haven\'t punched out yet.');
           }
           last.out(punch, organization);
           const row = last.toRawRow(user.name);
@@ -192,12 +193,12 @@ export class Spreadsheet {
               try {
                 await project.updateRow();
               } catch (err) {
-                throw err;
+                reject(err);
               }
             }
-            return last;
+            resolve(last);
           } catch (err) {
-            throw err;
+            reject(err);
           }
         }
       } else {
@@ -214,13 +215,17 @@ export class Spreadsheet {
           };
           this.service.spreadsheets.values.get(request, async (err, response) => {
             if (err || !response.values) {
-              throw `Could not get rawData rows: ${err}`;
+              reject(`Could not get rawData rows: ${err}`);
             }
-            const rows: Rows.RawDataRow[] = response.values.map((row, index, arr) => {
+            const rows = response.values.reduce((accumulator, row, index, arr) => {
+              if (index === 0) {
+                return accumulator;
+              }
               const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
               newRow.bindGoogleApis(this.service, this.id, this.auth);
-              return newRow;
-            });
+              accumulator.push(newRow);
+              return accumulator;
+            }, []);
             const rowMatches = rows.filter(r => r.id === row.id);
             const rowMatch = rowMatches[0];
             punch.assignRow(rowMatch);
@@ -248,16 +253,16 @@ export class Spreadsheet {
               try {
                 await user.updateRow();
               } catch (err) {
-                throw `Could not update user row: ${err}`;
+                reject(`Could not update user row: ${err}`);
               }
-              return punch;
+              resolve(punch);
             }
           });
         } catch (err) {
-          throw `Could not add row: ${err}`;
+          reject(`Could not add row: ${err}`);
         }
       }
-    }
+    });
   }
   async generateReport(reports) {
     return new Promise<number>(async (resolve, reject) => {
@@ -288,7 +293,7 @@ export class Spreadsheet {
           const { properties, sheets } = response;
           this.title = properties.title;
           for (let sheet of sheets) {
-            let title = sheet.title;
+            let title = sheet.properties.title;
             const words = title.split(' ');
             title = words[0].toLowerCase();
             for (let i = 1; title.length < 6 && i < words.length; i++) {
@@ -323,11 +328,15 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.map((row, index, arr) => {
+          const rows = response.values.reduce((accumulator, row, index, arr) => {
+            if (index === 0) {
+              return accumulator;
+            }
             const newRow = new Rows.VariablesRow(row, Rows.Row.formatRowRange(title, index));
-              newRow.bindGoogleApis(this.service, this.id, this.auth);
-              return newRow;
-          });
+            newRow.bindGoogleApis(this.service, this.id, this.auth);
+            accumulator.push(newRow);
+            return accumulator;
+          }, []);
           const opts = {
             vacation: 0,
             sick: 0,
@@ -388,11 +397,15 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.map((row, index, arr) => {
+          const rows = response.values.reduce((accumulator, row, index, arr) => {
+            if (index === 0) {
+              return accumulator;
+            }
             const newRow = new Rows.ProjectsRow(row, Rows.Row.formatRowRange(title, index));
-              newRow.bindGoogleApis(this.service, this.id, this.auth);
-              return newRow;
-          });
+            newRow.bindGoogleApis(this.service, this.id, this.auth);
+            accumulator.push(newRow);
+            return accumulator;
+          }, []);
           let projects: Project[] = [];
           for (let row of rows) {
             const project = Project.parse(row);
@@ -422,11 +435,15 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.map((row, index, arr) => {
+          const rows = response.values.reduce((accumulator, row, index, arr) => {
+            if (index === 0) {
+              return accumulator;
+            }
             const newRow = new Rows.UsersRow(row, Rows.Row.formatRowRange(title, index));
-              newRow.bindGoogleApis(this.service, this.id, this.auth);
-              return newRow;
-          });
+            newRow.bindGoogleApis(this.service, this.id, this.auth);
+            accumulator.push(newRow);
+            return accumulator;
+          }, []);
           let users: User[] = [];
           for (let row of rows) {
             const user = User.parse(row);
@@ -456,11 +473,15 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.map((row, index, arr) => {
+          const rows = response.values.reduce((accumulator, row, index, arr) => {
+            if (index === 0) {
+              return accumulator;
+            }
             const newRow = new Rows.EventsRow(row, Rows.Row.formatRowRange(title, index));
-              newRow.bindGoogleApis(this.service, this.id, this.auth);
-              return newRow;
-          });
+            newRow.bindGoogleApis(this.service, this.id, this.auth);
+            accumulator.push(newRow);
+            return accumulator;
+          }, []);
           let events: CalendarEvent[] = [];
           for (let row of rows) {
             const calendarEvent = CalendarEvent.parse(row);
@@ -490,11 +511,15 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.map((row, index, arr) => {
+          const rows = response.values.reduce((accumulator, row, index, arr) => {
+            if (index === 0) {
+              return accumulator;
+            }
             const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
-              newRow.bindGoogleApis(this.service, this.id, this.auth);
-              return newRow;
-          });
+            newRow.bindGoogleApis(this.service, this.id, this.auth);
+            accumulator.push(newRow);
+            return accumulator;
+          }, []);
           rows.forEach((row, index, arr) => {
             const user: User = opts.users.filter((item, index, arr) => item.name === row.name)[0];
             const punch = Punch.parseRaw(user, row, this, opts.projects);

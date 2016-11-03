@@ -61,7 +61,7 @@
     "heroku-postbuild": "npm run build:prod",
     "start": "node ./bin/index.js",
     "prepublish": "npm run build:prod",
-    "test": "mocha",
+    "test": "TEST=true mocha",
     "test:cover": "nyc --reporter=html -x **/*.spec.ts npm test",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
