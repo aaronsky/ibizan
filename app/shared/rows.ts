@@ -51,8 +51,7 @@ export const HEADERS = {
         { field: 'project5', header: 'Project 5' },
         { field: 'project6', header: 'Project 6' }
     ],
-
-    payrollReports: [
+    payroll: [
         { field: 'date', header: 'Payroll Date' },
         { field: 'name', header: 'Employee Name' },
         { field: 'paid', header: 'Paid Hours' },
@@ -70,7 +69,7 @@ export const HEADERS = {
 };
 
 export namespace Rows {
-    export type SheetKind = 'variables' | 'projects' | 'users' | 'rawData' | 'payrollReports' | 'events';
+    export type SheetKind = 'variables' | 'projects' | 'users' | 'rawData' | 'payroll' | 'events';
     export abstract class Row {
         kind: SheetKind;
         range: string;
@@ -98,7 +97,7 @@ export namespace Rows {
             const values = [];
             const headers = HEADERS[this.kind];
             for (let i = 0; i < headers.length; i++) {
-                values.push(headers[i].field);
+                values.push(this[headers[i].field]);
             }
             return {
                 range: this.range,
@@ -106,7 +105,7 @@ export namespace Rows {
                 values
             };
         }
-        save(callback: (err: string | Error) => void) {
+        async save() {
             const [service, sheetId, auth] = Array.prototype.slice.call(arguments);
             const values = this.toGoogleValues();
             const request = {
@@ -115,23 +114,31 @@ export namespace Rows {
                 auth: auth,
                 resource: values
             };
-            service.spreadsheets.values.update(request, (err, response) => {
-                if (callback && typeof callback === 'function') {
-                    callback(err);
-                }
+            return new Promise<void>((resolve, reject) => {
+                service.spreadsheets.values.update(request, (err, response) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve();
+                });
             });
         }
-        del(callback: (err: Error) => void) {
+        async del() {
             const [service, sheetId, auth] = Array.prototype.slice.call(arguments);
             const request = {
                 spreadsheetId: sheetId,
                 range: this.range,
                 auth: auth
             };
-            service.spreadsheets.values.clear(request, (err, response) => {
-                if (callback && typeof callback === 'function') {
-                    callback(err);
-                }
+            return new Promise<void>((resolve, reject) => {
+                service.spreadsheets.values.clear(request, (err, response) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    resolve();
+                });
             });
         }
     }
@@ -209,7 +216,7 @@ export namespace Rows {
         holiday: string;
         extra: any;
         constructor(values: any[], range: string) {
-            super(values, range, 'payrollReports');
+            super(values, range, 'payroll');
         }
     };
     export class EventsRow extends Row {

@@ -43,6 +43,12 @@ function fakeApiRequest(apiMethod, request, callback) {
     } else if (domain === 'values') {
         if (method === 'get') {
             getValues(request.range, request.majorDimension, callback)
+        } else if (method === 'append') {
+            appendValues(request.range, request.values, request.majorDimension, callback);
+        } else if (method === 'update') {
+            updateValues(request.range, request.values, request.majorDimension, callback);
+        } else if (method === 'clear') {
+            clearValues(request.range, request.majorDimension, callback);
         }
     }
 }
@@ -66,6 +72,49 @@ function getValues(range, dimension, callback) {
         range: range,
         majorDimension: dimension || 'DIMENSION_UNSPECIFIED',
         values: values
+    };
+    if (callback && typeof callback === 'function') {
+        callback(null, response);
+    }
+}
+
+function appendValues(range, values, dimension, callback) {
+    if (!callback && dimension && typeof dimension === 'function') {
+        callback = dimension;
+        dimension = null;
+    }
+    const response = {
+        range: range,
+        majorDimension: dimension || 'DIMENSION_UNSPECIFIED',
+        values: values
+    };
+    if (callback && typeof callback === 'function') {
+        callback(null, response);
+    }
+}
+
+function updateValues(range, values, dimension, callback) {
+    if (!callback && dimension && typeof dimension === 'function') {
+        callback = dimension;
+        dimension = null;
+    }
+    const response = {
+        range: range,
+        majorDimension: dimension || 'DIMENSION_UNSPECIFIED',
+        values: values
+    };
+    if (callback && typeof callback === 'function') {
+        callback(null, response);
+    }
+}
+
+function clearValues(range, dimension, callback) {
+    if (!callback && dimension && typeof dimension === 'function') {
+        callback = dimension;
+        dimension = null;
+    }
+    const response = {
+        range: range,
     };
     if (callback && typeof callback === 'function') {
         callback(null, response);

@@ -3,6 +3,9 @@ import 'mocha';
 const { expect } = require('chai');
 import * as moment from 'moment-timezone';
 
+const { MockSheet } = require('../../../test/mocks');
+const TEST_ROW = require('../../../test/mocks/mocked/mocked_users')[0];
+
 import { Rows } from '../../shared/rows';
 import { User, Timetable } from '../user';
 
@@ -115,8 +118,6 @@ describe('Timetable', () => {
   });
 });
 
-const TEST_ROW = require('../../../test/mocks/mocked/mocked_users')[0];
-
 describe('User', () => {
   beforeEach(() => {
     const start = moment({
@@ -133,6 +134,7 @@ describe('User', () => {
   describe('.parse(row)', () => {
     it('should return a new User when given a row', () => {
       const row = new Rows.UsersRow(TEST_ROW, '');
+      row.bindGoogleApis(MockSheet.service, '', MockSheet.auth);
       const user = User.parse(row);
       expect(user).to.exist;
     });
