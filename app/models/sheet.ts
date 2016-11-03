@@ -87,31 +87,31 @@ export class Spreadsheet {
     return opts;
   }
   async saveRow(row: Rows.Row, sheet: Rows.SheetKind) {
-    return new Promise((resolve, reject) => {
-      row.save((err) => {
-        if (err) {
-          let retry = 1;
-          const timeout = setTimeout(() => {
-            if (retry <= 3) {
-              Logger.Console.debug(`Retrying save of row in ${sheet}, attempt ${retry}...`);
-              row.save((err) => {
-                if (!err) {
-                  Logger.Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
-                  clearInterval(timeout);
-                  resolve(row);
-                  return;
-                }
-              });
-              retry += 1;
-            } else {
-              Logger.Console.error(`Unable to save row to ${sheet}`, new Error(err.toString()));
-              reject(err);
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        await row.save();
+        resolve();
+      } catch (err) {
+        let retry = 1;
+        const timeout = setTimeout(async () => {
+          if (retry <= 3) {
+            Logger.Console.debug(`Retrying save of row in ${sheet}, attempt ${retry}...`);
+            try {
+              await row.save();
+              Logger.Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
+              clearInterval(timeout);
+              resolve();
+              return;
+            } catch (err) {
+
             }
-          }, 1000);
-        } else {
-          resolve(row);
-        }
-      });
+            retry += 1;
+          } else {
+            Logger.Console.error(`Unable to save row to ${sheet}`, new Error(err.toString()));
+            reject(err);
+          }
+        }, 1000);
+      }
     });
   }
   async newRow(row: Rows.Row, sheet: Rows.SheetKind) {
@@ -176,6 +176,7 @@ export class Spreadsheet {
           }
           last.out(punch, organization);
           const row = last.toRawRow(user.name);
+          row.bindGoogleApis(this.service, this.id, this.auth);
           try {
             await this.saveRow(row, 'rawData');
             // add hours to project in projects
@@ -255,8 +256,8 @@ export class Spreadsheet {
               } catch (err) {
                 reject(`Could not update user row: ${err}`);
               }
-              resolve(punch);
             }
+            resolve(punch);
           });
         } catch (err) {
           reject(`Could not add row: ${err}`);
@@ -264,21 +265,20 @@ export class Spreadsheet {
       }
     });
   }
-  async generateReport(reports) {
-    return new Promise<number>(async (resolve, reject) => {
-      let numberDone = 0;
-      for (let row of reports) {
-        try {
-          await this.newRow(row, 'payrollReports');
-          numberDone += 1;
-          if (numberDone >= reports.length) {
-            resolve(numberDone);
-          }
-        } catch (err) {
-          reject(err);
+  async generateReport(reports: Rows.PayrollReportsRow[]) {
+    let numberDone = 0;
+    for (let row of reports) {
+      try {
+        await this.newRow(row, 'payroll');
+        numberDone += 1;
+        if (numberDone >= reports.length) {
+          return numberDone;
         }
+      } catch (err) {
+        throw err;
       }
-    });
+    }
+    return numberDone;
   }
   private async loadWorksheets() {
     return new Promise((resolve, reject) => {

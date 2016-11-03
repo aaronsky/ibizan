@@ -5,9 +5,11 @@ import * as moment from 'moment';
 
 const { MockSheet, MockConfig } = require('../../../test/mocks');
 
+import { Rows } from '../../shared/rows';
 import { Organization } from '../organization';
 import { Spreadsheet } from '../sheet';
 import { Punch } from '../punch';
+import { User } from '../user';
 
 let org = new Organization(MockConfig.team);
 
@@ -143,10 +145,19 @@ describe('Sheet', () => {
       let start = end.subtract(2, 'weeks');
       try {
         const opts = await this.sheet.loadOptions();
-        const userCount = opts.users.length;
-        const numberDone = await this.sheet.generateReport(opts.users, start, end);
+        const users: User[] = opts.users;
+        const userCount = users.length;
+        const reports: Rows.PayrollReportsRow[] = [];
+        for (let user of users) {
+          const row = user.toRawPayroll(start, end);
+          if (row) {
+            reports.push(row);
+          }
+        }
+        const numberDone = await this.sheet.generateReport(reports, start, end);
         expect(numberDone).to.equal(userCount);
       } catch (err) {
+        console.log(err);
         assert.fail('success', err);
       }
     });

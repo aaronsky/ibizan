@@ -36,22 +36,19 @@ export class Project {
     return project;
   }
   async updateRow() {
-    return new Promise<void>((resolve, reject) => {
-      if (this.row) {
-        this.row.name = `#${this.name}`;
-        this.row.start = this.start.format('MM/DD/YYYY');
-        this.row.total = Math.floor(this.total).toString();
-        this.row.save((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      } else {
-        reject('Row is null');
+    if (this.row) {
+      this.row.name = `#${this.name}`;
+      this.row.start = this.start.format('MM/DD/YYYY');
+      this.row.total = Math.floor(this.total).toString();
+      try {
+        await this.row.save();
+      } catch (err) {
+        throw err;
       }
-    });
+      return;
+    } else {
+      throw 'Row is null';
+    }
   }
   description() {
     return `Project: ${this.name}\nStart date: ${this.start.format('MM/DD/YYYY')}\nTotal hours: ${this.total}`;

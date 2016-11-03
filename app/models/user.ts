@@ -82,7 +82,7 @@ export class Timetable {
 
     if (typeof start === 'string') {
       if (timezone)
-      this._start = moment.tz(start, 'hh:mm a', timezoneName);
+        this._start = moment.tz(start, 'hh:mm a', timezoneName);
     } else {
       this._start = moment.tz(start, timezoneName);
     }
@@ -159,7 +159,7 @@ export class User {
   row: Rows.UsersRow;
   punches: Punch[];
   settings: Settings;
-  
+
   constructor(name: string, slack: string, salary: boolean, timetable: Timetable, row: any = null) {
     this.name = name;
     this.slack = slack;
@@ -277,67 +277,67 @@ export class User {
     return 'never';
   }
   async undoPunch() {
-    return new Promise((resolve, reject) => {
-      const lastPunch = this.lastPunch();
-      Logger.Console.info(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
-      let elapsed;
-      if (lastPunch.times.block) {
-        elapsed = lastPunch.times.block;
+    const lastPunch = this.lastPunch();
+    Logger.Console.info(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
+    let elapsed;
+    if (lastPunch.times.block) {
+      elapsed = lastPunch.times.block;
+    } else {
+      elapsed = lastPunch.elapsed || 0;
+    }
+    if (lastPunch.mode === 'vacation' || lastPunch.mode === 'sick' || lastPunch.mode === 'unpaid' || lastPunch.mode === 'none') {
+      await lastPunch.row.del();
+      const punch = this.punches.pop();
+      const elapsedDays = this.toDays(elapsed);
+      if (punch.mode === 'vacation') {
+        const total = this.timetable.vacationTotal;
+        const available = this.timetable.vacationAvailable;
+        this.timetable.setVacation(total - elapsedDays, available + elapsedDays);
+      } else if (punch.mode === 'sick') {
+        const total = this.timetable.sickTotal;
+        const available = this.timetable.sickAvailable;
+        this.timetable.setSick(total - elapsedDays, available + elapsedDays);
+      } else if (punch.mode === 'unpaid') {
+        const total = this.timetable.unpaidTotal;
+        this.timetable.unpaidTotal = total - elapsedDays;
       } else {
-        elapsed = lastPunch.elapsed || 0;
+        const logged = this.timetable.loggedTotal;
+        this.timetable.loggedTotal = logged - elapsed;
       }
-      if (lastPunch.mode === 'vacation' || lastPunch.mode === 'sick' || lastPunch.mode === 'unpaid' || lastPunch.mode === 'none') {
-        lastPunch.row.del(() => {
-          const punch = this.punches.pop();
-          const elapsedDays = this.toDays(elapsed);
-          if (punch.mode === 'vacation') {
-            const total = this.timetable.vacationTotal;
-            const available = this.timetable.vacationAvailable;
-            this.timetable.setVacation(total - elapsedDays, available + elapsedDays);
-          } else if (punch.mode === 'sick') {
-            const total = this.timetable.sickTotal;
-            const available = this.timetable.sickAvailable;
-            this.timetable.setSick(total - elapsedDays, available + elapsedDays);
-          } else if (punch.mode === 'unpaid') {
-            const total = this.timetable.unpaidTotal;
-            this.timetable.unpaidTotal = total - elapsedDays;
-          } else {
-            const logged = this.timetable.loggedTotal;
-            this.timetable.loggedTotal = logged - elapsed;
-          }
-          resolve(punch);
-        });
-      } else if (lastPunch.mode === 'out') {
-        lastPunch.times.pop();
-        lastPunch.elapsed = null;
-        if (lastPunch.notes.lastIndexOf('\n') > 0) {
-          lastPunch.notes = lastPunch.notes.substring(0, lastPunch.notes.lastIndexOf('\n'));
-        }
-        lastPunch.mode = 'in';
-        lastPunch.row.out = lastPunch.row.totalTime = lastPunch.row.blockTime = '';
-        lastPunch.row.notes = lastPunch.notes;
-        lastPunch.row.save(() => {
-          const logged = this.timetable.loggedTotal;
-          this.timetable.loggedTotal = logged - elapsed;
-          resolve(lastPunch);
-        });
-      } else if (lastPunch.mode === 'in') {
-        lastPunch.row.del(() => {
-          const punch = this.punches.pop();
-          resolve(punch);
-        });
+      return punch;
+    } else if (lastPunch.mode === 'out') {
+      lastPunch.times.pop();
+      lastPunch.elapsed = null;
+
+      if (lastPunch.notes.lastIndexOf('\n') > 0) {
+        lastPunch.notes = lastPunch.notes.substring(0, lastPunch.notes.lastIndexOf('\n'));
       }
-    });
+
+      lastPunch.mode = 'in';
+      lastPunch.row.out = lastPunch.row.totalTime = lastPunch.row.blockTime = '';
+      lastPunch.row.notes = lastPunch.notes;
+
+      await lastPunch.row.save();
+      const logged = this.timetable.loggedTotal;
+      this.timetable.loggedTotal = logged - elapsed;
+
+      return lastPunch;
+    } else if (lastPunch.mode === 'in') {
+      await lastPunch.row.del();
+
+      const punch = this.punches.pop();
+      return punch;
+    }
   }
   toRawPayroll(start, end) {
     let row = new Rows.PayrollReportsRow([], '');
 
     row.date = moment.tz(TIMEZONE).format('M/DD/YYYY');
     row.name = this.name;
-    let loggedTime = 0, 
-        unpaidTime = 0,
-        vacationTime = 0,
-        sickTime = 0;
+    let loggedTime = 0,
+      unpaidTime = 0,
+      vacationTime = 0,
+      sickTime = 0;
     const projectsForPeriod = []
     for (let punch of this.punches) {
       if (punch.date.isBefore(start) || punch.date.isAfter(end)) {
@@ -406,38 +406,34 @@ export class User {
     };
     return row;
   }
-  updateRow() {
-    return new Promise<boolean>((resolve, reject) => {
-      if (this.row) {
-        this.row.start = this.timetable.start.format('h:mm A');
-        this.row.end = this.timetable.end.format('h:mm A');
-        this.row.timezone = this.timetable.timezone.name;
-        this.row.shouldHound = this.settings.shouldHound ? 'Y' : 'N';
-        this.row.houndFrequency = (this.settings.houndFrequency ? this.settings.houndFrequency : -1).toString();
-        this.row.vacationAvailable = this.timetable.vacationAvailable.toString();
-        this.row.vacationLogged = this.timetable.vacationTotal.toString();
-        this.row.sickAvailable = this.timetable.sickAvailable.toString();
-        this.row.sickLogged = this.timetable.sickTotal.toString();
-        this.row.unpaidLogged = this.timetable.unpaidTotal.toString();
-        this.row.overtime = Math.max(0, this.timetable.loggedTotal - 80).toString();
-        this.row.totalLogged = this.timetable.loggedTotal.toString();
-        this.row.averageLogged = this.timetable.averageLogged.toString();
-        if (this.settings.lastPing) {
-          this.row.lastPing = moment.tz(this.settings.lastPing, this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
-        } else {
-          this.row.lastPing = moment.tz(this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
-        }
-        this.row.save((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(true);
-          }
-        });
+  async updateRow() {
+    if (this.row) {
+      this.row.start = this.timetable.start.format('h:mm A');
+      this.row.end = this.timetable.end.format('h:mm A');
+      this.row.timezone = this.timetable.timezone.name;
+      this.row.shouldHound = this.settings.shouldHound ? 'Y' : 'N';
+      this.row.houndFrequency = (this.settings.houndFrequency ? this.settings.houndFrequency : -1).toString();
+      this.row.vacationAvailable = this.timetable.vacationAvailable.toString();
+      this.row.vacationLogged = this.timetable.vacationTotal.toString();
+      this.row.sickAvailable = this.timetable.sickAvailable.toString();
+      this.row.sickLogged = this.timetable.sickTotal.toString();
+      this.row.unpaidLogged = this.timetable.unpaidTotal.toString();
+      this.row.overtime = Math.max(0, this.timetable.loggedTotal - 80).toString();
+      this.row.totalLogged = this.timetable.loggedTotal.toString();
+      this.row.averageLogged = this.timetable.averageLogged.toString();
+      if (this.settings.lastPing) {
+        this.row.lastPing = moment.tz(this.settings.lastPing, this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
       } else {
-        reject('Row is null');
+        this.row.lastPing = moment.tz(this.timetable.timezone.name).format('MM/DD/YYYY hh:mm:ss A');
       }
-    });
+      try {
+        await this.row.save();
+      } catch (err) {
+        throw err;
+      }
+    } else {
+      throw 'Row is null';
+    }
   }
   directMessage(msg: string, logger = Logger, attachment?: any) {
     logger.Slack.logToChannel(msg, this.slack, attachment, true);

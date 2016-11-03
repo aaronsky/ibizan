@@ -151,7 +151,7 @@ export class Organization {
         }
         Console.info(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
 
-        const reports = [];
+        const reports: Rows.PayrollReportsRow[] = [];
 
         for (let user of this.users) {
             const row = user.toRawPayroll(start, end);

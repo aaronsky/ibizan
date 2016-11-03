@@ -75,21 +75,18 @@ export class CalendarEvent {
     return row;
   }
   async updateRow() {
-    return new Promise<void>((resolve, reject) => {
-      if (this.row) {
-        this.row.date = this.date.format('MM/DD/YYYY');
-        this.row.name = `#${this.name}`;
-        this.row.save((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      } else {
-        reject('Row is null');
+    if (this.row) {
+      this.row.date = this.date.format('MM/DD/YYYY');
+      this.row.name = `#${this.name}`;
+      try {
+        await this.row.save();
+        return;
+      } catch (err) {
+        throw err;
       }
-    });
+    } else {
+      throw 'Row is null';
+    }
   }
   description() {
     return `Calendar Event: ${this.name}\Date: ${this.date.format('MM/DD/YYYY')}`;
