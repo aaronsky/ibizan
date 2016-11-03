@@ -3,7 +3,7 @@ import 'mocha';
 const { expect } = require('chai');
 import * as moment from 'moment';
 
-const { MockConfig, MockSheetService } = require('../../../test/mocks');
+const { MockConfig, MockSheet } = require('../../../test/mocks');
 
 import { Rows } from '../../shared/rows';
 import { Organization } from '../organization';
@@ -16,7 +16,7 @@ org.projects = [
   new Project('#production', moment(), 0),
   new Project('#camp-fangamer', moment(), 0)
 ];
-org.spreadsheet.service = MockSheetService;
+org.spreadsheet.service = MockSheet.Service;
 
 describe('Punch', () => {
   describe('#constructor(mode, times, projects, notes)', () => {

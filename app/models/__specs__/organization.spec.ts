@@ -3,17 +3,20 @@ import 'mocha';
 import * as moment from 'moment';
 const { expect, assert } = require('chai');
 
-const { MockSheetService, MockConfig } = require('../../../test/mocks');
+const { MockSheet, MockConfig } = require('../../../test/mocks');
 
+import { App } from '../../app';
 import { Organization } from '../organization';
 
 describe('Organization', () => {
-  beforeEach(async () =>  {
+  beforeEach(async () => {
     this.organization = new Organization(MockConfig.team);
-    this.organization.spreadsheet.service = MockSheetService;
+    this.organization.spreadsheet.service = MockSheet.Service;
     await this.organization.sync({
-      client_email: 'bad@email.com',
-      private_key: 'bad key'
+      clientId: 'a client id',
+      clientSecret: 'a client secret',
+      redirectUri: 'https://nope.com',
+      token: 'a token'
     });
   });
   describe('#constructor(config?)', () => {
@@ -64,7 +67,7 @@ describe('Organization', () => {
         const reports = await this.organization.generateReport(start, end);
         const numberDone = reports.length;
         expect(numberDone).to.equal(userCount);
-      } catch(err) {
+      } catch (err) {
         assert.fail('success', err);
       }
     });
