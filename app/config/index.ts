@@ -11,6 +11,12 @@ export interface IbizanConfig {
         clientSecret: string;
         verificationToken: string;
         scopes: string[];
+    },
+    google: {
+        clientId: string;
+        clientSecret: string;
+        redirectUri: string;
+        token?: string;
     }
 }
 
@@ -19,8 +25,6 @@ export interface TeamConfig {
     admins: string[];
     google: {
         sheetId: string;
-        clientEmail: string;
-        privateKey: string;
     }
 }
 
@@ -47,6 +51,11 @@ export class ConfigFactory {
                 clientSecret: null,
                 verificationToken: null,
                 scopes: null
+            },
+            google: {
+                clientId: null,
+                clientSecret: null,
+                redirectUri: null
             }
         };
         let temp: IbizanConfig = {
@@ -57,17 +66,22 @@ export class ConfigFactory {
                 clientSecret: null,
                 verificationToken: null,
                 scopes: null
+            },
+            google: {
+                clientId: null,
+                clientSecret: null,
+                redirectUri: null
             }
         };
         for (let key in temp) {
-            if (key === 'slack') {
-                for (let slackKey in temp.slack) {
-                    config[key][slackKey] = rcConfig && rcConfig[key] && (rcConfig[key][slackKey] || '');
-                    if (shouldCheckOpts && optsConfig[key] && optsConfig[key][slackKey]) {
-                        config[key][slackKey] = optsConfig[key][slackKey];
+            if ((key === 'slack' || key === 'google') && typeof temp[key] === 'object') {
+                for (let subKey in temp[key]) {
+                    config[key][subKey] = rcConfig && rcConfig[key] && (rcConfig[key][subKey] || '');
+                    if (shouldCheckOpts && optsConfig[key] && optsConfig[key][subKey]) {
+                        config[key][subKey] = optsConfig[key][subKey];
                     }
-                    if (shouldCheckArgs && argsConfig[key] && argsConfig[key][slackKey]) {
-                        config[key][slackKey] = argsConfig[key][slackKey];
+                    if (shouldCheckArgs && argsConfig[key] && argsConfig[key][subKey]) {
+                        config[key][subKey] = argsConfig[key][subKey];
                     }
                 }
             } else {
@@ -151,6 +165,11 @@ export class ConfigFactory {
                 clientSecret: null,
                 verificationToken: null,
                 scopes: null
+            },
+            google: {
+                clientId: null,
+                clientSecret: null,
+                redirectUri: null
             }
         };
         if (args.port) {
@@ -159,14 +178,23 @@ export class ConfigFactory {
         if (args.storageUri) {
             config.storageUri = args.storageUri || process.env.IBIZAN_STORAGE_URI;
         }
-        if (args.slackClientId || args.id || process.env.IBIZAN_SLACK_CLIENT_ID) {
+        if (args.slackClientId || args.slackId || process.env.IBIZAN_SLACK_CLIENT_ID) {
             config.slack.clientId = args.slackClientId || args.id || process.env.IBIZAN_SLACK_CLIENT_ID;
         }
-        if (args.slackClientSecret || args.secret || process.env.IBIZAN_SLACK_CLIENT_SECRET) {
+        if (args.slackClientSecret || args.slackSecret || process.env.IBIZAN_SLACK_CLIENT_SECRET) {
             config.slack.clientSecret = args.slackClientSecret || args.secret || process.env.IBIZAN_SLACK_CLIENT_SECRET;
         }
         if (args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN) {
             config.slack.verificationToken = args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN;
+        }
+        if (args.googleClientId || args.googleId || process.env.IBIZAN_GOOGLE_CLIENT_ID) {
+            config.google.clientId = args.googleClientId || args.id || process.env.IBIZAN_GOOGLE_CLIENT_ID;
+        }
+        if (args.googleClientSecret || args.googleSecret || process.env.IBIZAN_GOOGLE_CLIENT_SECRET) {
+            config.google.clientSecret = args.googleClientSecret || args.id || process.env.IBIZAN_GOOGLE_CLIENT_SECRET;
+        }
+        if (args.googleRedirectUri || args.googleRedirectUri || process.env.IBIZAN_GOOGLE_REDIRECT_URI) {
+            config.google.redirectUri = args.googleRedirectUri || args.googleRedirectUri || process.env.IBIZAN_GOOGLE_REDIRECT_URI;
         }
         config.slack.scopes = ['bot'];
         return config;

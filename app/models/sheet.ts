@@ -1,6 +1,7 @@
-
+import * as readline from 'readline';
 import * as moment from 'moment';
-const GoogleSpreadsheet = require('google-spreadsheet');
+const google = require('googleapis');
+const googleAuth = require('google-auth-library');
 
 import { Rows } from '../shared/rows';
 import { momentForHoliday } from '../shared/moment-holiday';
@@ -11,43 +12,63 @@ import { Punch } from './punch';
 import { User } from './user';
 import { Organization } from './organization';
 
-export interface GoogleAuth {
-  client_email: string;
-  private_key: string
-};
+const SCOPES = [];
 
 export class Spreadsheet {
-  sheet: any;
+  service: any;
+  auth: any;
   initialized: boolean;
-  title: string;
   id: string;
-  url: string;
+  title: string;
+
   rawData: any;
   payroll: any;
   variables: any;
   projects: any;
-  employees: any;
+  users: any;
   events: any;
 
   constructor(sheetId: string) {
-    if (sheetId && sheetId !== 'test') {
-      this.sheet = new GoogleSpreadsheet(sheetId);
-    } else {
-      this.sheet = false;
-    }
+    this.service = google.sheets('v4');
     this.initialized = false;
+    if (sheetId && sheetId !== 'test') {
+      this.id = sheetId;
+    }
   }
-  async authorize(auth: GoogleAuth) {
+  async authorize(clientId: string, clientSecret: string, redirectUri: string, token?: string) {
     return new Promise((resolve, reject) => {
-      this.sheet.useServiceAccountAuth(auth, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          Logger.Console.info('Authorized successfully');
-          resolve();
-        }
-      });
+      const auth = new googleAuth();
+      const oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUri);
       Logger.Console.info('Waiting for authorization');
+      if (token) {
+        oauth2Client.credentials = token;
+        this.auth = oauth2Client;
+        Logger.Console.info('Authorized successfully');
+        resolve(token);
+      } else {
+        const authUrl = oauth2Client.generateAuthUrl({
+          access_type: 'offline',
+          scopes: SCOPES
+        });
+        Logger.Console.info('Authorize this app by visiting this url: ', authUrl);
+        var rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+        rl.question('Enter the code from that page here: ', function (code) {
+          rl.close();
+          oauth2Client.getToken(code, function (err, token) {
+            if (err) {
+              console.log('Error while trying to retrieve access token', err);
+              reject(err);
+            }
+            oauth2Client.credentials = token;
+            this.auth = oauth2Client;
+            Logger.Console.info('Authorized successfully');
+            resolve(token);
+          });
+        });
+      }
     });
   }
   async loadOptions() {
@@ -65,26 +86,26 @@ export class Spreadsheet {
     this.initialized = true;
     return opts;
   }
-  async saveRow(row: any, rowName: string = 'row') {
+  async saveRow(row: Rows.Row, sheet: Rows.SheetKind) {
     return new Promise((resolve, reject) => {
       row.save((err) => {
         if (err) {
-          // Retry up to 3 times
           let retry = 1;
-          setTimeout(() => {
+          const timeout = setTimeout(() => {
             if (retry <= 3) {
-              Logger.Console.debug(`Retrying save of ${rowName}, attempt ${retry}...`);
+              Logger.Console.debug(`Retrying save of row in ${sheet}, attempt ${retry}...`);
               row.save((err) => {
                 if (!err) {
-                  Logger.Console.debug(`${rowName} saved successfully`);
+                  Logger.Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
+                  clearInterval(timeout);
                   resolve(row);
-                  return true;
+                  return;
                 }
               });
               retry += 1;
             } else {
+              Logger.Console.error(`Unable to save row to ${sheet}`, new Error(err.toString()));
               reject(err);
-              Logger.Console.error(`Unable to save ${rowName}`, new Error(err));
             }
           }, 1000);
         } else {
@@ -93,38 +114,39 @@ export class Spreadsheet {
       });
     });
   }
-  async newRow(sheet, row, rowName: string = 'row') {
+  async newRow(row: Rows.Row, sheet: Rows.SheetKind) {
     return new Promise((resolve, reject) => {
-      if (!sheet) {
-        reject('No sheet passed to newRow');
-      } else if (!row) {
-        reject('No row passed to newRow');
-      } else {
-        sheet.addRow(row, (err) => {
-          if (err) {
-            // Retry up to 3 times
-            let retry = 1
-            setTimeout(() => {
-              if (retry <= 3) {
-                Logger.Console.debug(`Retrying adding ${rowName}, attempt ${retry}...`);
-                sheet.addRow(row, (err) => {
-                  if (!err) {
-                    Logger.Console.debug(`${rowName} saved successfully`);
-                    resolve(row);
-                    return true;
-                  }
-                });
-                retry += 1;
-              } else {
-                reject(err);
-                Logger.Console.error(`Unable to add ${rowName}`, new Error(err));
-              }
-            }, 1000);
-          } else {
-            resolve(row);
-          }
-        });
-      }
+      const request = {
+        spreadsheetId: this.id,
+        range: this[sheet].properties.title,
+        auth: this.auth,
+        insertDataOption: 'INSERT_ROWS',
+        resource: row.toGoogleValues()
+      };
+      this.service.spreadsheets.values.append(request, (err, response) => {
+        if (err) {
+          let retry = 1;
+          const timeout = setTimeout(() => {
+            if (retry <= 3) {
+              Logger.Console.debug(`Retrying adding row to ${sheet}, attempt ${retry}...`);
+              this.service.spreadsheets.values.append(request, (err, response) => {
+                if (!err) {
+                  Logger.Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
+                  clearInterval(timeout);
+                  resolve(row);
+                  return;
+                }
+              });
+              retry += 1;
+            } else {
+              Logger.Console.error(`Unable to add row to ${sheet}`, new Error(err));
+              reject(err);
+            }
+          }, 1000);
+        } else {
+          resolve(row);
+        }
+      });
     });
   }
   async enterPunch(punch: Punch, user: User, organization: Organization) {
@@ -154,7 +176,7 @@ export class Spreadsheet {
           last.out(punch, organization);
           const row = last.toRawRow(user.name);
           try {
-            await this.saveRow(row, `punch for ${user.name}`);
+            await this.saveRow(row, 'rawData');
             // add hours to project in projects
             let elapsed;
             if (last.times.block) {
@@ -181,42 +203,54 @@ export class Spreadsheet {
       } else {
         const row = punch.toRawRow(user.name);
         try {
-          const newRow = await this.newRow(this.rawData, row);
-          this.rawData.getRows({}, async (err, rows) => {
-            if (err || !rows) {
+          const newRow = await this.newRow(row, 'rawData');
+          const title = this.rawData.properties.title;
+          const request = {
+            spreadsheetId: this.id,
+            range: title,
+            auth: this.auth,
+            dateTimeRenderOption: 'FORMATTED_STRING',
+            majorDimension: 'ROWS'
+          };
+          this.service.spreadsheets.values.get(request, async (err, response) => {
+            if (err || !response.values) {
               throw `Could not get rawData rows: ${err}`;
-            } else {
-              const rowMatches = rows.filter(r => r.id === row.id);
-              const rowMatch = rowMatches[0];
-              punch.assignRow(rowMatch);
-              user.punches.push(punch);
-              if (punch.mode === 'vacation' || punch.mode === 'sick' || punch.mode === 'unpaid') {
-                let elapsed;
-                if (punch.times.block) {
-                  elapsed = punch.times.block;
-                } else {
-                  elapsed = punch.elapsed;
-                }
-                const elapsedDays = user.toDays(elapsed);
-                if (punch.mode === 'vacation') {
-                  const total = user.timetable.vacationTotal;
-                  const available = user.timetable.vacationAvailable;
-                  user.timetable.setVacation(total + elapsedDays, available - elapsedDays);
-                } else if (punch.mode === 'sick') {
-                  const total = user.timetable.sickTotal;
-                  const available = user.timetable.sickAvailable;
-                  user.timetable.setSick(total + elapsedDays, available - elapsedDays);
-                } else if (punch.mode === 'unpaid') {
-                  const total = user.timetable.unpaidTotal;
-                  user.timetable.unpaidTotal = total + elapsedDays;
-                }
-                try {
-                  await user.updateRow();
-                } catch (err) {
-                  throw `Could not update user row: ${err}`;
-                }
-                return punch;
+            }
+            const rows: Rows.RawDataRow[] = response.values.map((row, index, arr) => {
+              const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
+              newRow.bindGoogleApis(this.service, this.id, this.auth);
+              return newRow;
+            });
+            const rowMatches = rows.filter(r => r.id === row.id);
+            const rowMatch = rowMatches[0];
+            punch.assignRow(rowMatch);
+            user.punches.push(punch);
+            if (punch.mode === 'vacation' || punch.mode === 'sick' || punch.mode === 'unpaid') {
+              let elapsed;
+              if (punch.times.block) {
+                elapsed = punch.times.block;
+              } else {
+                elapsed = punch.elapsed;
               }
+              const elapsedDays = user.toDays(elapsed);
+              if (punch.mode === 'vacation') {
+                const total = user.timetable.vacationTotal;
+                const available = user.timetable.vacationAvailable;
+                user.timetable.setVacation(total + elapsedDays, available - elapsedDays);
+              } else if (punch.mode === 'sick') {
+                const total = user.timetable.sickTotal;
+                const available = user.timetable.sickAvailable;
+                user.timetable.setSick(total + elapsedDays, available - elapsedDays);
+              } else if (punch.mode === 'unpaid') {
+                const total = user.timetable.unpaidTotal;
+                user.timetable.unpaidTotal = total + elapsedDays;
+              }
+              try {
+                await user.updateRow();
+              } catch (err) {
+                throw `Could not update user row: ${err}`;
+              }
+              return punch;
             }
           });
         } catch (err) {
@@ -226,56 +260,46 @@ export class Spreadsheet {
     }
   }
   async generateReport(reports) {
-    return new Promise<number>((resolve, reject) => {
+    return new Promise<number>(async (resolve, reject) => {
       let numberDone = 0;
       for (let row of reports) {
-        this.payroll.addRow(row, (err) => {
-          if (err) {
-            reject(err);
-          } else {
-            numberDone += 1;
-            if (numberDone >= reports.length) {
-              resolve(numberDone);
-            }
+        try {
+          await this.newRow(row, 'payrollReports');
+          numberDone += 1;
+          if (numberDone >= reports.length) {
+            resolve(numberDone);
           }
-        });
-      }
-    });
-  }
-  async addEventRow(row) {
-    return new Promise((resolve, reject) => {
-      this.events.addRow(row, (err) => {
-        if (err) {
+        } catch (err) {
           reject(err);
-        } else {
-          resolve(row);
         }
-      });
+      }
     });
   }
   private async loadWorksheets() {
     return new Promise((resolve, reject) => {
-      this.sheet.getInfo((err, info) => {
+      const request = {
+        spreadsheetId: this.id,
+        auth: this.auth
+      };
+      this.service.spreadsheets.get(request, (err, response) => {
         if (err) {
           reject(err);
         } else {
-          this.title = info.title;
-          let id = info.id;
-          id = id.replace('https://spreadsheets.google.com/feeds/worksheets/', '');
-          this.id = id.replace('/private/full', '');
-          this.url = `https://docs.google.com/spreadsheets/d/${this.id}`;
-          for (let worksheet of info.worksheets) {
-            let title = worksheet.title;
+          const { properties, sheets } = response;
+          this.title = properties.title;
+          for (let sheet of sheets) {
+            let title = sheet.title;
             const words = title.split(' ');
             title = words[0].toLowerCase();
-            let i = 1;
-            while (title.length < 6 && i < words.length) {
+            for (let i = 1; title.length < 6 && i < words.length; i++) {
               title = title.concat(words[i]);
-              i += 1;
             }
-            this[title] = worksheet;
+            if (title === 'employees') {
+              title = 'users';
+            }
+            this[title] = sheet;
           }
-          if (!(this.rawData && this.payroll && this.variables && this.projects && this.employees && this.events)) {
+          if (!(this.rawData && this.payroll && this.variables && this.projects && this.users && this.events)) {
             reject('Worksheets failed to be associated properly');
           } else {
             Logger.Console.log('silly', '----------------------------------------');
@@ -287,11 +311,23 @@ export class Spreadsheet {
   }
   private async loadVariables(opts: any) {
     return new Promise((resolve, reject) => {
-      this.variables.getRows((err, rows) => {
+      const title = this.variables.properties.title;
+      const request = {
+        spreadsheetId: this.id,
+        auth: this.auth,
+        dateTimeRenderOption: 'FORMATTED_STRING',
+        majorDimension: 'ROWS',
+        range: title
+      };
+      this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
         } else {
-          const variableRows = rows.map((row, index, arr) => new Rows.VariablesRow(row));
+          const rows = response.values.map((row, index, arr) => {
+            const newRow = new Rows.VariablesRow(row, Rows.Row.formatRowRange(title, index));
+              newRow.bindGoogleApis(this.service, this.id, this.auth);
+              return newRow;
+          });
           const opts = {
             vacation: 0,
             sick: 0,
@@ -301,7 +337,7 @@ export class Spreadsheet {
             clockChannel: '',
             exemptChannels: []
           };
-          for (let row of variableRows) {
+          for (let row of rows) {
             if (row.vacation || +row.vacation === 0) {
               opts.vacation = +row.vacation;
             }
@@ -340,13 +376,25 @@ export class Spreadsheet {
   }
   private async loadProjects(opts: any) {
     return new Promise((resolve, reject) => {
-      this.projects.getRows((err, rows) => {
+      const title = this.projects.properties.title;
+      const request = {
+        spreadsheetId: this.id,
+        auth: this.auth,
+        dateTimeRenderOption: 'FORMATTED_STRING',
+        majorDimension: 'ROWS',
+        range: title
+      };
+      this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
         } else {
-          const projectRows = rows.map((row, index, arr) => new Rows.ProjectsRow(row));
+          const rows = response.values.map((row, index, arr) => {
+            const newRow = new Rows.ProjectsRow(row, Rows.Row.formatRowRange(title, index));
+              newRow.bindGoogleApis(this.service, this.id, this.auth);
+              return newRow;
+          });
           let projects: Project[] = [];
-          for (let row of projectRows) {
+          for (let row of rows) {
             const project = Project.parse(row);
             if (project) {
               projects.push(project);
@@ -362,13 +410,25 @@ export class Spreadsheet {
   }
   private async loadEmployees(opts: any) {
     return new Promise((resolve, reject) => {
-      this.employees.getRows((err, rows) => {
+      const title = this.users.properties.title;
+      const request = {
+        spreadsheetId: this.id,
+        auth: this.auth,
+        dateTimeRenderOption: 'FORMATTED_STRING',
+        majorDimension: 'ROWS',
+        range: title
+      };
+      this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
         } else {
-          const userRows = rows.map((row, index, arr) => new Rows.UsersRow(row));
+          const rows = response.values.map((row, index, arr) => {
+            const newRow = new Rows.UsersRow(row, Rows.Row.formatRowRange(title, index));
+              newRow.bindGoogleApis(this.service, this.id, this.auth);
+              return newRow;
+          });
           let users: User[] = [];
-          for (let row of userRows) {
+          for (let row of rows) {
             const user = User.parse(row);
             if (user) {
               users.push(user);
@@ -384,13 +444,25 @@ export class Spreadsheet {
   }
   private async loadEvents(opts: any) {
     return new Promise((resolve, reject) => {
-      this.events.getRows((err, rows) => {
+      const title = this.events.properties.title;
+      const request = {
+        spreadsheetId: this.id,
+        auth: this.auth,
+        dateTimeRenderOption: 'FORMATTED_STRING',
+        majorDimension: 'ROWS',
+        range: title
+      };
+      this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
         } else {
-          const eventsRows: Rows.EventsRow[] = rows.map((row, index, arr) => new Rows.EventsRow(row));
+          const rows = response.values.map((row, index, arr) => {
+            const newRow = new Rows.EventsRow(row, Rows.Row.formatRowRange(title, index));
+              newRow.bindGoogleApis(this.service, this.id, this.auth);
+              return newRow;
+          });
           let events: CalendarEvent[] = [];
-          for (let row of eventsRows) {
+          for (let row of rows) {
             const calendarEvent = CalendarEvent.parse(row);
             if (calendarEvent) {
               events.push(calendarEvent);
@@ -406,12 +478,24 @@ export class Spreadsheet {
   }
   private async loadPunches(opts: any) {
     return new Promise((resolve, reject) => {
-      this.rawData.getRows((err, rows) => {
+      const title = this.rawData.properties.title;
+      const request = {
+        spreadsheetId: this.id,
+        auth: this.auth,
+        dateTimeRenderOption: 'FORMATTED_STRING',
+        majorDimension: 'ROWS',
+        range: title
+      };
+      this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
         } else {
-          const punchRows = rows.map((row, index, arr) => new Rows.RawDataRow(row));
-          punchRows.forEach((row, index, arr) => {
+          const rows = response.values.map((row, index, arr) => {
+            const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
+              newRow.bindGoogleApis(this.service, this.id, this.auth);
+              return newRow;
+          });
+          rows.forEach((row, index, arr) => {
             const user: User = opts.users.filter((item, index, arr) => item.name === row.name)[0];
             const punch = Punch.parseRaw(user, row, this, opts.projects);
             if (punch && user) {

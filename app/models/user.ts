@@ -330,7 +330,7 @@ export class User {
     });
   }
   toRawPayroll(start, end) {
-    let row = new Rows.PayrollReportsRow({ save: null, del: null });
+    let row = new Rows.PayrollReportsRow([], '');
 
     row.date = moment.tz(TIMEZONE).format('M/DD/YYYY');
     row.name = this.name;
@@ -404,7 +404,7 @@ export class User {
       slack: this.slack,
       projects: projectsForPeriod
     };
-    return row.raw;
+    return row;
   }
   updateRow() {
     return new Promise<boolean>((resolve, reject) => {

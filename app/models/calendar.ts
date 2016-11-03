@@ -69,10 +69,10 @@ export class CalendarEvent {
     return this.date.diff(moment(), 'days');
   }
   toEventRow() {
-    const row = this.row || new Rows.EventsRow({ save: null, del: null });
+    const row = this.row || new Rows.EventsRow([], '');
     row.date = row.date || this.date.format('MM/DD/YYYY');
     row.name = row.name || this.name;
-    return row.raw;
+    return row;
   }
   async updateRow() {
     return new Promise<void>((resolve, reject) => {

@@ -25,7 +25,8 @@
   "dependencies": {
     "botkit": "^0.4.0",
     "botkit-storage-firebase": "^1.0.0",
-    "google-spreadsheet": "^2.0.3",
+    "google-auth-library": "^0.9.9",
+    "googleapis": "^14.1.0",
     "moment": "^2.15.1",
     "moment-range": "^2.2.0",
     "moment-timezone": "^0.5.5",

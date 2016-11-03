@@ -1,7 +1,14 @@
-[{
-    "eventdate": "1/17/2016",
-    "eventname": "dog time"
-}, {
-    "eventdate": "1/24/2016",
-    "eventname": "a brief moment of rest"
-}]
+[
+    [
+        "Event Date",
+        "Event Name"
+    ],
+    [
+        "1/17/2016",
+        "dog time"
+    ],
+    [
+        "1/24/2016",
+        "a brief moment of rest"
+    ]
+]

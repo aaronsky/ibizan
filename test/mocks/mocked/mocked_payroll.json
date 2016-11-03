@@ -1,11 +1,13 @@
-[{
-    "payrolldate": "",
-    "employeename": "",
-    "paidhours": "",
-    "unpaidhours": "",
-    "loggedhours": "",
-    "vacationhours": "",
-    "sickhours": "",
-    "overtimehours": "",
-    "holidayhours": ""
-}]
+[
+    [
+        "Payroll Date",
+        "Employee Name",
+        "Paid Hours",
+        "Unpaid Hours",
+        "Logged Hours",
+        "Vacation Hours",
+        "Sick Hours",
+        "Overtime Hours",
+        "Holiday Hours"
+    ]
+]

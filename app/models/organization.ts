@@ -1,3 +1,4 @@
+import { App } from '../app';
 
 import * as moment from 'moment';
 
@@ -5,9 +6,16 @@ import { Rows } from '../shared/rows';
 import { Console } from '../logger';
 import { TeamConfig } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
-import { Spreadsheet, GoogleAuth } from './sheet';
+import { Spreadsheet } from './sheet';
 import { Project } from './project';
 import { User, Settings } from './user';
+
+interface GoogleAuth {
+    clientId: string;
+    clientSecret: string;
+    redirectUri: string;
+    token?: string;
+}
 
 export class Organization {
     readonly name: string = 'Unnamed organization';
@@ -30,29 +38,23 @@ export class Organization {
         this.initTime = moment();
         this.spreadsheet = new Spreadsheet(config.google.sheetId);
 
-        if (this.spreadsheet.sheet && config.google.clientEmail && config.google.privateKey) {
+        if (this.spreadsheet.id) {
             this.sync({
-                client_email: config.google.clientEmail,
-                private_key: config.google.privateKey
-            })
-                .then(() => Console.info('Options loaded'))
-                .catch((err) => Console.error("Failed to sync", err));
+                clientId: App.config.google.clientId,
+                clientSecret: App.config.google.clientSecret,
+                redirectUri: App.config.google.redirectUri,
+                token: App.config.google.token
+            }).then(() => Console.info('Options loaded')).catch(err => Console.error("Failed to sync", err));
         } else {
             Console.warn('Sheet not initialized, no spreadsheet ID was provided');
         }
     }
     ready() {
-        if (this.spreadsheet) {
-            return this.spreadsheet.initialized;
-        }
-        return false;
+        return this.spreadsheet.initialized;
     }
     async sync(auth?: GoogleAuth) {
         try {
-            await this.spreadsheet.authorize(auth || {
-                client_email: this.config.google.clientEmail,
-                private_key: this.config.google.privateKey
-            });
+            await this.spreadsheet.authorize(auth.clientId, auth.clientSecret, auth.redirectUri, auth.token);
             let opts = await this.spreadsheet.loadOptions();
             if (opts) {
                 let old;
@@ -134,7 +136,7 @@ export class Organization {
         const calendarEvent = new CalendarEvent(dateObject, name);
         const calendar = this.calendar;
         try {
-            await this.spreadsheet.addEventRow(calendarEvent.toEventRow());
+            await this.spreadsheet.newRow(calendarEvent.toEventRow(), 'events');
         } catch (err) {
             throw `Could not add event row: ${err}`;
         }

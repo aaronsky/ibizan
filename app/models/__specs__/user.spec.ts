@@ -3,6 +3,7 @@ import 'mocha';
 const { expect } = require('chai');
 import * as moment from 'moment-timezone';
 
+import { Rows } from '../../shared/rows';
 import { User, Timetable } from '../user';
 
 describe('Timetable', () => {
@@ -114,7 +115,7 @@ describe('Timetable', () => {
   });
 });
 
-const TEST_ROW = require('../../../test/mocks/mocked/mocked_employees')[0];
+const TEST_ROW = require('../../../test/mocks/mocked/mocked_users')[0];
 
 describe('User', () => {
   beforeEach(() => {
@@ -131,7 +132,8 @@ describe('User', () => {
   });
   describe('.parse(row)', () => {
     it('should return a new User when given a row', () => {
-      const user = User.parse(TEST_ROW);
+      const row = new Rows.UsersRow(TEST_ROW, '');
+      const user = User.parse(row);
       expect(user).to.exist;
     });
   });
