@@ -1,97 +1,183 @@
-
+const path = require('path');
+const fs = require('fs');
 const { HEADERS } = require('../../app/shared/rows');
 
-function createDataSheet (name, file, headers) {
-  function Row() {
-    let i = 0;
-    for (let key in headers) {
-      const rowName = headers[key];
-      this[rowName] = arguments[i] || '';
-      i += 1;
-    }
-    this.save = function(cb) {
-      cb();
-    };
-    this.del = function(cb) {
-      cb();
-    };
-  }
-
-  const rows = [];
-  require('./mocked/mocked_' + file + '.json').forEach(function (element, index, arr) {
-    const args = [];
-    for (let key in element) {
-      args.push(element[key]);
-    }
-    rows.push(new (function () { Row.apply(this, args); }));
-  });
-  return {
-    title: name,
-    _rows: rows,
-    getRows: function (params, cb) {
-      if (params && !cb && typeof params === 'function') {
-        cb = params;
-      }
-      if (!(this._rows)) {
-        cb(new Error('Sheet rows undefined'));
-      }
-      cb(null, this._rows);
+const mockService = {
+  spreadsheets: {
+    create: (request, callback) => {
+      fakeApiRequest('spreadsheets.create', request, callback);
     },
-    addRow: function (row, cb) {
-      if (!row) {
-        cb(new Error('No row passed'));
-      } else if (!(this._rows)) {
-        cb(new Error('Sheet rows undefined'));
+    get: (request, callback) => {
+      fakeApiRequest('spreadsheets.get', request, callback);
+    },
+    sheets: {
+
+    },
+    values: {
+      append: (request, callback) => {
+        fakeApiRequest('spreadsheets.values.append', request, callback);
+      },
+      clear: (request, callback) => {
+        fakeApiRequest('spreadsheets.values.clear', request, callback);
+      },
+      get: (request, callback) => {
+        fakeApiRequest('spreadsheets.values.get', request, callback);
+      },
+      update: (request, callback) => {
+        fakeApiRequest('spreadsheets.values.update', request, callback);
       }
-      row.save = function(cb) {
-        cb();
-      };
-      row.del = function(cb) {
-        cb();
-      };
-      const size = this._rows.length;
-      this._rows.push(row);
-      if (this._rows.length !== size + 1) {
-        cb(new Error('Row was not added'));
-      }
-      cb();
     }
   }
 }
 
-const createRawDataSheet = function () { return createDataSheet('Raw Data', 'rawdata', HEADERS.rawdata); };
-const createPayrollReportSheet = function () { return createDataSheet('Payroll Reports', 'payroll', HEADERS.payrollreports); };
-const createEmployeeSheet = function () { return createDataSheet('Employees', 'employees', HEADERS.users); };
-const createVariableSheet = function () { return createDataSheet('Variables', 'variables', HEADERS.variables); };
-const createProjectsSheet = function () { return createDataSheet('Projects', 'projects', HEADERS.projects); };
-const createEventsSheet = function () { return createDataSheet('Events', 'events', HEADERS.events); };
+function fakeApiRequest(apiMethod, request, callback) {
+  let [domain, methodOrDomain, method] = apiMethod.split('.');
+  if (!method) {
+    method = methodOrDomain;
+  } else {
+    domain = methodOrDomain;
+  }
+  if (domain === 'spreadsheets') {
+    if (method === 'get') {
+      getInfo(callback);
+    }
+  } else if (domain === 'values') {
+    if (method === 'get') {
+      getValues(request.range, request.majorDimension, callback)
+    }
+  }
+}
+
+function getInfo(callback) {
+  const response = {
+    properties: {
+      title: mockSpreadsheet.title
+    },
+    sheets: [
+      {
+
+      },
+      {
+
+      },
+      {
+
+      },
+      {
+
+      },
+      {
+
+      },
+      {
+
+      }
+    ]
+  }
+  if (callback && typeof callback === 'function') {
+    callback(response);
+  }
+}
+
+function getValues(range, dimension, callback) {
+  if (!callback && dimension && typeof dimension === 'function') {
+    callback = dimension;
+    dimension = null;
+  }
+  const [sheet, minCell, maxCell] = parseRange(range);
+  const worksheet = mockSpreadsheet.getSheet(sheet);
+  const values = worksheet.getValues(minCell, maxCell);
+  const response = {
+    range: range,
+    majorDimension: dimension || 'DIMENSION_UNSPECIFIED',
+    values: values
+  };
+  if (callback && typeof callback === 'function') {
+    callback(null, response);
+  }
+}
+
+function parseRange(range) {
+  // Sheet!ColRow:ColRow
+  const [sheetName, cells] = range.split('!');
+  let minCell, maxCell;
+  if (cells) {
+    [minCell, maxCell] = cells.split(':');
+  }
+  return [sheetName, minCell, maxCell];
+}
 
 const mockSpreadsheet = {
   title: 'test sheet',
   id: 'test',
+  getSheet: (sheetName) => {
+    if (!sheetName) {
+      return worksheets[0];
+    } else {
+      if (sheetName === 'Variables') {
+        return worksheets[0];
+      } else if (sheetName === 'Projects') {
+        return worksheets[1];
+      } else if (sheetName === 'Raw Data') {
+        return worksheets[2];
+      } else if (sheetName === 'Employees') {
+        return worksheets[3];
+      } else if (sheetName === 'Payroll Reports') {
+        return worksheets[4];
+      } else if (sheetName === 'Events') {
+        return worksheets[5];
+      }
+    }
+  },
   worksheets: [
-    createRawDataSheet(),
-    createPayrollReportSheet(),
-    createEmployeeSheet(),
-    createVariableSheet(),
-    createProjectsSheet(),
-    createEventsSheet()
+    createDataSheet.call(null, 'Variables', 'variables', HEADERS.rawdata),
+    createDataSheet.call(null, 'Projects', 'projects', HEADERS.rawdata),
+    createDataSheet.call(null, 'Raw Data', 'rawdata', HEADERS.rawdata),
+    createDataSheet.call(null, 'Employees', 'users', HEADERS.rawdata),
+    createDataSheet.call(null, 'Payroll Reports', 'payroll', HEADERS.rawdata),
+    createDataSheet.call(null, 'Events', 'events', HEADERS.rawdata)
   ]
 };
 
-const mockGoogleSpreadsheet = {
-  _mockSpreadsheet: mockSpreadsheet,
-  useServiceAccountAuth: function (auth, cb) {
-    if (auth.client_email && auth.private_key) {
-      cb();
+function createDataSheet(name, file, headers) {
+  const model = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'mocked', 'mocked_' + file + '.json'), 'utf-8'));
+  model.name = name;
+  model.getValues = (minCell, maxCell) => {
+    let minCol, minRow, maxCol, maxRow;
+    if (!minCell && !maxCell) {
+      minCol = 0;
+      minRow = 0;
+      maxCol = this.length;
+      maxRow = this[0].length;
     } else {
-      cb(new Error('Authorization failed: Either client email or private key weren\'t passed in auth object'));
+      const columnRegex = /[A-Za-z]+/;
+      let match = minCell.match(columnRegex);
+      if (match && match[0]) {
+        match = match[0].toUpperCase();
+        minCol = match.charCodeAt(0) - 65;
+        minRow = (+minCell.replace(minCol, '') || 1) - 1;
+      } else {
+        minRow = (+minCell || 1) - 1;
+      }
+      match = maxCell.match(columnRegex);
+      if (match && match[0]) {
+        match = match[0].toUpperCase();
+        maxCol = match.charCodeAt(0) - 65;
+        maxRow = ((+maxCell.replace(maxCell, '') - 1) || this[0].length);
+      } else {
+        maxRow = +maxCell || this.length;
+      }
     }
-  },
-  getInfo: function (cb) {
-    //pass error some day
-    cb(null, this._mockSpreadsheet);
-  }
-};
+    const values = [];
+    for (let y = minRow; y < maxRow; y++) {
+      const segment = [];
+      for (let x = minCol; x < maxCol; x++) {
+        segment.push(this[y][x]);
+      }
+      values.push(segment);
+    }
+  };
+  return model;
+}
 
-module.exports = mockGoogleSpreadsheet;
+module.exports = mockService;

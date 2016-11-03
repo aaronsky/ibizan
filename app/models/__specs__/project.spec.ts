@@ -5,20 +5,8 @@ const { expect } = require('chai');
 import { Rows } from '../../shared/rows';
 import { Project } from '../project';
 
-const TEST_ROW = new Rows.ProjectsRow({
-  project: '#production',
-  weekstarting: '1/1/2014',
-  totalofhours: '100',
-  save: () => {},
-  del: () => {}
-});
-const BAD_ROW = new Rows.ProjectsRow({
-  project: '#production',
-  weekstarting: '1/1/2014',
-  totalofhours: 'jeff',
-  save: () => {},
-  del: () => {}
-});
+const TEST_ROW = new Rows.ProjectsRow(['#production', '1/1/2014', '100'], '');
+const BAD_ROW = new Rows.ProjectsRow(['#production', '1/1/2014', 'jeff'], '');
 
 describe('Project', () => {
   describe('.parse(row)', () => {

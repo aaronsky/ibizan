@@ -3,16 +3,14 @@ import 'mocha';
 import * as moment from 'moment';
 const { expect, assert } = require('chai');
 
-const { MockSheet, MockConfig } = require('../../../test/mocks');
+const { MockSheetService, MockConfig } = require('../../../test/mocks');
 
 import { Organization } from '../organization';
 
 describe('Organization', () => {
   beforeEach(async () =>  {
     this.organization = new Organization(MockConfig.team);
-    if (!this.organization.spreadsheet.sheet) {
-      this.organization.spreadsheet.sheet = MockSheet;
-    }
+    this.organization.spreadsheet.service = MockSheetService;
     await this.organization.sync({
       client_email: 'bad@email.com',
       private_key: 'bad key'

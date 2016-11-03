@@ -316,14 +316,14 @@ export class Punch {
     }
     return punch;
   }
-  static parseRaw(user: User, row: Rows.RawDataRow, spreadsheet: { saveRow: (row: Rows.RawDataRow) => Promise<void> }, projects: Project[] = []) {
+  static parseRaw(user: User, row: Rows.RawDataRow, spreadsheet: { saveRow: (row: Rows.Row, sheet: Rows.SheetKind) => Promise<Rows.Row> }, projects: Project[] = []) {
     const date = moment.tz(row.today, 'MM/DD/YYYY', TIMEZONE);
 
     // UUID sanity check
     if (row.id.length != 36) {
       Logger.Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
       row.id = uuid.v1();
-      spreadsheet.saveRow(row);
+      spreadsheet.saveRow(row, 'rawData');
     }
 
     let mode;
@@ -386,7 +386,7 @@ export class Punch {
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
         row.totalTime = `${hours}:${minute_str}:00.000`;
-        spreadsheet.saveRow(row).catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
+        spreadsheet.saveRow(row, 'rawData').catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
       }
     }
 
@@ -478,7 +478,7 @@ export class Punch {
   }
   toRawRow(name: string) {
     const today = moment.tz(TIMEZONE);
-    const row = this.row || new Rows.RawDataRow({ save: null, del: null });
+    const row = this.row || new Rows.RawDataRow([], '');
     row.id = row.id || uuid.v1();
     row.today = row.today || this.date.format('MM/DD/YYYY');
     row.name = row.name || name;
@@ -516,7 +516,7 @@ export class Punch {
         }
       }
     }
-    return row.raw;
+    return row;
   }
   assignRow(row: Rows.RawDataRow) {
     this.row = row;

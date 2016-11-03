@@ -240,7 +240,7 @@ export default function (controller: Controller) {
       }
       const row = punch.toRawRow(user.name);
       try {
-        await organization.spreadsheet.saveRow(row);
+        await organization.spreadsheet.saveRow(row, 'rawData');
         user.directMessage(`Added ${operator} ${results}`, Logger);
         Logger.Slack.addReaction('dog2', message);
       } catch (err) {

@@ -11,31 +11,31 @@ import { Organization } from './models/organization';
 let organization: Organization;
 
 export class App {
-    config: IbizanConfig;
+    static config: IbizanConfig;
     controller: Controller;
     bots: { [token: string]: Bot };
     orgs: { [token: string]: Organization };
     helpEntries: string[];
 
     constructor(config: IbizanConfig) {
-        this.config = config;
+        App.config = config;
         this.bots = {};
         this.orgs = {};
     }
     start() {
         this.controller = Botkit.slackbot({
             storage: FirebaseStorage({
-                firebase_uri: this.config.storageUri
+                firebase_uri: App.config.storageUri
             }),
             logger: Console,
             stats_optout: true
         }).configureSlackApp({
-            clientId: this.config.slack.clientId,
-            clientSecret: this.config.slack.clientSecret,
-            scopes: this.config.slack.scopes
+            clientId: App.config.slack.clientId,
+            clientSecret: App.config.slack.clientSecret,
+            scopes: App.config.slack.scopes
         });
 
-        this.controller.setupWebserver(this.config.port, this.onSetupWebserver.bind(this));
+        this.controller.setupWebserver(App.config.port, this.onSetupWebserver.bind(this));
         this.controller.on('create_bot', this.onCreateBot.bind(this));
         this.controller.on('create_team', this.onCreateTeam.bind(this));
         this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
@@ -75,7 +75,15 @@ export class App {
     onCreateTeam(bot: Bot, team: Team) {
         // create config
         // TODO: This variable being undefined crashes ibizan. The todo is to work on the solution for per-team sheets, or use a hack job in the interim.
-        let newConfig: TeamConfig;
+        let newConfig: TeamConfig = {
+            name: team.name,
+            admins: [],
+            google: {
+                sheetId: '1owlFh2wlnerIPDSLziDUl4jECZC4pYJ0gk3IQ71OLRI'
+            }
+        };
+
+        // authorize
 
         this.controller.storage.teams.save({ 
             id: team.id,
@@ -85,6 +93,8 @@ export class App {
             config: newConfig
         }, (err) => {
             if (err) {
+                this.controller.log.error('Error saving team to database: ', err);
+            } else {
 
             }
         });

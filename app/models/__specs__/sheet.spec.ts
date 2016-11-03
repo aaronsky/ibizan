@@ -3,7 +3,7 @@ import 'mocha';
 const { expect, assert } = require('chai');
 import * as moment from 'moment';
 
-const { MockSheet, MockConfig } = require('../../../test/mocks');
+const { MockSheetService, MockConfig } = require('../../../test/mocks');
 
 import { Organization } from '../organization';
 import { Spreadsheet } from '../sheet';
@@ -15,15 +15,12 @@ describe('Sheet', () => {
   beforeEach(() => {
     const sheetId = 'test';
     this.sheet = new Spreadsheet(sheetId);
-    this.sheet.sheet = MockSheet;
+    this.sheet.service = MockSheetService;
   });
-  describe('#authorize(auth)', () => {
+  describe('#authorize(clientId, clientSecret, redirectUri, token?)', () => {
     it('should authorize', async () => {
       try {
-        await this.sheet.authorize({
-          client_email: 'bad@email.com',
-          private_key: 'bad key'
-        });
+        await this.sheet.authorize('a client id', 'a client secret', 'https://nope.com', 'a token');
         assert.isOk(true);
       } catch (err) {
         assert.fail('success', err);
@@ -40,10 +37,10 @@ describe('Sheet', () => {
       }
     });
   });
-  describe('#saveRow(row, rowName)', () => {
+  describe('#saveRow(row, sheet)', () => {
 
   });
-  describe('#newRow(sheet, row, rowName)', () => {
+  describe('#newRow(row, sheet)', () => {
 
   });
   describe('#enterPunch(punch, user)', () => {

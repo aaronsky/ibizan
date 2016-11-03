@@ -3,7 +3,7 @@ import 'mocha';
 const { expect } = require('chai');
 import * as moment from 'moment';
 
-const { MockConfig, MockSheet } = require('../../../test/mocks');
+const { MockConfig, MockSheetService } = require('../../../test/mocks');
 
 import { Rows } from '../../shared/rows';
 import { Organization } from '../organization';
@@ -16,7 +16,7 @@ org.projects = [
   new Project('#production', moment(), 0),
   new Project('#camp-fangamer', moment(), 0)
 ];
-org.spreadsheet.sheet = MockSheet;
+org.spreadsheet.service = MockSheetService;
 
 describe('Punch', () => {
   describe('#constructor(mode, times, projects, notes)', () => {
@@ -412,7 +412,7 @@ describe('Punch', () => {
     });
     it('should assign a row if a row is passed in', () => {
       const punch = Punch.parse(org, this.user, 'in', 'in');
-      punch.assignRow(new Rows.RawDataRow({ save: () => {}, del: () => {} }));
+      punch.assignRow(new Rows.RawDataRow([], ''));
       expect(punch.row).to.exist;
     });
   });

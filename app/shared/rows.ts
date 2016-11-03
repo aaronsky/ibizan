@@ -1,104 +1,138 @@
+import * as assert from 'assert';
+
 export const HEADERS = {
-    variables: {
-        vacation: 'vacationhoursforsalariedemployees',
-        sick: 'sickhoursforsalariedemployees',
-        houndFrequency: 'defaulthoundingfrequencyinhours',
-        payweek: 'paydayforareferencepoint',
-        clockChannel: 'timeloggingchannel',
-        exemptChannels: 'houndingchannelexemptions',
-        holidays: 'workholidays',
-        holidayOverride: 'date',
-    },
-    projects: {
-        name: 'project',
-        start: 'weekstarting',
-        total: 'totalofhours',
-    },
-    users: {
-        slackname: 'slackusername',
-        name: 'employeename',
-        salary: 'salary',
-        start: 'activehoursbegin',
-        end: 'activehoursend',
-        timezone: 'timezone',
-        shouldHound: 'shouldhound',
-        houndFrequency: 'houndfrequency',
-        vacationAvailable: 'totalvacationdaysavailable',
-        vacationLogged: 'totalvacationdayslogged',
-        sickAvailable: 'totalsickdaysavailable',
-        sickLogged: 'totalsickdayslogged',
-        unpaidLogged: 'totalunpaiddayslogged',
-        overtime: 'totalovertime',
-        totalLogged: 'totalloggedhours',
-        averageLogged: 'averagehoursloggedweek',
-        lastPing: 'lastping',
-    },
-    rawdata: {
-        id: 'punchid',
-        today: 'dateentered',
-        name: 'employee',
-        in: 'in',
-        out: 'out',
-        totalTime: 'elapsedtime',
-        blockTime: 'block',
-        notes: 'notes',
-        project1: 'project1',
-        project2: 'project2',
-        project3: 'project3',
-        project4: 'project4',
-        project5: 'project5',
-        project6: 'project6',
-    },
-    payrollreports: {
-        date: 'payrolldate',
-        name: 'employeename',
-        paid: 'paidhours',
-        unpaid: 'unpaidhours',
-        logged: 'loggedhours',
-        vacation: 'vacationhours',
-        sick: 'sickhours',
-        overtime: 'overtimehours',
-        holiday: 'holidayhours',
-    },
-    events: {
-        date: 'eventdate',
-        name: 'eventname',
-    },
+    variables: [
+        { field: 'vacation', header: 'Vacation Hours (for Salaried Employees)' },
+        { field: 'sick', header: 'Sick Hours (for Salaried Employees)' },
+        { field: 'houndFrequency', header: 'Default Hounding Frequency in Hours' },
+        { field: 'payweek', header: 'Pay Day for a Reference Point' },
+        { field: 'clockChannel', header: 'Time Logging Channel' },
+        { field: 'exemptChannels', header: 'Hounding Channel Exemptions' },
+        { field: 'holidays', header: 'Work Holidays' },
+        { field: 'holidayOverride', header: 'Date' }
+    ],
+    projects: [
+        { field: 'name', header: 'Project' },
+        { field: 'start', header: 'Week Starting' },
+        { field: 'total', header: 'Total # of Hours' }
+    ],
+    users: [
+        { field: 'slackname', header: 'Slack User Name' },
+        { field: 'name', header: 'Employee Name' },
+        { field: 'salary', header: 'Salary?' },
+        { field: 'start', header: 'Active Hours (Begin)' },
+        { field: 'end', header: 'Active Hours (End)' },
+        { field: 'timezone', header: 'Time Zone' },
+        { field: 'shouldHound', header: 'Should Hound?' },
+        { field: 'houndFrequency', header: 'Hound Frequency' },
+        { field: 'vacationAvailable', header: 'Total Vacation Days Available' },
+        { field: 'vacationLogged', header: 'Total Vacation Days Logged' },
+        { field: 'sickAvailable', header: 'Total Sick Days Available' },
+        { field: 'sickLogged', header: 'Total Sick Days Logged' },
+        { field: 'unpaidLogged', header: 'Total Unpaid Days Logged' },
+        { field: 'overtime', header: 'Total Overtime' },
+        { field: 'totalLogged', header: 'Total Logged Hours' },
+        { field: 'averageLogged', header: 'Average Hours Logged / Week' },
+        { field: 'lastPing', header: 'Last Ping' }
+    ],
+    rawData: [
+        { field: 'id', header: 'Punch ID' },
+        { field: 'today', header: 'Date Entered' },
+        { field: 'name', header: 'Employee' },
+        { field: 'in', header: 'In' },
+        { field: 'out', header: 'Out' },
+        { field: 'totalTime', header: 'Elapsed Time' },
+        { field: 'blockTime', header: 'Block' },
+        { field: 'notes', header: 'Notes' },
+        { field: 'project1', header: 'Project 1' },
+        { field: 'project2', header: 'Project 2' },
+        { field: 'project3', header: 'Project 3' },
+        { field: 'project4', header: 'Project 4' },
+        { field: 'project5', header: 'Project 5' },
+        { field: 'project6', header: 'Project 6' }
+    ],
+
+    payrollReports: [
+        { field: 'date', header: 'Payroll Date' },
+        { field: 'name', header: 'Employee Name' },
+        { field: 'paid', header: 'Paid Hours' },
+        { field: 'unpaid', header: 'Unpaid Hours' },
+        { field: 'logged', header: 'Logged Hours' },
+        { field: 'vacation', header: 'Vacation Hours' },
+        { field: 'sick', header: 'Sick Hours' },
+        { field: 'overtime', header: 'Overtime Hours' },
+        { field: 'holiday', header: 'Holiday Hours' }
+    ],
+    events: [
+        { field: 'date', header: 'Event Date' },
+        { field: 'name', header: 'Event Name' }
+    ]
 };
 
 export namespace Rows {
-    interface RawGoogleRow {
-        [props: string]: any;
-        save: (cb: (err: Error) => void) => void;
-        del: (cb: (err: Error) => void) => void;
-    }
+    export type SheetKind = 'variables' | 'projects' | 'users' | 'rawData' | 'payrollReports' | 'events';
+    export abstract class Row {
+        kind: SheetKind;
+        range: string;
 
-    type RowKind = 'variables' | 'projects' | 'users' | 'rawdata' | 'payrollreports' | 'events';
-
-    abstract class Row {
-        kind: RowKind;
-        protected _raw: any;
-
-        constructor(kind: RowKind, raw: RawGoogleRow) {
+        constructor(values: any[], range: string, kind: SheetKind) {
             this.kind = kind;
-            const headers = HEADERS[kind];
-            for (let key in headers) {
-                this[key] = raw[headers[key]];
-            }
-            this._raw = raw;
+            this.fromGoogleValues(values, range);
         }
-        get raw(): any {
+        static formatRowRange(sheetTitle: string, index: number) {
+            const formattedRange = `${sheetTitle}!${index}:${index}`;
+            return formattedRange;
+        }
+        bindGoogleApis(service, sheetId, auth) {
+            this.save = this.save.bind(this, service, sheetId, auth);
+            this.del = this.del.bind(this, service, sheetId, auth);
+        }
+        fromGoogleValues(values: any[], range) {
+            this.range = range;
             const headers = HEADERS[this.kind];
-            for (let key in headers) {
-                this._raw[headers[key]] = this[key];
+            for (let i = 0; i < headers.length; i++) {
+                this[headers[i].field] = values[i] || '';
             }
-            return this._raw;
         }
-        save(cb: (err: Error) => void) {
-            this._raw.save(cb);
+        toGoogleValues() {
+            const values = [];
+            const headers = HEADERS[this.kind];
+            for (let i = 0; i < headers.length; i++) {
+                values.push(headers[i].field);
+            }
+            return {
+                range: this.range,
+                majorDimension: 'ROWS',
+                values
+            };
         }
-        del(cb: (err: Error) => void) {
-            this._raw.del(cb);
+        save(callback: (err: string | Error) => void) {
+            const [service, sheetId, auth] = Array.prototype.slice.call(arguments);
+            const values = this.toGoogleValues();
+            const request = {
+                spreadsheetId: sheetId,
+                range: values.range,
+                auth: auth,
+                resource: values
+            };
+            service.spreadsheets.values.update(request, (err, response) => {
+                if (callback && typeof callback === 'function') {
+                    callback(err);
+                }
+            });
+        }
+        del(callback: (err: Error) => void) {
+            const [service, sheetId, auth] = Array.prototype.slice.call(arguments);
+            const request = {
+                spreadsheetId: sheetId,
+                range: this.range,
+                auth: auth
+            };
+            service.spreadsheets.values.clear(request, (err, response) => {
+                if (callback && typeof callback === 'function') {
+                    callback(err);
+                }
+            });
         }
     }
     export class VariablesRow extends Row {
@@ -110,16 +144,16 @@ export namespace Rows {
         exemptChannel: string;
         holidays: string;
         holidayOverride: string;
-        constructor(raw: RawGoogleRow) {
-            super('variables', raw);
+        constructor(values: any[], range: string) {
+            super(values, range, 'variables');
         }
     };
     export class ProjectsRow extends Row {
         name: string;
         start: string;
         total: string;
-        constructor(raw: RawGoogleRow) {
-            super('projects', raw);
+        constructor(values: any[], range: string) {
+            super(values, range, 'projects');
         }
     };
     export class UsersRow extends Row {
@@ -140,8 +174,8 @@ export namespace Rows {
         totalLogged: string;
         averageLogged: string;
         lastPing: string;
-        constructor(raw: RawGoogleRow) {
-            super('users', raw);
+        constructor(values: any[], range: string) {
+            super(values, range, 'users');
         }
     };
     export class RawDataRow extends Row {
@@ -159,8 +193,8 @@ export namespace Rows {
         project4: string;
         project5: string;
         project6: string;
-        constructor(raw: RawGoogleRow) {
-            super('rawdata', raw);
+        constructor(values: any[], range: string) {
+            super(values, range, 'rawData');
         }
     };
     export class PayrollReportsRow extends Row {
@@ -174,15 +208,15 @@ export namespace Rows {
         overtime: string;
         holiday: string;
         extra: any;
-        constructor(raw: RawGoogleRow) {
-            super('payrollreports', raw);
+        constructor(values: any[], range: string) {
+            super(values, range, 'payrollReports');
         }
     };
     export class EventsRow extends Row {
         date: string;
         name: string;
-        constructor(raw: RawGoogleRow) {
-            super('events', raw);
+        constructor(values: any[], range: string) {
+            super(values, range, 'events');
         }
     };
 }

@@ -1,61 +1,53 @@
-[{
-    "punchid": "67cb5fc0-e64d-11e5-a2a8-cf5ff93ad50f",
-    "dateentered": "3/9/2016",
-    "employee": "Aaron Sky",
-    "in": "3/9/2016 14:19:43",
-    "out": "3/9/2016 16:37:40",
-    "elapsedtime": "2:18:00",
-    "block": "",
-    "notes": "where am i\nsent keefry to the ocean",
-    "project1": "",
-    "project2": "",
-    "project3": "",
-    "project4": "",
-    "project5": "",
-    "project6": ""
-}, {
-    "punchid": "ee6eecc0-e64f-11e5-bd61-6715b3979ddf",
-    "dateentered": "3/9/2016",
-    "employee": "Aaron Sky",
-    "in": "3/9/2016 14:37:48",
-    "out": "3/9/2016 20:06:08",
-    "elapsedtime": "5:28:00",
-    "block": "",
-    "notes": "",
-    "project1": "",
-    "project2": "",
-    "project3": "",
-    "project4": "",
-    "project5": "",
-    "project6": ""
-}, {
-    "punchid": "539e5fa0-e66d-11e5-ba3d-135f44f040bb",
-    "dateentered": "3/9/2016",
-    "employee": "Aaron Sky",
-    "in": "3/9/2016 18:08:13",
-    "out": "3/11/2016 21:17:21",
-    "elapsedtime": "51:09:00",
-    "block": "",
-    "notes": "",
-    "project1": "",
-    "project2": "",
-    "project3": "",
-    "project4": "",
-    "project5": "",
-    "project6": ""
-}, {
-    "punchid": "5a31c8f0-e809-11e5-bb96-0f358ca476f8",
-    "dateentered": "3/11/2016",
-    "employee": "Aaron Sky",
-    "in": "",
-    "out": "",
-    "elapsedtime": "",
-    "block": "3:42:00",
-    "notes": "",
-    "project1": "",
-    "project2": "",
-    "project3": "",
-    "project4": "",
-    "project5": "",
-    "project6": ""
-}]
+[
+    [
+        "Punch ID",
+        "Date Entered",
+        "Employee",
+        "In",
+        "Out",
+        "Elapsed Time",
+        "Block",
+        "Notes",
+        "Project 1",
+        "Project 2",
+        "Project 3",
+        "Project 4",
+        "Project 5",
+        "Project 6"
+    ],
+    [
+        "67cb5fc0-e64d-11e5-a2a8-cf5ff93ad50f",
+        "3/9/2016",
+        "Aaron Sky",
+        "3/9/2016 14:19:43",
+        "3/9/2016 16:37:40",
+        "2:18:00",
+        "",
+        "where am i\nsent keefry to the ocean"
+    ],
+    [
+        "ee6eecc0-e64f-11e5-bd61-6715b3979ddf",
+        "3/9/2016",
+        "Aaron Sky",
+        "3/9/2016 14:37:48",
+        "3/9/2016 20:06:08",
+        "5:28:00"
+    ],
+    [
+        "539e5fa0-e66d-11e5-ba3d-135f44f040bb",
+        "3/9/2016",
+        "Aaron Sky",
+        "3/9/2016 18:08:13",
+        "3/11/2016 21:17:21",
+        "51:09:00"
+    ],
+    [
+        "5a31c8f0-e809-11e5-bb96-0f358ca476f8",
+        "3/11/2016",
+        "Aaron Sky",
+        "",
+        "",
+        "",
+        "3:42:00"
+    ]
+]
