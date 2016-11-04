@@ -149,12 +149,12 @@ export class Spreadsheet {
       });
     });
   }
-  rowsFromSheetData<T>(rawRows: any[], title: string): T[] {
+  rowsFromSheetData<T extends Rows.Row>(rawRows: any[], title: string, ctor: { new (raws: any[], range: string): T; }): T[] {
     return rawRows.reduce((accumulator, row, index, arr) => {
       if (index === 0) {
         return accumulator;
       }
-      const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
+      const newRow = new ctor(row, Rows.Row.formatRowRange(title, index));
       newRow.bindGoogleApis(this.service, this.id, this.auth);
       accumulator.push(newRow);
       return accumulator;
@@ -229,7 +229,7 @@ export class Spreadsheet {
             if (err || !response.values) {
               reject(`Could not get rawData rows: ${err}`);
             }
-            const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title);
+            const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title, Rows.RawDataRow);
             const rowMatches = rows.filter(r => r.id === row.id);
             const rowMatch = rowMatches[0];
             punch.assignRow(rowMatch);
@@ -331,7 +331,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = this.rowsFromSheetData<Rows.VariablesRow>(response.values, title);
+          const rows = this.rowsFromSheetData<Rows.VariablesRow>(response.values, title, Rows.VariablesRow);
           const opts = {
             vacation: 0,
             sick: 0,
@@ -392,7 +392,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = this.rowsFromSheetData<Rows.ProjectsRow>(response.values, title);
+          const rows = this.rowsFromSheetData<Rows.ProjectsRow>(response.values, title, Rows.ProjectsRow);
           let projects: Project[] = [];
           for (let row of rows) {
             const project = Project.parse(row);
@@ -422,7 +422,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = this.rowsFromSheetData<Rows.UsersRow>(response.values, title);
+          const rows = this.rowsFromSheetData<Rows.UsersRow>(response.values, title, Rows.UsersRow);
           let users: User[] = [];
           for (let row of rows) {
             const user = User.parse(row);
@@ -452,7 +452,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = this.rowsFromSheetData<Rows.EventsRow>(response.values, title);
+          const rows = this.rowsFromSheetData<Rows.EventsRow>(response.values, title, Rows.EventsRow);
           let events: CalendarEvent[] = [];
           for (let row of rows) {
             const calendarEvent = CalendarEvent.parse(row);
@@ -482,7 +482,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title);
+          const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title, Rows.RawDataRow);
           rows.forEach((row, index, arr) => {
             const user: User = opts.users.filter((item, index, arr) => item.name === row.name)[0];
             const punch = Punch.parseRaw(user, row, this, opts.projects);

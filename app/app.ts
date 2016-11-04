@@ -10,8 +10,6 @@ import { Organization } from './models/organization';
 
 import * as scripts from './controllers';
 
-let organization: Organization;
-
 export class App {
     static config: IbizanConfig;
     controller: Controller;
