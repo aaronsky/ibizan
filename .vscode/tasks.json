@@ -4,7 +4,10 @@
     "version": "0.1.0",
     "command": "./node_modules/.bin/tsc",
     "isShellCommand": true,
-    "args": ["-p", "."],
+    "args": [
+        "-p",
+        "."
+    ],
     "showOutput": "always",
     "problemMatcher": "$tsc"
 }

@@ -8,6 +8,8 @@ import { Console } from './logger';
 import { IbizanConfig, TeamConfig } from './config';
 import { Organization } from './models/organization';
 
+import * as scripts from './controllers';
+
 let organization: Organization;
 
 export class App {
@@ -73,6 +75,9 @@ export class App {
         });
     }
     onCreateTeam(bot: Bot, team: Team) {
+        this.saveTeam(team);;
+    }
+    saveTeam(team: Team) {
         // create config
         // TODO: This variable being undefined crashes ibizan. The todo is to work on the solution for per-team sheets, or use a hack job in the interim.
         let newConfig: TeamConfig = {
@@ -85,7 +90,7 @@ export class App {
 
         // authorize
 
-        this.controller.storage.teams.save({ 
+        this.controller.storage.teams.save({
             id: team.id,
             createdBy: team.createdBy,
             url: team.url,
@@ -101,6 +106,17 @@ export class App {
     }
     trackBot(bot: Bot, team: Team) {
         this.bots[bot.config.token] = bot;
+        if (!team.config) {
+            // HACK: THIS IS BAD
+            team.config = {
+                name: team.name,
+                admins: [],
+                google: {
+                    sheetId: '1owlFh2wlnerIPDSLziDUl4jECZC4pYJ0gk3IQ71OLRI'
+                }
+            };
+            this.saveTeam(team);
+        }
         this.orgs[bot.config.token] = new Organization(team.config);
     }
     onReceiveSetOrganization(bot: Bot, message, next) {
@@ -128,24 +144,14 @@ export class App {
         }
     }
     loadScripts() {
-        const scriptsDirectory = path.resolve(__dirname, 'controllers');
-        const scriptFiles = fs.readdirSync(scriptsDirectory).sort();
-        for (let file of scriptFiles) {
-            const scriptExtension = path.extname(file);
-            const scriptPath = path.join(scriptsDirectory, path.basename(file, scriptExtension));
-            if (!require.extensions[scriptExtension]) {
-                continue;
-            }
-            try {
-                this.controller.log('Loading script:', file);
-                const script = require(scriptPath).default;
-                if (typeof script === 'function') {
-                    script(this.controller);
-                } else {
-                    this.controller.log.error('Expected script to be a function, instead was a ' + typeof script);
-                }
-            } catch (err) {
-                this.controller.log.error(`Couldn't load ${file}\n`, err);
+        for (let key in scripts) {
+            const script = scripts[key];
+            this.controller.log(`Loading ${key} script`);
+            if (script && typeof script === 'function') {
+                script(this.controller);
+            } else {
+                this.controller.log.error(`Expected ${key} to be a function, instead was a ${typeof script}`);
+                throw new Error(`Couldn't load ${key} script`);
             }
         }
     }

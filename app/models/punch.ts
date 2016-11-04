@@ -437,7 +437,7 @@ export class Punch {
       } else {
         projectName = project.name;
       }
-      
+
       if (!project) {
         continue;
       } else if (this.projects.indexOf(project) === -1) {

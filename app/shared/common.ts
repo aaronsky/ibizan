@@ -71,9 +71,9 @@ export interface Controller {
   createOauthEndpoints(webserver: any, callback: (err: Error, req, res) => void): void;
 };
 
-export interface Team { 
+export interface Team {
   id: string;
-  createdBy: string; 
+  createdBy: string;
   url: string;
   name: string;
   config?: TeamConfig;

@@ -50,40 +50,40 @@ describe('momentForHoliday(holiday)', () => {
     expect(holiday.date()).to.equal(date);
     expect(holiday.year()).to.equal(year);
   }
-  it ('should return \"2016-01-01\" for \"New Year\'s Day\"', () => {
+  it('should return \"2016-01-01\" for \"New Year\'s Day\"', () => {
     testMomentMatchesString('New Year\'s Day', 0, 1, 2016);
   });
-  it ('should return \"2016-04-01\" for \"RAAHB\"', () => {
+  it('should return \"2016-04-01\" for \"RAAHB\"', () => {
     testMomentMatchesString('RAAHB', 3, 1, 2016);
   });
-  it ('should return \"2016-07-04\" for \"Independence Day\"', () => {
+  it('should return \"2016-07-04\" for \"Independence Day\"', () => {
     testMomentMatchesString('Independence Day', 6, 4, 2016);
   });
-  it ('should return \"2016-11-11\" for \"Veteran\'s Day\"', () => {
+  it('should return \"2016-11-11\" for \"Veteran\'s Day\"', () => {
     testMomentMatchesString('Veteran\'s Day', 10, 11, 2016);
   });
-  it ('should return \"2016-12-24\" for \"Christmas Eve\"', () => {
+  it('should return \"2016-12-24\" for \"Christmas Eve\"', () => {
     testMomentMatchesString('Christmas Eve', 11, 24, 2016);
   });
-  it ('should return \"2016-12-25\" for \"Christmas Day\"', () => {
+  it('should return \"2016-12-25\" for \"Christmas Day\"', () => {
     testMomentMatchesString('Christmas Day', 11, 25, 2016);
   });
-  it ('should return \"2016-01-18\" for \"Martin Luther King Jr. Day\"', () => {
+  it('should return \"2016-01-18\" for \"Martin Luther King Jr. Day\"', () => {
     testMomentMatchesString('Martin Luther King Jr. Day', 0, 18, 2016);
   });
-  it ('should return \"2016-02-15\" for \"Washington\'s Birthday\"', () => {
+  it('should return \"2016-02-15\" for \"Washington\'s Birthday\"', () => {
     testMomentMatchesString('Washington\'s Birthday', 1, 15, 2016);
   });
-  it ('should return \"2016-05-30\" for \"Memorial Day\"', () => {
+  it('should return \"2016-05-30\" for \"Memorial Day\"', () => {
     testMomentMatchesString('Memorial Day', 4, 30, 2016);
   });
-  it ('should return \"2016-09-05\" for \"Labor Day\"', () => {
+  it('should return \"2016-09-05\" for \"Labor Day\"', () => {
     testMomentMatchesString('Labor Day', 8, 5, 2016);
   });
-  it ('should return \"2016-11-24\" for \"Thanksgiving Day\"', () => {
+  it('should return \"2016-11-24\" for \"Thanksgiving Day\"', () => {
     testMomentMatchesString('Thanksgiving Day', 10, 24, 2016);
   });
-  it ('should return \"null\" for \"', () => {
+  it('should return \"null\" for \"', () => {
     const date = momentForHoliday('');
     expect(date).to.be.null;
   });

@@ -27,7 +27,7 @@ export default function (controller: Controller) {
   Logger.Slack.setController(controller);
 
   // Generates a random [in/out] hound message
-  function houndMessage (mode: 'in'|'out') {
+  function houndMessage(mode: 'in' | 'out') {
     let message;
     if (message === 'in') {
       message = strings.punchin[Math.floor(Math.random() * strings.punchin.length)];
@@ -64,7 +64,7 @@ export default function (controller: Controller) {
       }
       const now = moment.tz(user.timetable.timezone.name);
       const last = user.settings.lastMessage || {
-        time: now, 
+        time: now,
         channel: channel.name
       };
       user.settings.fromSettings({
@@ -73,7 +73,7 @@ export default function (controller: Controller) {
           channel: channel.name
         }
       });
-      
+
       const [start, end] = user.activeHours;
       const lastPunch = user.lastPunch(['in', 'out', 'vacation', 'sick', 'unpaid']);
       const lastPing = user.settings.lastPing || now;
@@ -82,7 +82,7 @@ export default function (controller: Controller) {
       const timeSinceLastPunch = now.diff(lastPunch.times.slice(-1)[0], 'hours', true) || 0;
       const timeSinceLastMessage = user.settings.lastMessage.time.diff(last.time, 'hours', true) || 0;
       const timeSinceLastPing = +Math.abs(now.diff(lastPing, 'hours', true)) || 0;
-      
+
       Logger.Console.debug(`${user.slack} - ${user.salary}, now: ${now.format('h:mm A, z')}, isInactive: ${user.isInactive()}, start: ${start.format('h:mm A')}, end: ${end.format('h:mm A')}, timeSinceLastPunch: ${timeSinceLastPunch}, timeSinceLastMessage: ${timeSinceLastMessage}, timeSinceStart: ${timeSinceStart}, timeSinceEnd: ${timeSinceEnd}, timeSinceLastPing: ${timeSinceLastPing}, houndFrequency: ${user.settings.houndFrequency}`);
 
       if (user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
@@ -284,7 +284,7 @@ export default function (controller: Controller) {
         const block = parseFloat(blockStr);
         organization.setHoundFrequency(+block.toFixed(2));
         user.directMessage(`Hounding frequency set to every ${block} hours for ${Organization.name}, time until next hound reset.`, Logger);
-        Logger.Slack.addReaction('dog2', message); 
+        Logger.Slack.addReaction('dog2', message);
       } else if (action === 'start' || action === 'enable' || action === 'on') {
         organization.shouldHound = true;
         organization.shouldResetHound = true;
