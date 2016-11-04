@@ -17,19 +17,19 @@ export default function (controller) {
   Logger.Slack.setController(controller);
 
   // bark.bark
-  controller.hears('bark', ['direct_message','direct_mention','mention','ambient'], (bot, message) => {
+  controller.hears('bark', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
     bot.startTyping(message);
     bot.reply(message, random(strings.bark));
   });
 
   //bark.story
-  controller.hears('tell me a story', ['direct_message','direct_mention','mention'], (bot, message) => {
+  controller.hears('tell me a story', ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
     bot.startTyping(message);
     bot.reply(message, random(strings.story));
   });
 
   // bark.goodboy
-  controller.hears('good (dog|boy|pup|puppy|ibizan|ibi)', ['direct_message','direct_mention','mention'], (bot, message) => {
+  controller.hears('good (dog|boy|pup|puppy|ibizan|ibi)', ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
     bot.say({
       text: strings.goodboy,
       channel: message.channel

@@ -56,7 +56,7 @@ export default function (controller) {
   });
 
   // Catch-all for unrecognized commands
-  controller.on('message_received', function(bot, message) {
+  controller.on('message_received', function (bot, message) {
     if (message && message.text && message.text.length < 30 && (message.text.match(REGEX.ibizan) || message.room && message.room.substring(0, 1) === 'D')) {
       bot.reply(`_${bot.random(strings.unknowncommand)} ${bot.random(strings.askforhelp)}_`);
       Logger.Slack.addReaction('question', message);

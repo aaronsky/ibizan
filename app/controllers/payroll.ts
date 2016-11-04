@@ -70,7 +70,7 @@ export default function (controller) {
   //     Logger.Slack.errorToSlack('Failed to produce a salary report', err);
   //   }
   // });
-  
+
   // { id: 'payroll.payroll', userRequired: true, adminOnly: true }
   controller.hears('payroll\s*(.*)?$', async (bot, message) => {
     const organization: Organization = message.organization;

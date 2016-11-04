@@ -39,7 +39,7 @@ export class ConfigFactory {
         const optsConfig = ConfigFactory.loadOpts(optsPath);
         // load args
         const argsConfig = ConfigFactory.loadArgs(args);
-        
+
         const shouldCheckOpts = !!optsConfig;
         const shouldCheckArgs = !!argsConfig;
 

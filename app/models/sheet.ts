@@ -149,6 +149,17 @@ export class Spreadsheet {
       });
     });
   }
+  rowsFromSheetData<T>(rawRows: any[], title: string): T[] {
+    return rawRows.reduce((accumulator, row, index, arr) => {
+      if (index === 0) {
+        return accumulator;
+      }
+      const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
+      newRow.bindGoogleApis(this.service, this.id, this.auth);
+      accumulator.push(newRow);
+      return accumulator;
+    }, []);
+  }
   async enterPunch(punch: Punch, user: User, organization: Organization) {
     let valid;
     if (!punch || !user) {
@@ -218,15 +229,7 @@ export class Spreadsheet {
             if (err || !response.values) {
               reject(`Could not get rawData rows: ${err}`);
             }
-            const rows = response.values.reduce((accumulator, row, index, arr) => {
-              if (index === 0) {
-                return accumulator;
-              }
-              const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
-              newRow.bindGoogleApis(this.service, this.id, this.auth);
-              accumulator.push(newRow);
-              return accumulator;
-            }, []);
+            const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title);
             const rowMatches = rows.filter(r => r.id === row.id);
             const rowMatch = rowMatches[0];
             punch.assignRow(rowMatch);
@@ -328,15 +331,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.reduce((accumulator, row, index, arr) => {
-            if (index === 0) {
-              return accumulator;
-            }
-            const newRow = new Rows.VariablesRow(row, Rows.Row.formatRowRange(title, index));
-            newRow.bindGoogleApis(this.service, this.id, this.auth);
-            accumulator.push(newRow);
-            return accumulator;
-          }, []);
+          const rows = this.rowsFromSheetData<Rows.VariablesRow>(response.values, title);
           const opts = {
             vacation: 0,
             sick: 0,
@@ -397,15 +392,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.reduce((accumulator, row, index, arr) => {
-            if (index === 0) {
-              return accumulator;
-            }
-            const newRow = new Rows.ProjectsRow(row, Rows.Row.formatRowRange(title, index));
-            newRow.bindGoogleApis(this.service, this.id, this.auth);
-            accumulator.push(newRow);
-            return accumulator;
-          }, []);
+          const rows = this.rowsFromSheetData<Rows.ProjectsRow>(response.values, title);
           let projects: Project[] = [];
           for (let row of rows) {
             const project = Project.parse(row);
@@ -435,15 +422,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.reduce((accumulator, row, index, arr) => {
-            if (index === 0) {
-              return accumulator;
-            }
-            const newRow = new Rows.UsersRow(row, Rows.Row.formatRowRange(title, index));
-            newRow.bindGoogleApis(this.service, this.id, this.auth);
-            accumulator.push(newRow);
-            return accumulator;
-          }, []);
+          const rows = this.rowsFromSheetData<Rows.UsersRow>(response.values, title);
           let users: User[] = [];
           for (let row of rows) {
             const user = User.parse(row);
@@ -473,15 +452,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.reduce((accumulator, row, index, arr) => {
-            if (index === 0) {
-              return accumulator;
-            }
-            const newRow = new Rows.EventsRow(row, Rows.Row.formatRowRange(title, index));
-            newRow.bindGoogleApis(this.service, this.id, this.auth);
-            accumulator.push(newRow);
-            return accumulator;
-          }, []);
+          const rows = this.rowsFromSheetData<Rows.EventsRow>(response.values, title);
           let events: CalendarEvent[] = [];
           for (let row of rows) {
             const calendarEvent = CalendarEvent.parse(row);
@@ -511,15 +482,7 @@ export class Spreadsheet {
         if (err) {
           reject(err);
         } else {
-          const rows = response.values.reduce((accumulator, row, index, arr) => {
-            if (index === 0) {
-              return accumulator;
-            }
-            const newRow = new Rows.RawDataRow(row, Rows.Row.formatRowRange(title, index));
-            newRow.bindGoogleApis(this.service, this.id, this.auth);
-            accumulator.push(newRow);
-            return accumulator;
-          }, []);
+          const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title);
           rows.forEach((row, index, arr) => {
             const user: User = opts.users.filter((item, index, arr) => item.name === row.name)[0];
             const punch = Punch.parseRaw(user, row, this, opts.projects);

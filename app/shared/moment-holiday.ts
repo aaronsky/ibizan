@@ -66,9 +66,9 @@ export function momentForHoliday(name: string): moment.Moment {
                 year,
                 month
             });
-            const maxDays = moment({ 
-                year, 
-                month 
+            const maxDays = moment({
+                year,
+                month
             }).endOf('month').date();
             let week = parseInt(comps[1]);
             if (maxDays < 31) {

@@ -25,11 +25,11 @@ describe('Punch', () => {
   describe('.parse(organization, user, command, mode, timezone?)', () => {
     beforeEach(() => {
       const start = moment({
-        day: 3, 
+        day: 3,
         hour: 7
       });
       const end = moment({
-        day: 3, 
+        day: 3,
         hour: 18
       });
       const timetable = new Timetable(start, end, moment.tz.zone('America/New_York'));
@@ -319,15 +319,15 @@ describe('Punch', () => {
       const zone = 'America/New_York';
       const now = moment.tz(zone);
       const start = moment.tz({
-        year: now.year(), 
-        month: now.month(), 
-        day: now.date(), 
+        year: now.year(),
+        month: now.month(),
+        day: now.date(),
         hour: 7
       }, zone);
       const end = moment.tz({
-        year: now.year(), 
-        month: now.month(), 
-        day: now.date(), 
+        year: now.year(),
+        month: now.month(),
+        day: now.date(),
         hour: 18
       }, zone);
       const timetable = new Timetable(start, end, zone);
@@ -473,7 +473,7 @@ describe('Punch', () => {
     it('should return true for a valid punch', () => {
       const punch = Punch.parse(org, this.user, 'in', 'in');
       expect(punch.isValid(this.user)).to.be.true;
-    });     
+    });
   });
   describe('#slackAttachment()', () => {
 
@@ -482,4 +482,3 @@ describe('Punch', () => {
 
   });
 });
-    
