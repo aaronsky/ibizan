@@ -157,7 +157,6 @@ describe('Sheet', () => {
                 const numberDone = await this.sheet.generateReport(reports, start, end);
                 expect(numberDone).to.equal(userCount);
             } catch (err) {
-                console.log(err);
                 assert.fail('success', err);
             }
         });

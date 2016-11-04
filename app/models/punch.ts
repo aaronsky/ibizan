@@ -40,7 +40,7 @@ function parseMode(command: string): [string, string] {
   }
   return ['none', commandWithoutMode];
 }
-function parseTime(command: string, activeStart: any, activeEnd: any, tz: any): [PunchTime, string] {
+function parseTime(command: string, activeStart: any, activeEnd: any, tz: string): [PunchTime, string] {
   // parse time component
   command = command.replace(/^\s+/, '') || '';
   if (command.indexOf('at') === 0) {
@@ -233,7 +233,7 @@ export class Punch {
     this.projects = projects;
     this.notes = notes;
   }
-  static parse(organization: Organization, user: User, command: string, mode: string = 'none', timezone?: any) {
+  static parse(organization: Organization, user: User, command: string, mode: string = 'none', timezone?: string) {
     if (!user) {
       Logger.Console.error('No user passed', new Error(command));
       return;
@@ -247,8 +247,8 @@ export class Punch {
     }
     const original = command.slice(0);
     const [start, end] = user.activeHours;
-    const tz = timezone || user.timetable.timezone.name;
-    const [times, commandWithoutTime] = parseTime(command, start, end, timezone);
+    const tz: string = timezone || user.timetable.timezone.name;
+    const [times, commandWithoutTime] = parseTime(command, start, end, tz);
     command = commandWithoutTime;
     const [dates, commandWithoutDate] = parseDate(command);
     command = commandWithoutDate;
