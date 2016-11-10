@@ -1,58 +1,65 @@
 import * as fs from 'fs';
+import * as http from 'http';
 import * as path from 'path';
+
 const Botkit = require('botkit');
 const FirebaseStorage = require('botkit-storage-firebase');
+import express from 'express';
+import * as bodyParser from 'body-parser';
 
-import { Bot, Controller, Team } from './shared/common';
+import { Team } from './shared/common';
 import { Console } from './logger';
 import { IbizanConfig, TeamConfig } from './config';
+import { applyRoutes } from './routes';
 import { Organization } from './models/organization';
 
 import * as scripts from './controllers';
 
 export class App {
     static config: IbizanConfig;
-    controller: Controller;
-    bots: { [token: string]: Bot };
+    controller: botkit.Controller;
+    bots: { [token: string]: botkit.Bot };
     orgs: { [token: string]: Organization };
     helpEntries: string[];
+    webserver: express.Application;
 
     constructor(config: IbizanConfig) {
         App.config = config;
         this.bots = {};
         this.orgs = {};
-    }
-    start() {
         this.controller = Botkit.slackbot({
             storage: FirebaseStorage({
                 firebase_uri: App.config.storageUri
             }),
             logger: Console,
-            stats_optout: true
+            stats_optout: true,
+            webserver: this.setupWebserver()
         }).configureSlackApp({
             clientId: App.config.slack.clientId,
             clientSecret: App.config.slack.clientSecret,
             scopes: App.config.slack.scopes
         });
-
-        this.controller.setupWebserver(App.config.port, this.onSetupWebserver.bind(this));
+    }
+    start() {
+        this.webserver.listen(App.config.port, this.onWebserverStart.bind(this));
         this.controller.on('create_bot', this.onCreateBot.bind(this));
         this.controller.on('create_team', this.onCreateTeam.bind(this));
         this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
         this.controller.storage.teams.all(this.connectTeamsToSlack.bind(this));
         this.loadScripts();
     }
-    onSetupWebserver(err: Error, webserver) {
-        this.controller.createWebhookEndpoints(this.controller.webserver);
-        this.controller.createOauthEndpoints(this.controller.webserver, (err, req, res) => {
-            if (err) {
-                res.status(500).send('ERROR: ' + err);
-                return;
-            }
-            res.send('Success!');
-        });
+    setupWebserver() {
+        this.webserver = express();
+        this.webserver.use(bodyParser.json());
+        this.webserver.use(bodyParser.urlencoded({ extended: true }));
+        this.webserver.use(express.static(path.resolve(__dirname, 'public')));
+        applyRoutes(this.webserver, this.controller);
+        return this.webserver;
     }
-    onCreateBot(bot: Bot, team: Team) {
+    onWebserverStart() {
+        this.controller.log.info('Ibizan is waking up');
+    }
+    onCreateBot(bot: botkit.Bot, team: Team) {
         if (this.bots[bot.config.token]) {
             return;
         }
@@ -72,37 +79,10 @@ export class App {
             });
         });
     }
-    onCreateTeam(bot: Bot, team: Team) {
-        this.saveTeam(team);;
+    onCreateTeam(bot: botkit.Bot, team: Team) {
+        this.controller.saveTeam(team);
     }
-    saveTeam(team: Team) {
-        // create config
-        // TODO: This variable being undefined crashes ibizan. The todo is to work on the solution for per-team sheets, or use a hack job in the interim.
-        let newConfig: TeamConfig = {
-            name: team.name,
-            admins: [],
-            google: {
-                sheetId: '1owlFh2wlnerIPDSLziDUl4jECZC4pYJ0gk3IQ71OLRI'
-            }
-        };
-
-        // authorize
-
-        this.controller.storage.teams.save({
-            id: team.id,
-            createdBy: team.createdBy,
-            url: team.url,
-            name: team.name,
-            config: newConfig
-        }, (err) => {
-            if (err) {
-                this.controller.log.error('Error saving team to database: ', err);
-            } else {
-
-            }
-        });
-    }
-    trackBot(bot: Bot, team: Team) {
+    trackBot(bot: botkit.Bot, team: Team) {
         this.bots[bot.config.token] = bot;
         if (!team.config) {
             // HACK: THIS IS BAD
@@ -113,11 +93,11 @@ export class App {
                     sheetId: '1owlFh2wlnerIPDSLziDUl4jECZC4pYJ0gk3IQ71OLRI'
                 }
             };
-            this.saveTeam(team);
+            this.controller.saveTeam(team);
         }
         this.orgs[bot.config.token] = new Organization(team.config);
     }
-    onReceiveSetOrganization(bot: Bot, message, next) {
+    onReceiveSetOrganization(bot: botkit.Bot, message: botkit.Message, next: () => void) {
         const token = bot.config.token;
         if (this.bots[token] && this.orgs[token]) {
             message.organization = this.orgs[token];

@@ -19,11 +19,10 @@ const schedule = require('node-schedule');
 
 import { STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.hound;
-import { Controller } from '../shared/common';
 import * as Logger from '../logger';
 import { Organization } from '../models/organization';
 
-export default function (controller: Controller) {
+export default function (controller: botkit.Controller) {
   Logger.Slack.setController(controller);
 
   // Generates a random [in/out] hound message

@@ -13,7 +13,7 @@ const strings = STRINGS.bark;
 import { random } from '../shared/common';
 import * as Logger from '../logger';
 
-export default function (controller) {
+export default function (controller: botkit.Controller) {
   Logger.Slack.setController(controller);
 
   // bark.bark
@@ -62,7 +62,7 @@ export default function (controller) {
               Logger.Slack.addReaction(el.replace(/:/g, ''), message);
             }
           }
-          bot.reply({
+          bot.say({
             text: `_drops ${thing} at @${message.user.name}'s feet${random(strings.fetchsuffix)}_`,
             channel: message.channel
           })

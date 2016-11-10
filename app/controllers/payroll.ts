@@ -16,7 +16,7 @@ import { STRINGS, TIMEZONE } from '../shared/constants';
 import * as Logger from '../logger';
 import { Organization } from '../models/organization';
 
-export default function (controller) {
+export default function (controller: botkit.Controller) {
   Logger.Slack.setController(controller);
 
   // const generateDailyReportJob = schedule.scheduleJob('0 9 * * *', async () => {

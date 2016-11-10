@@ -2,17 +2,17 @@
 import * as ConsoleLogger from './console-logger';
 import { STRINGS } from '../shared/constants';
 const strings = STRINGS.logger;
-import { typeIsArray, Bot, Controller } from '../shared/common';
+import { typeIsArray } from '../shared/common';
 const ICON_URL = process.env.ICON_URL || false;
 
 export namespace SlackLogger {
-  let controller: Controller;
-  let bot: Bot;
+  let controller: botkit.Controller;
+  let bot: botkit.Bot;
 
-  export function setController(control: Controller) {
+  export function setController(control: botkit.Controller) {
     controller = control;
   }
-  export function setBot(bot: Bot) {
+  export function setBot(bot: botkit.Bot) {
     bot = bot;
   }
   export function getSlackDM(username: string, resolve: (id: string) => void) {
