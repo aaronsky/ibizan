@@ -15,7 +15,7 @@ const strings = STRINGS.diagnostics;
 import * as Logger from '../logger';
 import { Organization } from '../models/organization';
 
-export default function (controller) {
+export default function (controller: botkit.Controller) {
   Logger.Slack.setController(controller);
 
   // respond
@@ -148,7 +148,7 @@ export default function (controller) {
     Logger.Slack.addReaction('clock4', message);
     try {
       const status = await organization.sync();
-      bot.say(message, 'Resynced with spreadsheet');
+      bot.reply(message, 'Resynced with spreadsheet');
       Logger.Slack.removeReaction('clock4', message);
       Logger.Slack.addReaction('dog2', message);
     } catch (err) {

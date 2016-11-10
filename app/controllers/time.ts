@@ -50,27 +50,26 @@ import moment from 'moment-timezone';
 
 import { REGEX, REGEX_STR, STRINGS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
-import { Bot, Controller } from '../shared/common';
 import { Rows } from '../shared/rows';
 import * as Logger from '../logger';
 import { Punch } from '../models/punch';
 import { User } from '../models/user';
 import { Organization } from '../models/organization';
 
-export default function (controller: Controller) {
+export default function (controller: botkit.Controller) {
   Logger.Slack.setController(controller);
 
   function isDM(channel: string) {
     return channel.substring(0, 1) === 'D';
   }
 
-  function isClockChannel(bot: Bot, channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
+  function isClockChannel(bot: botkit.Bot, channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
     bot.storage.channels.get(channel, (err, data) => {
       resolve(data.name === organization.clockChannel);
     });
   }
 
-  function isProjectChannel(bot: Bot, channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
+  function isProjectChannel(bot: botkit.Bot, channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
     bot.storage.channels.get(channel, (err, data) => {
       isClockChannel(bot, channel, organization, (isClockChannel) => {
         resolve(!isClockChannel && !isDM(channel) && !!organization.getProjectByName(data.name));
@@ -78,7 +77,7 @@ export default function (controller: Controller) {
     });
   }
 
-  function canPunchHere(bot: Bot, channel: string, organization: Organization, resolve: (isAllowed: boolean) => void) {
+  function canPunchHere(bot: botkit.Bot, channel: string, organization: Organization, resolve: (isAllowed: boolean) => void) {
     isProjectChannel(bot, channel, organization, (isProjectChannel) => {
       isClockChannel(bot, channel, organization, (isClockChannel) => {
         return isDM(channel) || isClockChannel || isProjectChannel;
@@ -109,7 +108,7 @@ export default function (controller: Controller) {
   }
 
   // Parse a textual punch and produce a new Punch object
-  function parse(bot: Bot, message: any, mode: string, organization: Organization) {
+  function parse(bot: botkit.Bot, message: any, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
     const user = organization.getUserBySlackName(message.user.name);
     Logger.Console.info(`Parsing '${message.text} for @${user.slack}.`);
