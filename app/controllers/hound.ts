@@ -141,7 +141,7 @@ export default function (controller: botkit.Controller) {
     });
   });
 
-  controller.on('presence_change', (bot, message) => {
+  controller.on('presence_change', (bot, message: any) => {
     if (message.presence === 'active') {
       controller.storage.users.get(message.user, (err, user) => {
         //hound(user, { private: null, name: '' }, organization, false, true);
@@ -213,7 +213,7 @@ export default function (controller: botkit.Controller) {
     if (scope === 'self') {
       let match;
       if (match = action.match(/((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i)) {
-        const blockStr = match[0].replace('hours', '').replace('hour', '').trimRight();
+        const blockStr = match[0].replace('hours', '').replace('hour', '').replace(/\s+$/, '');
         const block = parseFloat(blockStr);
         user.settings.fromSettings({
           shouldHound: true,
@@ -283,7 +283,7 @@ export default function (controller: botkit.Controller) {
       }
       let match;
       if (match = action.match(/((0+)?(?:\.+[0-9]*) hours?)|(0?1 hour)|(1+(?:\.+[0-9]*)? hours)|(0?[2-9]+(?:\.+[0-9]*)? hours)|([1-9][0-9]+(?:\.+[0-9]*)? hours)/i)) {
-        const blockStr = match[0].replace('hours', '').replace('hour', '').trimRight();
+        const blockStr = match[0].replace('hours', '').replace('hour', '').replace(/\s+$/, '');
         const block = parseFloat(blockStr);
         organization.setHoundFrequency(+block.toFixed(2));
         user.directMessage(`Hounding frequency set to every ${block} hours for ${Organization.name}, time until next hound reset.`, Logger);

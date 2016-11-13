@@ -19,10 +19,10 @@ interface Options {
 };
 
 export function buildOptions(options: Options, organization: Organization, controller: botkit.Controller, patterns: string[] | RegExp[], message: botkit.Message) {
-    message.options = options;
-    message.organization = organization;
-    return controller.hears_test(patterns, message);
-  };
+  message.options = options;
+  message.organization = organization;
+  return controller.hears_test(patterns, message);
+};
 
 export default function (controller: botkit.Controller) {
   Logger.Slack.setController(controller);
@@ -33,54 +33,61 @@ export default function (controller: botkit.Controller) {
 
   controller.middleware.receive.use((bot: botkit.Bot, message: botkit.Message, next: () => void) => {
     const { id, adminOnly, userRequired } = message.options;
+    bot.api.users.info({ user: message.user }, (err, data) => {
+      const user = data.user;
+      const username = user.name;
+      message.user = {
+        id: message.user,
+        name: username
+      };
 
-    const username = message.user.name;
-    if (username == 'hubot' || username == 'ibizan') {
-      // Ignore myself and messages overheard
-      return;
-    } else if (id == null) {
-      // Ignore unknown commands or catch-alls
-      next();
-    } else {
-      const organization: Organization = message.organization;
-      if (!organization.ready()) {
-        const msg = {
-          text: strings.orgnotready,
-          channel: message.channel
-        } as botkit.Message;
-        bot.say(msg);
-        Logger.Slack.addReaction('x', message);
+      if (username == 'hubot' || username == 'ibizan') {
+        // Ignore myself and messages overheard
         return;
-      } else {
-        Logger.Console.log(`Responding to '${message}' (${id}) from ${username}`);
-        if (adminOnly) {
-          if (!isAdminUser(username, organization)) {
-            // Admin command, but user isn't in whitelist
-            const msg = {
-              text: strings.adminonly,
-              channel: message.channel
-            } as botkit.Message;
-            bot.say(msg);
-            Logger.Slack.addReaction('x', message);
-            return;
-          }
-        }
-        if (userRequired) {
-          const user = organization.getUserBySlackName(username);
-          if (!user) {
-            // Slack user does not exist in Employee sheet, but user is required
-            const msg = {
-              text: strings.notanemployee,
-              channel: message.channel
-            } as botkit.Message;
-            bot.say(msg);
-            Logger.Slack.addReaction('x', message);
-            return;
-          }
-        }
+      } else if (id == null) {
+        // Ignore unknown commands or catch-alls
         next();
+      } else {
+        const organization: Organization = message.organization;
+        if (!organization.ready()) {
+          const msg = {
+            text: strings.orgnotready,
+            channel: message.channel
+          } as botkit.Message;
+          bot.say(msg);
+          Logger.Slack.addReaction('x', message);
+          return;
+        } else {
+          Logger.Console.log(`Responding to '${message}' (${id}) from ${username}`);
+          if (adminOnly) {
+            if (!isAdminUser(username, organization)) {
+              // Admin command, but user isn't in whitelist
+              const msg = {
+                text: strings.adminonly,
+                channel: message.channel
+              } as botkit.Message;
+              bot.say(msg);
+              Logger.Slack.addReaction('x', message);
+              return;
+            }
+          }
+          if (userRequired) {
+            const user = organization.getUserBySlackName(username);
+            if (!user) {
+              // Slack user does not exist in Employee sheet, but user is required
+              const msg = {
+                text: strings.notanemployee,
+                channel: message.channel
+              } as botkit.Message;
+              bot.say(msg);
+              Logger.Slack.addReaction('x', message);
+              return;
+            }
+          }
+          next();
+        }
       }
-    }
+    });
   });
 
   // Catch-all for unrecognized commands

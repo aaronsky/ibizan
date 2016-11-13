@@ -72,7 +72,7 @@ function parseTime(command: string, activeStart: any, activeEnd: any, tz: string
         minute: 0
       }));
     } else {
-      const block_str = match[0].replace('hours', '').replace('hour', '').trimRight();
+      const block_str = match[0].replace('hours', '').replace('hour', '').replace(/\s+$/, '');
       const block = parseFloat(block_str);
       time.block = block
     }
@@ -315,7 +315,7 @@ export class Punch {
     }
     return punch;
   }
-  static parseRaw(user: User, row: Rows.RawDataRow, spreadsheet: { saveRow: (row: Rows.Row, sheet: Rows.SheetKind) => Promise<Rows.Row> }, projects: Project[] = []) {
+  static parseRaw(user: User, row: Rows.RawDataRow, spreadsheet: { saveRow: (row: Rows.Row, sheet: Rows.SheetKind) => Promise<void> }, projects: Project[] = []) {
     const date = moment.tz(row.today, 'MM/DD/YYYY', TIMEZONE);
 
     // UUID sanity check
