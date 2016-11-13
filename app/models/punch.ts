@@ -11,7 +11,6 @@ import { User } from './user';
 import { Organization } from './organization';
 
 interface PunchTime extends Array<moment.Moment> {
-  [index: number]: moment.Moment;
   start?: moment.Moment;
   end?: moment.Moment;
   block?: number;
@@ -137,7 +136,7 @@ function parseDate(command: string): [moment.Moment[], string] {
       let month = ''
       for (let str of dateStrings) {
         str = str.trim()
-        if (!isNaN(str) && month) {
+        if (!isNaN(+str) && month) {
           str = month + ' ' + str
         }
         const newDate = moment(str, "MMMM DD");
@@ -350,13 +349,14 @@ export class Punch {
         datetimes.push(newDate.tz(tz));
       }
     }
-    let rawElapsed, elapsed;
+    let rawElapsed: number;
+    let elapsed: number;
     if (row.totalTime) {
       const comps = row.totalTime.split(':');
       rawElapsed = 0;
       for (let i = 0; i < comps.length; i++) {
-        const comp: any = comps[i];
-        if (isNaN(comp)) {
+        const comp = comps[i];
+        if (isNaN(+comp)) {
           continue;
         } else {
           const compInt = parseInt(comp);

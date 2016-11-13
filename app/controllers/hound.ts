@@ -199,7 +199,7 @@ export default function (controller: botkit.Controller) {
     } else if (scope === message.user.name) {
       scope = 'self';
     } else if (scope !== 'self' && scope !== 'org') {
-      if (!isNaN(comps[0]) && (comps[1] === 'hour' || comps[1] === 'hours')) {
+      if (!isNaN(+comps[0]) && (comps[1] === 'hour' || comps[1] === 'hours')) {
         comps = ['self', comps.join(' ')];
       } else if (comps.length > 2) {
         comps = ['self', comps.slice(1).join(' ')];

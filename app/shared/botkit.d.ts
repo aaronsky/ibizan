@@ -4,6 +4,7 @@ declare module botkit {
         no: RegExp;
         quit: RegExp;
     }
+    type HearFunction = (patterns: string[] | RegExp[], message: Message) => boolean;
     class Controller {
         events: { [event: string]: Function };
         config: Configuration;
@@ -37,13 +38,14 @@ declare module botkit {
             debug(...params: any[]): void;
         }
         webserver: Express.Application;
+        hears_test: HearFunction;
 
         constructor(configuration: Configuration);
         hears_regexp(tests: string[] | RegExp[], message: Message): boolean;
-        changeEars(new_test): never;
+        changeEars(new_test: HearFunction): never;
         spawn(team);
         hears(pattern: string | string[], modes: string | string[], callback: (bot: Bot, message: Message) => void);
-        hears(pattern: string | string[], modes: string | string[], middleware: () => void, callback: (bot: Bot, message: Message) => void);
+        hears(pattern: string | string[], modes: string | string[], middleware: HearFunction, callback: (bot: Bot, message: Message) => void);
         on(event: string, callback: (bot: Bot, message: Message) => void);
         trigger(event: string, data): void;
         startConversation(bot: Bot, message: Message, cb: (err: Error, convo: Conversation) => void): never;
@@ -121,6 +123,7 @@ declare module botkit {
         ts: string;
         // custom botkit fields
         event?: string;
+        match?: RegExpMatchArray;
         // custom ibizan fields
         options?: {
             id?: string;

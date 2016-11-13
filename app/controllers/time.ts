@@ -214,7 +214,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('(append|add)', 
                    ['message_received'],
                    buildOptions.bind(null, { id: 'time.append', userRequired: true }, null, controller), 
-                   (bot, message) => {
+                   async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -235,12 +235,13 @@ export default function (controller: botkit.Controller) {
         return;
       }
       if (operator === 'project' || operator === 'projects') {
-        const projects = msgWithoutOperator.split(' ');
-        isProjectChannel(message.user.room, organization, (isProjectChannel) => {
-          if (projects.length === 0 && isProjectChannel) {
-            projects.push(organization.getProjectByName(message.user.room));
+        const projectNames = msgWithoutOperator.split(' ');
+        const projects = [];
+        isProjectChannel(message.channel, organization, (isProjectChannel) => {
+          if (projectNames.length === 0 && isProjectChannel) {
+            projects.push(organization.getProjectByName(message.channel));
           }
-          punch.appendProjects(projects);
+          punch.appendProjects(organization, projects);
           results = projects.join(', ') || '';
         });
       } else if (operator === 'note' || operator === 'notes') {
@@ -295,7 +296,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('undo', 
                    ['message_received'],
                    buildOptions.bind(null, { id: 'time.undo', userRequired: true }, null, controller), 
-                   (bot, message) => {
+                   async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -587,6 +588,7 @@ export default function (controller: botkit.Controller) {
                    ['message_received'],
                    buildOptions.bind(null, { id: 'time.time', userRequired: true }, null, controller), 
                    (bot, message) => {
+    const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;

@@ -12,7 +12,7 @@ function getPositiveNumber(input?: number | any, current: number = 0) {
     return current;
   }
   const inputNum = +input;
-  if (isNaN(input) || inputNum < 0) {
+  if (isNaN(+input) || inputNum < 0) {
     return current;
   }
   return input;
