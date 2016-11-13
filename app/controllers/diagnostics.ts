@@ -23,7 +23,7 @@ export default function (controller: botkit.Controller) {
   // diagnostics.uptime, 
   controller.hears('uptime', 
                    ['direct_message', 'direct_mention', 'mention', 'ambient'],
-                   buildOptions.bind(null, { id: 'diagnostics.uptime' }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.uptime' }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -38,7 +38,7 @@ export default function (controller: botkit.Controller) {
   // id: diagnostics.users, userRequired: true, adminOnly: true
   controller.hears('users',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.users', userRequired: true, adminOnly: true }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.users', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -59,7 +59,7 @@ export default function (controller: botkit.Controller) {
   // id: diagnostics.userHelp, adminOnly: true
   controller.hears('user$',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.userHelp', adminOnly: true }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.userHelp', adminOnly: true }, controller), 
                    (bot, message) => {
     bot.reply(message, strings.userhelp);
     Logger.Slack.addReaction('dog2', message);
@@ -69,7 +69,7 @@ export default function (controller: botkit.Controller) {
   // id: diagnostics.user, userRequired: true, adminOnly: true
   controller.hears('user (.*)',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.user', userRequired: true, adminOnly: true }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.user', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -94,7 +94,7 @@ export default function (controller: botkit.Controller) {
   // id: diagnostics.dailyReport, adminOnly: true
   controller.hears('daily report',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.dailyReport', adminOnly: true }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.dailyReport', adminOnly: true }, controller), 
                    async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -127,7 +127,7 @@ export default function (controller: botkit.Controller) {
   // id: diagnostics.projects, userRequired: true, adminOnly: true
   controller.hears('projects',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.projects', userRequired: true, adminOnly: true }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.projects', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -147,7 +147,7 @@ export default function (controller: botkit.Controller) {
   // id: diagnostics.calendar, userRequired: true, adminOnly: true
   controller.hears('calendar',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.calendar', userRequired: true, adminOnly: true }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.calendar', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -163,7 +163,7 @@ export default function (controller: botkit.Controller) {
   // diagnostics.sync
   controller.hears('sync',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.sync' }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.sync' }, controller), 
                    async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -241,7 +241,7 @@ export default function (controller: botkit.Controller) {
   // diagnostics.help
   controller.hears('.*(help|docs|documentation|commands).*',
                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'diagnostics.help' }, null, controller), 
+                   buildOptions.bind(null, { id: 'diagnostics.help' }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {

@@ -20,7 +20,7 @@ export default function (controller: botkit.Controller) {
   // bark.bark
   controller.hears('bark', 
                     ['direct_message', 'direct_mention', 'mention', 'ambient'], 
-                   buildOptions.bind(null, { id: 'bark.bark' }, null, controller), 
+                   buildOptions.bind(null, { id: 'bark.bark' }, controller), 
                    (bot, message) => {
     bot.startTyping(message);
     bot.reply(message, random(strings.bark));
@@ -29,7 +29,7 @@ export default function (controller: botkit.Controller) {
   //bark.story
   controller.hears('tell me a story', 
                     ['direct_message', 'direct_mention', 'mention'], 
-                    buildOptions.bind(null, { id: 'bark.story' }, null, controller), 
+                    buildOptions.bind(null, { id: 'bark.story' }, controller), 
                     (bot, message) => {
     bot.startTyping(message);
     bot.reply(message, random(strings.story));
@@ -38,7 +38,7 @@ export default function (controller: botkit.Controller) {
   // bark.goodboy
   controller.hears('good (dog|boy|pup|puppy|ibizan|ibi)', 
                     ['direct_message', 'direct_mention', 'mention'], 
-                    buildOptions.bind(null, { id: 'bark.goodboy' }, null, controller), 
+                    buildOptions.bind(null, { id: 'bark.goodboy' }, controller), 
                     (bot, message) => {
     const msg = {
       text: strings.goodboy,
@@ -50,7 +50,7 @@ export default function (controller: botkit.Controller) {
   // bark.fetch
   controller.hears('fetch\s*(.*)?$', 
                    ['message_received'], 
-                   buildOptions.bind(null, { id: 'bark.fetch' }, null, controller), 
+                   buildOptions.bind(null, { id: 'bark.fetch' }, controller), 
                    (bot, message) => {
     const thing = message.match[1];
     if (!thing) {
