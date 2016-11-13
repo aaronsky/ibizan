@@ -284,7 +284,7 @@ export class Spreadsheet {
     return numberDone;
   }
   private async loadWorksheets() {
-    return new Promise((resolve, reject) => {
+    return new Promise<Options>((resolve, reject) => {
       const request = {
         spreadsheetId: this.id,
         auth: this.auth
@@ -311,14 +311,14 @@ export class Spreadsheet {
             reject('Worksheets failed to be associated properly');
           } else {
             Logger.Console.log('silly', '----------------------------------------');
-            resolve({});
+            resolve({} as Options);
           }
         }
       });
     });
   }
-  private async loadVariables(opts: any) {
-    return new Promise((resolve, reject) => {
+  private async loadVariables(opts: Options) {
+    return new Promise<Options>((resolve, reject) => {
       const title = this.variables.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -332,7 +332,7 @@ export class Spreadsheet {
           reject(err);
         } else {
           const rows = this.rowsFromSheetData<Rows.VariablesRow>(response.values, title, Rows.VariablesRow);
-          const opts = {
+          opts = {
             vacation: 0,
             sick: 0,
             houndFrequency: 0,
@@ -340,7 +340,7 @@ export class Spreadsheet {
             holidays: [],
             clockChannel: '',
             exemptChannels: []
-          };
+          } as Options;
           for (let row of rows) {
             if (row.vacation || +row.vacation === 0) {
               opts.vacation = +row.vacation;
@@ -378,8 +378,8 @@ export class Spreadsheet {
       });
     });
   }
-  private async loadProjects(opts: any) {
-    return new Promise((resolve, reject) => {
+  private async loadProjects(opts: Options) {
+    return new Promise<Options>((resolve, reject) => {
       const title = this.projects.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -408,8 +408,8 @@ export class Spreadsheet {
       });
     });
   }
-  private async loadEmployees(opts: any) {
-    return new Promise((resolve, reject) => {
+  private async loadEmployees(opts: Options) {
+    return new Promise<Options>((resolve, reject) => {
       const title = this.users.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -438,8 +438,8 @@ export class Spreadsheet {
       });
     });
   }
-  private async loadEvents(opts: any) {
-    return new Promise((resolve, reject) => {
+  private async loadEvents(opts: Options) {
+    return new Promise<Options>((resolve, reject) => {
       const title = this.events.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -468,8 +468,8 @@ export class Spreadsheet {
       })
     });
   }
-  private async loadPunches(opts: any) {
-    return new Promise((resolve, reject) => {
+  private async loadPunches(opts: Options) {
+    return new Promise<Options>((resolve, reject) => {
       const title = this.rawData.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -497,4 +497,21 @@ export class Spreadsheet {
       });
     });
   }
+}
+
+interface Options {
+  vacation: number;
+  sick: number;
+  houndFrequency: number;
+  payWeek: moment.Moment;
+  holidays: { 
+    name: string;
+    date: moment.Moment;
+  }[];
+  clockChannel: string;
+  exemptChannels: string[];
+  projects: Project[];
+  users: User[];
+  events: CalendarEvent[];
+  punches: Punch[];
 }

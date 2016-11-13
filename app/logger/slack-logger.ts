@@ -44,7 +44,7 @@ export namespace SlackLogger {
   export function logToChannel(msg: string, channel: string, attachment?: any, isUser?: boolean) {
     if (msg) {
       if (bot) {
-        const message = {
+        const message: any = {
           text: msg,
           channel: null,
           parse: 'full',
@@ -52,7 +52,7 @@ export namespace SlackLogger {
           icon_url: ICON_URL || undefined,
           icon_emoji: ICON_URL ? undefined : ':dog2:',
           attachments: null
-        } as botkit.Message;
+        };
         if (attachment && typeIsArray(attachment)) {
           message.attachments = attachment;
         } else if (attachment) {

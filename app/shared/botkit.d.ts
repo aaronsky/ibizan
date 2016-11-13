@@ -119,7 +119,8 @@ declare module botkit {
         subtype?: string;
         channel: string;
         text: string;
-        user: string;
+        // HACK: What in God's name is this
+        user: string | any;
         ts: string;
         // custom botkit fields
         event?: string;
