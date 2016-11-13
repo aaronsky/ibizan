@@ -177,7 +177,7 @@ export default function (controller: botkit.Controller) {
   // hound.hound, userRequired: true
   controller.hears('hound\s*(.*)?$', 
                    ['message_received'], 
-                   buildOptions.bind(null, { id: 'hound.hound', userRequired: true }, null, controller), 
+                   buildOptions.bind(null, { id: 'hound.hound', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
