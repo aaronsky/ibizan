@@ -83,10 +83,7 @@ export default function (controller: botkit.Controller) {
       return;
     }
     const user = organization.getUserBySlackName(message.user.name);
-    let dates = message.match[1];
-    if (dates) {
-      dates = dates.split(' ');
-    }
+    let dates = message.match[1] && message.match[1].split(' ');
     if (dates && dates[0] && !dates[1]) {
       user.directMessage('You must provide both a start and end date.', Logger);
       Logger.Slack.addReaction('x', message);

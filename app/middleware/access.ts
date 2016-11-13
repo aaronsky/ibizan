@@ -21,7 +21,7 @@ interface Options {
 export function buildOptions(options: Options, organization: Organization, controller: botkit.Controller, patterns: string[] | RegExp[], message: botkit.Message) {
     message.options = options;
     message.organization = organization;
-    return controller.hears_regexp(patterns, message);
+    return controller.hears_test(patterns, message);
   };
 
 export default function (controller: botkit.Controller) {
@@ -34,7 +34,7 @@ export default function (controller: botkit.Controller) {
   controller.middleware.receive.use((bot: botkit.Bot, message: botkit.Message, next: () => void) => {
     const { id, adminOnly, userRequired } = message.options;
 
-    const username = message.user;
+    const username = message.user.name;
     if (username == 'hubot' || username == 'ibizan') {
       // Ignore myself and messages overheard
       return;
@@ -75,7 +75,7 @@ export default function (controller: botkit.Controller) {
             } as botkit.Message;
             bot.say(msg);
             Logger.Slack.addReaction('x', message);
-            done();
+            return;
           }
         }
         next();
@@ -88,10 +88,10 @@ export default function (controller: botkit.Controller) {
     if (message &&
       message.text &&
       message.text.length < 30 &&
-      (message.text.match(REGEX.ibizan) || message.room && message.room.substring(0, 1) === 'D')) {
+      (message.text.match(REGEX.ibizan) || message.channel && message.channel.substring(0, 1) === 'D')) {
       bot.reply(message, `_${random(strings.unknowncommand)} ${random(strings.askforhelp)}_`);
       Logger.Slack.addReaction('question', message);
-      bot.finish();
+      return;
     }
   });
 };

@@ -13,6 +13,7 @@ import { IbizanConfig, TeamConfig } from './config';
 import { applyRoutes } from './routes';
 import { Organization } from './models/organization';
 
+import accessMiddleware from './middleware/access';
 import * as scripts from './controllers';
 
 export class App {
@@ -82,6 +83,19 @@ export class App {
     }
     trackBot(bot: botkit.Bot, team: Team) {
         this.bots[bot.config.token] = bot;
+        bot.api.users.list(null, (err, data) => {
+            if (err || (data && !data.ok)) {
+                this.controller.log.error('Error retrieving list of users for team', err);
+                return;
+            }
+            for (let member of data.members) {
+                this.controller.storage.users.save(member, (err) => {
+                    if (err) {
+                        this.controller.log.error('Error saving user to team', err);
+                    }
+                });
+            }
+        });
         if (!team.config) {
             // HACK: THIS IS BAD
             team.config = {
@@ -120,6 +134,7 @@ export class App {
         }
     }
     loadScripts() {
+        accessMiddleware(this.controller);
         for (let key in scripts) {
             const script = scripts[key];
             this.controller.log(`Loading ${key} script`);
