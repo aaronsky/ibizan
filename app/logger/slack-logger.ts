@@ -52,7 +52,7 @@ export namespace SlackLogger {
           icon_url: ICON_URL || undefined,
           icon_emoji: ICON_URL ? undefined : ':dog2:',
           attachments: null
-        };
+        } as botkit.Message;
         if (attachment && typeIsArray(attachment)) {
           message.attachments = attachment;
         } else if (attachment) {

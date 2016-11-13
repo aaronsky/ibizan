@@ -1,3 +1,4 @@
+import { buildOptions } from '../middleware/access';
 // Description:
 //   Your dog friend makes sure everything's in order
 //
@@ -19,8 +20,11 @@ export default function (controller: botkit.Controller) {
   Logger.Slack.setController(controller);
 
   // respond
-  // diagnostics.uptime
-  controller.hears('uptime', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
+  // diagnostics.uptime, 
+  controller.hears('uptime', 
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'],
+                   buildOptions.bind(null, { id: 'diagnostics.uptime' }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -32,7 +36,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // id: diagnostics.users, userRequired: true, adminOnly: true
-  controller.hears('users', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
+  controller.hears('users',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.users', userRequired: true, adminOnly: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -50,14 +57,20 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // id: diagnostics.userHelp, adminOnly: true
-  controller.hears('user$', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
+  controller.hears('user$',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.userHelp', adminOnly: true }, null, controller), 
+                   (bot, message) => {
     bot.reply(message, strings.userhelp);
     Logger.Slack.addReaction('dog2', message);
   });
 
   // respond
   // id: diagnostics.user, userRequired: true, adminOnly: true
-  controller.hears('user (.*)', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
+  controller.hears('user (.*)',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.user', userRequired: true, adminOnly: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -79,7 +92,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // id: diagnostics.dailyReport, adminOnly: true
-  controller.hears('daily report', ['direct_message', 'direct_mention', 'mention', 'ambient'], async (bot, message) => {
+  controller.hears('daily report',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.dailyReport', adminOnly: true }, null, controller), 
+                   async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -109,7 +125,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // id: diagnostics.projects, userRequired: true, adminOnly: true
-  controller.hears('projects', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
+  controller.hears('projects',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.projects', userRequired: true, adminOnly: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -126,7 +145,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // id: diagnostics.calendar, userRequired: true, adminOnly: true
-  controller.hears('calendar', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
+  controller.hears('calendar',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.calendar', userRequired: true, adminOnly: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -139,7 +161,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // diagnostics.sync
-  controller.hears('sync', ['direct_message', 'direct_mention', 'mention', 'ambient'], async (bot, message) => {
+  controller.hears('sync',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.sync' }, null, controller), 
+                   async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -214,7 +239,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // diagnostics.help
-  controller.hears('.*(help|docs|documentation|commands).*', ['direct_message', 'direct_mention', 'mention', 'ambient'], (bot, message) => {
+  controller.hears('.*(help|docs|documentation|commands).*',
+                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   buildOptions.bind(null, { id: 'diagnostics.help' }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
