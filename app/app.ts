@@ -4,7 +4,7 @@ import * as path from 'path';
 
 const Botkit = require('botkit');
 const FirebaseStorage = require('botkit-storage-firebase');
-import express from 'express';
+import * as express from 'express';
 import * as bodyParser from 'body-parser';
 
 import { Team } from './shared/common';
@@ -27,10 +27,9 @@ export class App {
         App.config = config;
         this.bots = {};
         this.orgs = {};
+        const storage = FirebaseStorage({ firebase_uri: App.config.storageUri });
         this.controller = Botkit.slackbot({
-            storage: FirebaseStorage({
-                firebase_uri: App.config.storageUri
-            }),
+            storage,
             logger: Console,
             stats_optout: true,
             webserver: this.setupWebserver()
@@ -41,6 +40,7 @@ export class App {
         });
     }
     start() {
+        applyRoutes(this.webserver, this.controller);
         this.webserver.listen(App.config.port, this.onWebserverStart.bind(this));
         this.controller.on('create_bot', this.onCreateBot.bind(this));
         this.controller.on('create_team', this.onCreateTeam.bind(this));
@@ -53,7 +53,6 @@ export class App {
         this.webserver.use(bodyParser.json());
         this.webserver.use(bodyParser.urlencoded({ extended: true }));
         this.webserver.use(express.static(path.resolve(__dirname, 'public')));
-        applyRoutes(this.webserver, this.controller);
         return this.webserver;
     }
     onWebserverStart() {
@@ -67,9 +66,8 @@ export class App {
             if (!err) {
                 this.trackBot(bot, team);
             }
-            bot.startPrivateConversation({
-                user: team.createdBy
-            }, (err, convo) => {
+            const message = { user: team.createdBy } as botkit.Message;
+            bot.startPrivateConversation(message, (err, convo) => {
                 if (err) {
                     this.controller.log.error(err.message, err);
                 } else {

@@ -61,7 +61,7 @@ declare module botkit {
         secureWebhookEndpoints();
         createWebhookEndpoints(webserver: Express.Application, authenticationTokens?: string[]): Controller;
         saveTeam(team: Team, cb?: (err: Error, data: any) => void): never;
-        findTeamById(id: string, cb: (err: Error, data: any) => void): never;
+        findTeamById(id: string, cb: (err: Error, data: Team) => void): never;
         setupWebserver(port: number, cb: (err: Error, webserver: Express.Application) => void): Controller;
         getAuthorizeURL(team_id: string): string;
         createOauthEndpoints(webserver: Express.Application, callback: (err: Error, req: any, res: any) => void): Controller;
@@ -122,6 +122,11 @@ declare module botkit {
         // custom botkit fields
         event?: string;
         // custom ibizan fields
+        options: {
+            id?: string;
+            userRequired?: boolean;
+            adminOnly?: boolean;
+        };
         organization?: any;
     }
     interface User {
@@ -354,8 +359,8 @@ declare module botkit {
          **/
         isActive(): boolean;
         deactivate(): never;
-        say(message: Message): never;
-        sayFirst(message: Message): never;
+        say(message: string | Message): never;
+        sayFirst(message: string | Message): never;
         on(event: string, cb: Function): never;
         trigger(event: string, data): void;
         /**
