@@ -122,7 +122,7 @@ declare module botkit {
         // custom botkit fields
         event?: string;
         // custom ibizan fields
-        options: {
+        options?: {
             id?: string;
             userRequired?: boolean;
             adminOnly?: boolean;

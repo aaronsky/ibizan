@@ -1,3 +1,4 @@
+import { buildOptions } from '../middleware/access';
 // Description:
 //   Your dog friend can keep you in line
 //
@@ -174,7 +175,10 @@ export default function (controller: botkit.Controller) {
   // Check/adjust hounding settings
   // respond
   // hound.hound, userRequired: true
-  controller.hears('hound\s*(.*)?$', ['message_received'], (bot, message) => {
+  controller.hears('hound\s*(.*)?$', 
+                   ['message_received'], 
+                   buildOptions.bind(null, { id: 'hound.hound', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());

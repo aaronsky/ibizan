@@ -1,3 +1,4 @@
+import { buildOptions } from '../middleware/access';
 // Description:
 //   Your dog friend is running tasks on a schedule
 //
@@ -72,7 +73,10 @@ export default function (controller: botkit.Controller) {
   // });
 
   // { id: 'payroll.payroll', userRequired: true, adminOnly: true }
-  controller.hears('payroll\s*(.*)?$', ['ambient'], async (bot, message) => {
+  controller.hears('payroll\s*(.*)?$', 
+                    ['ambient'], 
+                    buildOptions.bind(null, { id: 'payroll.payroll', userRequired: true, adminOnly: true }, null, controller), 
+                    async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());

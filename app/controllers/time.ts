@@ -1,3 +1,4 @@
+import { buildOptions } from '../middleware/access';
 // Description:
 //   Punch your timesheet from the comfort of Slack
 //
@@ -179,7 +180,10 @@ export default function (controller: botkit.Controller) {
   // Punch for a given mode
   // respond
   // time.punchByMode, userRequired: true
-  controller.hears(REGEX_STR.modes, ['message_received'], (bot, message) => {
+  controller.hears(REGEX_STR.modes, 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.punchByMode', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -191,7 +195,10 @@ export default function (controller: botkit.Controller) {
   // Punch for a block of time
   // respond
   // 'time.punchByTime', userRequired: true
-  controller.hears(REGEX_STR.rel_time, ['message_received'], (bot, message) => {
+  controller.hears(REGEX_STR.rel_time, 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.punchByTime', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -204,7 +211,10 @@ export default function (controller: botkit.Controller) {
   // append to lastPunch
   // respond
   // time.append, userRequired: true
-  controller.hears('(append|add)', ['message_received'], async (bot, message) => {
+  controller.hears('(append|add)', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.append', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -282,7 +292,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // time.undo, userRequired: true
-  controller.hears('undo', ['message_received'], async (bot, message) => {
+  controller.hears('undo', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.undo', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -311,7 +324,10 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // time.events
-  controller.hears('\b(events|upcoming)$', ['message_received'], (bot, message) => {
+  controller.hears('\b(events|upcoming)$', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.events' }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -340,7 +356,10 @@ export default function (controller: botkit.Controller) {
   // Gives helpful info if a user types 'hours' with no question mark or date
   // respond
   // time.hoursHelp
-  controller.hears('\bhours$', ['message_received'], (bot, message) => {
+  controller.hears('\bhours$', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.hoursHelp' }, null, controller), 
+                   (bot, message) => {
     const msg = {
       text: strings.hourshelp,
       channel: message.channel
@@ -352,7 +371,10 @@ export default function (controller: botkit.Controller) {
   // Returns the hours worked on a given date
   // respond
   // time.hoursOnDate, userRequired: true
-  controller.hears('hours (.*)', ['message_received'], (bot, message) => {
+  controller.hears('hours (.*)', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.hoursOnDate', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -418,7 +440,10 @@ export default function (controller: botkit.Controller) {
   // Returns the hours worked for the given time period
   // respond
   // time.hours, userRequired: true
-  controller.hears('.*(hours|today|week|month|year|period)+[\?\!\.¿¡]', ['message_received'], (bot, message) => {
+  controller.hears('.*(hours|today|week|month|year|period)+[\?\!\.¿¡]', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.hours', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -541,7 +566,10 @@ export default function (controller: botkit.Controller) {
   // Returns the user's info as a slackAttachment
   // respond
   // time.status, userRequired: true
-  controller.hears('\b(status|info)$', ['message_received'], (bot, message) => {
+  controller.hears('\b(status|info)$', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.status', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -555,8 +583,10 @@ export default function (controller: botkit.Controller) {
   // Returns the user's time in their timezone, as well as Ibizan's default time
   // respond
   // time.time, userRequired: true
-  controller.hears('\btime$', ['message_received'], (bot, message) => {
-    const organization: Organization = message.organization;
+  controller.hears('\btime$', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.time', userRequired: true }, null, controller), 
+                   (bot, message) => {
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
@@ -575,7 +605,10 @@ export default function (controller: botkit.Controller) {
   // Returns the user's timezone
   // respond
   // time.time, userRequired: true
-  controller.hears('\btimezone$', ['message_received'], (bot, message) => {
+  controller.hears('\btimezone$', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.time', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -590,7 +623,10 @@ export default function (controller: botkit.Controller) {
   // Sets the user's timezone
   // respond
   // time.time, userRequired: true
-  controller.hears('timezone (.*)', ['message_received'], (bot, message) => {
+  controller.hears('timezone (.*)', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.time', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -630,7 +666,10 @@ export default function (controller: botkit.Controller) {
   // Sets the user's active times
   // respond
   // time.active, userRequired: true
-  controller.hears('active\s*(.*)?$', ['message_received'], (bot, message) => {
+  controller.hears('active\s*(.*)?$', 
+                   ['message_received'],
+                   buildOptions.bind(null, { id: 'time.active', userRequired: true }, null, controller), 
+                   (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
