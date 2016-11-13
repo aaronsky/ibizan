@@ -127,8 +127,8 @@ export default function (controller: botkit.Controller) {
   }
 
   controller.on('user_typing', (bot, message) => {
-    bot.storage.users.get(message.user, (err, user) => {
-      bot.storage.channels.get(message.channel, (err, channel) => {
+    controller.storage.users.get(message.user, (err, user) => {
+      controller.storage.channels.get(message.channel, (err, channel) => {
         if (!channel.name) {
           channel = {
             private: true,
@@ -142,7 +142,7 @@ export default function (controller: botkit.Controller) {
 
   controller.on('presence_change', (bot, message) => {
     if (message.presence === 'active') {
-      bot.storage.users.get(message.user, (err, user) => {
+      controller.storage.users.get(message.user, (err, user) => {
         //hound(user, { private: null, name: '' }, organization, false, true);
       });
     }

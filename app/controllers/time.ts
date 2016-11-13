@@ -63,23 +63,23 @@ export default function (controller: botkit.Controller) {
     return channel.substring(0, 1) === 'D';
   }
 
-  function isClockChannel(bot: botkit.Bot, channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
-    bot.storage.channels.get(channel, (err, data) => {
+  function isClockChannel(channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
+    controller.storage.channels.get(channel, (err, data) => {
       resolve(data.name === organization.clockChannel);
     });
   }
 
-  function isProjectChannel(bot: botkit.Bot, channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
-    bot.storage.channels.get(channel, (err, data) => {
-      isClockChannel(bot, channel, organization, (isClockChannel) => {
+  function isProjectChannel(channel: string, organization: Organization, resolve: (isChannel: boolean) => void) {
+    controller.storage.channels.get(channel, (err, data) => {
+      isClockChannel(channel, organization, (isClockChannel) => {
         resolve(!isClockChannel && !isDM(channel) && !!organization.getProjectByName(data.name));
       });
     });
   }
 
-  function canPunchHere(bot: botkit.Bot, channel: string, organization: Organization, resolve: (isAllowed: boolean) => void) {
-    isProjectChannel(bot, channel, organization, (isProjectChannel) => {
-      isClockChannel(bot, channel, organization, (isClockChannel) => {
+  function canPunchHere(channel: string, organization: Organization, resolve: (isAllowed: boolean) => void) {
+    isProjectChannel(channel, organization, (isProjectChannel) => {
+      isClockChannel(channel, organization, (isClockChannel) => {
         return isDM(channel) || isClockChannel || isProjectChannel;
       });
     });
@@ -112,13 +112,13 @@ export default function (controller: botkit.Controller) {
     mode = mode.toLowerCase();
     const user = organization.getUserBySlackName(message.user.name);
     Logger.Console.info(`Parsing '${message.text} for @${user.slack}.`);
-    canPunchHere(bot, message.room, organization, (isAllowed) => {
+    canPunchHere(message.room, organization, (isAllowed) => {
       if (isAllowed) {
         Logger.Slack.addReaction('clock4', message);
         const msg = message.match.input.replace(REGEX.ibizan, '').trim();
         const tz = user.timetable.timezone.name || TIMEZONE;
         const punch = Punch.parse(organization, user, msg, mode, tz);
-        isProjectChannel(bot, message.room, organization, (isProjectChannel) => {
+        isProjectChannel(message.room, organization, (isProjectChannel) => {
           if (!punch.projects.length && isProjectChannel) {
             const project = organization.getProjectByName(message.room);
             if (project) {
@@ -226,7 +226,7 @@ export default function (controller: botkit.Controller) {
       }
       if (operator === 'project' || operator === 'projects') {
         const projects = msgWithoutOperator.split(' ');
-        isProjectChannel(bot, message.user.room, organization, (isProjectChannel) => {
+        isProjectChannel(message.user.room, organization, (isProjectChannel) => {
           if (projects.length === 0 && isProjectChannel) {
             projects.push(organization.getProjectByName(message.user.room));
           }
@@ -327,10 +327,11 @@ export default function (controller: botkit.Controller) {
     } else {
       response = strings.noevents;
     }
-    bot.say({
+    const msg = {
       text: response,
       channel: message.channel
-    });
+    } as botkit.Message;
+    bot.say(msg);
     Logger.Slack.addReaction('dog2', message);
   });
 
@@ -340,10 +341,11 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.hoursHelp
   controller.hears('\bhours$', ['message_received'], (bot, message) => {
-    bot.say({
+    const msg = {
       text: strings.hourshelp,
       channel: message.channel
-    });
+    } as botkit.Message;
+    bot.say(msg);
     Logger.Slack.addReaction('dog2', message);
   });
 
@@ -638,10 +640,11 @@ export default function (controller: botkit.Controller) {
     const command = message.match[1];
 
     if (!command) {
-      bot.say({
+      const msg = {
         text: strings.activehelp,
         channel: message.channel
-      });
+      } as botkit.Message;
+      bot.say(msg);
       Logger.Slack.addReaction('dog2', message);
       return;
     }

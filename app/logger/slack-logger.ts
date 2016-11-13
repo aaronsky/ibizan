@@ -16,11 +16,11 @@ export namespace SlackLogger {
     bot = bot;
   }
   export function getSlackDM(username: string, resolve: (id: string) => void) {
-    bot.storage.channels.get(username, (err, dm) => {
+    controller.storage.channels.get(username, (err, dm) => {
       if (dm) {
         resolve(dm.id);
       } else {
-        bot.storage.users.get(username, (err, user) => {
+        controller.storage.users.get(username, (err, user) => {
           bot.api.im.open({ user: user.id }, (err, response) => {
             if (err) {
               ConsoleLogger.error(`Error opening DM: ${err}`);
@@ -37,7 +37,7 @@ export namespace SlackLogger {
     });
   }
   export function getChannelName(channelName: string, resolve: (name: string) => void) {
-    bot.storage.channels.get(channelName, (err, channel) => {
+    controller.storage.channels.get(channelName, (err, channel) => {
       resolve(channel.name);
     });
   }
@@ -78,15 +78,16 @@ export namespace SlackLogger {
   }
   export function errorToSlack(msg: string, error?: any) {
     if (msg) {
-      bot.storage.channels.get('ibizan-diagnostics', (err, channel) => {
+      controller.storage.channels.get('ibizan-diagnostics', (err, channel) => {
         if (err) {
           ConsoleLogger.error(msg, error);
           return;
         }
-        bot.say({
+        const message = {
           text: `(${new Date()}) ERROR: ${msg}\n${error || ''}`,
           channel: channel.id
-        });
+        } as botkit.Message;
+        bot.say(message);
       });
     } else {
       ConsoleLogger.error('errorToSlack called with no message');

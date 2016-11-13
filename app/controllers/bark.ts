@@ -30,31 +30,35 @@ export default function (controller: botkit.Controller) {
 
   // bark.goodboy
   controller.hears('good (dog|boy|pup|puppy|ibizan|ibi)', ['direct_message', 'direct_mention', 'mention'], (bot, message) => {
-    bot.say({
+    const msg = {
       text: strings.goodboy,
       channel: message.channel
-    });
+    } as botkit.Message;
+    bot.say(msg);
   });
 
   // bark.fetch
   controller.hears('fetch\s*(.*)?$', ['message_received'], (bot, message) => {
     const thing = message.match[1];
     if (!thing) {
-      bot.say({
+      const msg = {
         text: `_perks up and fidgets impatiently, waiting for @${message.user.name} to \`fetch [thing]\`_`,
         channel: message.channel
-      });
+      } as botkit.Message;
+      bot.say(msg);
     } else {
-      bot.say({
+      const msg = {
         text: `_runs to fetch ${thing}!_`,
         channel: message.channel
-      });
+      } as botkit.Message;
+      bot.say(msg);
       setTimeout(() => {
         if ((Math.floor(Math.random() * 10) + 1) === 1) {
-          bot.say({
+          const msg = {
             text: `_returns to @${message.user.name}, unable to find ${thing}${random(strings.fetchsuffix)}_`,
             channel: message.channel
-          });
+          } as botkit.Message;
+          bot.say(msg);
         } else {
           const match = thing.match(/:(.*?):/g);
           if (match) {
@@ -62,20 +66,13 @@ export default function (controller: botkit.Controller) {
               Logger.Slack.addReaction(el.replace(/:/g, ''), message);
             }
           }
-          bot.say({
+          const msg = {
             text: `_drops ${thing} at @${message.user.name}'s feet${random(strings.fetchsuffix)}_`,
             channel: message.channel
-          })
+          } as botkit.Message;
+          bot.say(msg);
         }
       }, 2000 * (Math.floor(Math.random() * 5) + 1));
     }
-  });
-
-  controller.webserver.get('/', (req, res) => {
-    res.json({
-      name: process.env.ORG_NAME + '\'s Ibizan',
-      version: process.env.npm_package_version,
-      time: moment().format()
-    });
   });
 };
