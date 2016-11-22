@@ -37,7 +37,7 @@ declare module botkit {
             info(...params: any[]): void;
             debug(...params: any[]): void;
         }
-        webserver: Express.Application;
+        webserver: any;
         hears_test: HearFunction;
 
         constructor(configuration: Configuration);
@@ -59,14 +59,14 @@ declare module botkit {
         tick(): never;
 
         configureSlackApp(slack_app_config: { clientId: string, clientSecret: string, scopes: string[] }, cb: () => void): Controller;
-        createHomepageEndpoint(webserver: Express.Application): Controller;
+        createHomepageEndpoint(webserver: any): Controller;
         secureWebhookEndpoints();
-        createWebhookEndpoints(webserver: Express.Application, authenticationTokens?: string[]): Controller;
+        createWebhookEndpoints(webserver: any, authenticationTokens?: string[]): Controller;
         saveTeam(team: Team, cb?: (err: Error, data: any) => void): never;
         findTeamById(id: string, cb: (err: Error, data: Team) => void): never;
-        setupWebserver(port: number, cb: (err: Error, webserver: Express.Application) => void): Controller;
+        setupWebserver(port: number, cb: (err: Error, webserver: any) => void): Controller;
         getAuthorizeURL(team_id: string): string;
-        createOauthEndpoints(webserver: Express.Application, callback: (err: Error, req: any, res: any) => void): Controller;
+        createOauthEndpoints(webserver: any, callback: (err: Error, req: any, res: any) => void): Controller;
         handleSlackEvents(): never;
     }
     interface Attachment {

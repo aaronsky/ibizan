@@ -5,6 +5,9 @@
 node_modules
 *.log
 
+# Typings
+typings/
+
 # Ibizan
 bin
 .ibizanrc.json

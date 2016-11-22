@@ -8,12 +8,7 @@
     "diagnostics": true,
     "listEmittedFiles": true,
     "pretty": true,
-    "outDir": "bin",
-    "types": [
-      "node",
-      "node-uuid",
-      "moment-timezone"
-    ]
+    "outDir": "bin"
   },
   "include": [
     "app/**/*.ts"
