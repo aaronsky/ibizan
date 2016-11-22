@@ -11,6 +11,7 @@ typings/
 # Ibizan
 bin
 .ibizanrc.json
+*.pem
 
 # CI
 .nyc_output
