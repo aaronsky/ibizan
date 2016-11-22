@@ -23,7 +23,7 @@ export class App {
     bots: { [token: string]: botkit.Bot };
     orgs: { [token: string]: Organization };
     helpEntries: string[];
-    webserver: Express.Application;
+    webserver: express.Application;
 
     constructor(config: IbizanConfig) {
         App.config = config;
@@ -41,7 +41,7 @@ export class App {
         });
     }
     start() {
-        this.controller.setupWebserver(App.config.port, (err, webserver) => {
+        this.controller.setupWebserver(App.config.port, (err: Error, webserver: express.Application) => {
             this.webserver = webserver;
             applyRoutes(this.webserver, this.controller);
             this.controller.on('create_bot', this.onCreateBot.bind(this));
