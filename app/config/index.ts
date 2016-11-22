@@ -13,10 +13,8 @@ export interface IbizanConfig {
         scopes: string[];
     },
     google: {
-        clientId: string;
-        clientSecret: string;
-        redirectUri: string;
-        token?: string;
+        clientEmail: string;
+        privateKey: string;
     }
 }
 
@@ -53,9 +51,8 @@ export class ConfigFactory {
                 scopes: null
             },
             google: {
-                clientId: null,
-                clientSecret: null,
-                redirectUri: null
+                clientEmail: null,
+                privateKey: null
             }
         };
         let temp: IbizanConfig = {
@@ -68,9 +65,8 @@ export class ConfigFactory {
                 scopes: null
             },
             google: {
-                clientId: null,
-                clientSecret: null,
-                redirectUri: null
+                clientEmail: null,
+                privateKey: null
             }
         };
         for (let key in temp) {
@@ -95,6 +91,21 @@ export class ConfigFactory {
             }
         }
         return config;
+    }
+    static toJSONString(config: IbizanConfig | TeamConfig): string {
+        return JSON.stringify(config);
+    }
+    static loadJSON(path: string): any {
+        if (fs.existsSync(path)) {
+            try {
+                const contents = fs.readFileSync(path, 'utf-8');
+                const json = JSON.parse(contents);
+                return ConfigFactory.loadArgs(json);
+            } catch (err) {
+                throw err;
+            }
+        }
+        return;
     }
     private static loadIbizanRc(overridePath?: string) {
         const filename = '.ibizanrc.json';
@@ -167,9 +178,8 @@ export class ConfigFactory {
                 scopes: null
             },
             google: {
-                clientId: null,
-                clientSecret: null,
-                redirectUri: null
+                clientEmail: null,
+                privateKey: null
             }
         };
         if (args.port) {
@@ -187,31 +197,25 @@ export class ConfigFactory {
         if (args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN) {
             config.slack.verificationToken = args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN;
         }
-        if (args.googleClientId || args.googleId || process.env.IBIZAN_GOOGLE_CLIENT_ID) {
-            config.google.clientId = args.googleClientId || args.id || process.env.IBIZAN_GOOGLE_CLIENT_ID;
+        if (args.googleClientEmail || args.clientEmail || process.env.IBIZAN_GOOGLE_CLIENT_EMAIL) {
+            config.google.clientEmail = args.googleClientEmail || args.clientEmail || process.env.IBIZAN_GOOGLE_CLIENT_EMAIL;
         }
-        if (args.googleClientSecret || args.googleSecret || process.env.IBIZAN_GOOGLE_CLIENT_SECRET) {
-            config.google.clientSecret = args.googleClientSecret || args.id || process.env.IBIZAN_GOOGLE_CLIENT_SECRET;
-        }
-        if (args.googleRedirectUri || args.googleRedirectUri || process.env.IBIZAN_GOOGLE_REDIRECT_URI) {
-            config.google.redirectUri = args.googleRedirectUri || args.googleRedirectUri || process.env.IBIZAN_GOOGLE_REDIRECT_URI;
+        if (args.googlePrivateKey || args.privateKey || process.env.IBIZAN_GOOGLE_PRIVATE_KEY) {
+            config.google.privateKey = ConfigFactory.processGooglePrivateKey(args.googlePrivateKey || args.privateKey || process.env.IBIZAN_GOOGLE_PRIVATE_KEY);
         }
         config.slack.scopes = ['bot'];
         return config;
     }
-    static toJSONString(config: IbizanConfig | TeamConfig): string {
-        return JSON.stringify(config);
-    }
-    static loadJSON(path: string): any {
-        if (fs.existsSync(path)) {
-            try {
-                const contents = fs.readFileSync(path, 'utf-8');
-                const json = JSON.parse(contents);
-                return ConfigFactory.loadArgs(json);
-            } catch (err) {
-                throw err;
-            }
+    private static processGooglePrivateKey(keyOrPath: string): string {
+        if (!keyOrPath) {
+            return '';
         }
-        return;
+        const pathStats = fs.statSync(keyOrPath);
+        if (pathStats && pathStats.isFile() && ['.p12', '.pem'].indexOf(path.extname(keyOrPath)) !== -1) {
+            const key = fs.readFileSync(path.resolve(keyOrPath), 'utf-8');
+            return key;
+        } else {
+            return keyOrPath;
+        }
     }
 };

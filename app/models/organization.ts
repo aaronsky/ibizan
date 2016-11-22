@@ -11,10 +11,8 @@ import { Project } from './project';
 import { User, Settings } from './user';
 
 interface GoogleAuth {
-    clientId: string;
-    clientSecret: string;
-    redirectUri: string;
-    token?: string;
+    clientEmail: string;
+    privateKey: string;
 }
 
 export class Organization {
@@ -40,13 +38,11 @@ export class Organization {
 
         if (this.spreadsheet.id) {
             this.sync({
-                clientId: App.config.google.clientId,
-                clientSecret: App.config.google.clientSecret,
-                redirectUri: App.config.google.redirectUri,
-                token: App.config.google.token
-            }).then(() => Console.info('Options loaded')).catch(err => Console.error("Failed to sync", err));
+                clientEmail: App.config.google.clientEmail,
+                privateKey: App.config.google.privateKey
+            }).then(() => Console.info(`Options loaded for ${this.name}`)).catch(err => Console.error(`Failed to sync for ${this.name}`, err));
         } else {
-            Console.warn('Sheet not initialized, no spreadsheet ID was provided');
+            Console.warn(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
         }
     }
     ready() {
@@ -54,7 +50,7 @@ export class Organization {
     }
     async sync(auth?: GoogleAuth) {
         try {
-            await this.spreadsheet.authorize(auth.clientId, auth.clientSecret, auth.redirectUri, auth.token);
+            await this.spreadsheet.authorize(auth.clientEmail, auth.privateKey);
             let opts = await this.spreadsheet.loadOptions();
             if (opts) {
                 let old;

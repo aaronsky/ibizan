@@ -1,4 +1,3 @@
-import * as readline from 'readline';
 import * as moment from 'moment';
 const google = require('googleapis');
 const googleAuth = require('google-auth-library');
@@ -35,40 +34,20 @@ export class Spreadsheet {
       this.id = sheetId;
     }
   }
-  async authorize(clientId: string, clientSecret: string, redirectUri: string, token?: string) {
+  async authorize(clientEmail: string, privateKey: string) {
     return new Promise((resolve, reject) => {
       const auth = new googleAuth();
-      const oauth2Client = this.auth || new auth.OAuth2(clientId, clientSecret, redirectUri);
+      const jwtClient = this.auth || new auth.JWT(clientEmail, null, privateKey, ['https://www.googleapis.com/auth/spreadsheets']);
       Logger.Console.info('Waiting for authorization');
-      if (token) {
-        oauth2Client.credentials = token;
-        this.auth = oauth2Client;
-        Logger.Console.info('Authorized successfully');
-        resolve(token);
-      } else {
-        const authUrl = oauth2Client.generateAuthUrl({
-          access_type: 'offline',
-          scopes: SCOPES
-        });
-        Logger.Console.info('Authorize this app by visiting this url: ', authUrl);
-        var rl = readline.createInterface({
-          input: process.stdin,
-          output: process.stdout
-        });
-        rl.question('Enter the code from that page here: ', function (code) {
-          rl.close();
-          oauth2Client.getToken(code, function (err, token) {
-            if (err) {
+      jwtClient.authorize((err: Error, tokens: any[]) => {
+        if (err) {
               console.log('Error while trying to retrieve access token', err);
               reject(err);
             }
-            oauth2Client.credentials = token;
-            this.auth = oauth2Client;
+            this.auth = jwtClient;
             Logger.Console.info('Authorized successfully');
-            resolve(token);
-          });
-        });
-      }
+            resolve(tokens);
+      });
     });
   }
   async loadOptions() {
