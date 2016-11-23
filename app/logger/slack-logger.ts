@@ -36,11 +36,6 @@ export namespace SlackLogger {
       }
     });
   }
-  export function getChannelName(channelName: string, resolve: (name: string) => void) {
-    controller.storage.channels.get(channelName, (err, channel) => {
-      resolve(channel.name);
-    });
-  }
   export function logToChannel(msg: string, channel: string, attachment?: any, isUser?: boolean) {
     if (msg) {
       if (bot) {

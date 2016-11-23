@@ -102,7 +102,7 @@ export namespace Rows {
             return {
                 range: this.range,
                 majorDimension: 'ROWS',
-                values
+                values: [values]
             };
         }
         async save() {

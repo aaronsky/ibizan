@@ -10,7 +10,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
                 return;
             }
             const { user } = data;
-            message.user = user;
+            message.user_obj = user;
             next();
         });
     }
@@ -26,7 +26,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
                 return;
             }
             const { channel } = data;
-            message.channel = channel;
+            message.channel_obj = channel;
             next();
         });
     }
