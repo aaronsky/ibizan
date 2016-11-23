@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "body-parser": "^1.15.2",
-    "botkit": "^0.4.1",
+    "botkit": "^0.4.2",
     "botkit-storage-firebase": "^1.0.0",
     "express": "^4.14.0",
     "google-auth-library": "^0.9.9",

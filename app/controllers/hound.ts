@@ -145,7 +145,7 @@ export default function (controller: botkit.Controller) {
 
   controller.on('presence_change', (bot, message: any) => {
     if (message.presence === 'active') {
-      controller.storage.users.get(message.user, (err, user) => {
+      controller.storage.users.get(message.user.id, (err, user) => {
         //hound(user, { private: null, name: '' }, organization, false, true);
       });
     }
@@ -179,7 +179,7 @@ export default function (controller: botkit.Controller) {
   // hound.hound, userRequired: true
   controller.hears('hound\s*(.*)?$',
     ['message_received'],
-    buildOptions.bind(null, { id: 'hound.hound', userRequired: true }, controller),
+    buildOptions({ id: 'hound.hound', userRequired: true }, controller),
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
