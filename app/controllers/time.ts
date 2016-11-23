@@ -49,7 +49,7 @@ import { buildOptions } from '../middleware/access';
 
 import moment from 'moment-timezone';
 
-import { REGEX, REGEX_STR, STRINGS, TIMEZONE } from '../shared/constants';
+import { REGEX, REGEX_STR, STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
 import { Rows } from '../shared/rows';
 import * as Logger from '../logger';
@@ -181,7 +181,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.punchByMode, userRequired: true
   controller.hears(REGEX_STR.modes, 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.punchByMode', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -196,7 +196,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // 'time.punchByTime', userRequired: true
   controller.hears(REGEX_STR.rel_time, 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.punchByTime', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -212,7 +212,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.append, userRequired: true
   controller.hears('(append|add)', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.append', userRequired: true }, controller), 
                    async (bot, message) => {
     const organization: Organization = message.organization;
@@ -294,7 +294,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.undo, userRequired: true
   controller.hears('undo', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.undo', userRequired: true }, controller), 
                    async (bot, message) => {
     const organization: Organization = message.organization;
@@ -326,7 +326,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.events
   controller.hears('\b(events|upcoming)$', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.events' }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -358,7 +358,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.hoursHelp
   controller.hears('\bhours$', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.hoursHelp' }, controller), 
                    (bot, message) => {
     const msg = {
@@ -373,7 +373,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.hoursOnDate, userRequired: true
   controller.hears('hours (.*)', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.hoursOnDate', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -442,7 +442,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.hours, userRequired: true
   controller.hears('.*(hours|today|week|month|year|period)+[\?\!\.¿¡]', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.hours', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -568,7 +568,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.status, userRequired: true
   controller.hears('\b(status|info)$', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.status', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -585,7 +585,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.time, userRequired: true
   controller.hears('\btime$', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.time', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -608,7 +608,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.time, userRequired: true
   controller.hears('\btimezone$', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.time', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -626,7 +626,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.time, userRequired: true
   controller.hears('timezone (.*)', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.time', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -669,7 +669,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // time.active, userRequired: true
   controller.hears('active\s*(.*)?$', 
-                   ['message_received'],
+                   EVENTS.respond,
                    buildOptions({ id: 'time.active', userRequired: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;

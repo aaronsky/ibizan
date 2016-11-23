@@ -18,7 +18,7 @@ import { buildOptions } from '../middleware/access';
 import * as moment from 'moment';
 const schedule = require('node-schedule');
 
-import { STRINGS, TIMEZONE } from '../shared/constants';
+import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.hound;
 import * as Logger from '../logger';
 import { Organization } from '../models/organization';
@@ -178,9 +178,9 @@ export default function (controller: botkit.Controller) {
   // respond
   // hound.hound, userRequired: true
   controller.hears('hound\s*(.*)?$',
-    ['message_received'],
-    buildOptions({ id: 'hound.hound', userRequired: true }, controller),
-    (bot, message) => {
+                   EVENTS.respond,
+                   buildOptions({ id: 'hound.hound', userRequired: true }, controller),
+                   (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Logger.Console.error('No Organization was found for the team: ' + bot, new Error());

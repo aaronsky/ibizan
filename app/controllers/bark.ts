@@ -8,7 +8,7 @@
 
 import * as moment from 'moment';
 
-import { REGEX, STRINGS } from '../shared/constants';
+import { REGEX, EVENTS, STRINGS } from '../shared/constants';
 const strings = STRINGS.bark;
 import { random } from '../shared/common';
 import * as Logger from '../logger';
@@ -19,7 +19,7 @@ export default function (controller: botkit.Controller) {
 
   // bark.bark
   controller.hears('bark', 
-                    ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.hear, 
                    buildOptions({ id: 'bark.bark' }, controller), 
                    (bot, message) => {
     bot.startTyping(message);
@@ -28,7 +28,7 @@ export default function (controller: botkit.Controller) {
 
   //bark.story
   controller.hears('tell me a story', 
-                    ['direct_message', 'direct_mention', 'mention'], 
+                    EVENTS.respond, 
                     buildOptions({ id: 'bark.story' }, controller), 
                     (bot, message) => {
     bot.startTyping(message);
@@ -37,7 +37,7 @@ export default function (controller: botkit.Controller) {
 
   // bark.goodboy
   controller.hears('good (dog|boy|pup|puppy|ibizan|ibi)', 
-                    ['direct_message', 'direct_mention', 'mention'], 
+                    EVENTS.hear, 
                     buildOptions({ id: 'bark.goodboy' }, controller), 
                     (bot, message) => {
     const msg = {
@@ -49,7 +49,7 @@ export default function (controller: botkit.Controller) {
 
   // bark.fetch
   controller.hears('fetch\s*(.*)?$', 
-                   ['message_received'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'bark.fetch' }, controller), 
                    (bot, message) => {
     const thing = message.match[1];

@@ -98,3 +98,8 @@ export const STRINGS = {
 export const MODES = ['in', 'out', 'vacation', 'unpaid', 'sick'];
 
 export const TIMEZONE = 'America/Phoenix';
+
+export const EVENTS = {
+  hear: ['direct_mention', 'mention', 'ambient'],
+  respond: ['direct_mention', 'mention']
+};
