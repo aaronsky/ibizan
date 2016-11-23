@@ -1,34 +1,34 @@
 
 import 'mocha';
-import * as Logger from '../';
+import { Console, Slack } from '../';
 
 describe('Logger', () => {
   describe('.Console', () => {
     describe('#debug', () => {
       it('should run without issue', () => {
-        Logger.Console.debug('This is test output');
+        Console.debug('This is test output');
       });
     });
-    describe('#log', () => {
+    describe('#info', () => {
       it('should run without issue', () => {
-        Logger.Console.log('info', 'This is test output');
+        Console.info('This is test output');
       });
     });
     describe('#warn', () => {
       it('should run without issue', () => {
-        Logger.Console.warn('This is test output');
+        Console.warn('This is test output');
       });
     });
     describe('#error', () => {
       it('should run without issue', () => {
-        Logger.Console.error('This is test output');
-        Logger.Console.error('This is test output', null);
-        Logger.Console.error('This is test output', new Error('This is a test error'));
+        Console.error('This is test output');
+        Console.error('This is test output', null);
+        Console.error('This is test output', new Error('This is a test error'));
       });
     });
-    describe('#fun', () => {
+    describe('#silly', () => {
       it('should run without issue', () => {
-        Logger.Console.log('silly', 'This is test output :D');
+        Console.silly('This is test output :D');
       });
     });
   });

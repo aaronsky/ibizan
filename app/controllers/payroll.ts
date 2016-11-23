@@ -13,7 +13,7 @@ import { buildOptions } from '../middleware/access';
 import * as moment from 'moment';
 const schedule = require('node-schedule');
 
-import { STRINGS, TIMEZONE } from '../shared/constants';
+import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 import * as Logger from '../logger';
 import { Organization } from '../models/organization';
 
@@ -74,7 +74,7 @@ export default function (controller: botkit.Controller) {
 
   // { id: 'payroll.payroll', userRequired: true, adminOnly: true }
   controller.hears('payroll\s*(.*)?$', 
-                    ['ambient'], 
+                    EVENTS.respond, 
                     buildOptions({ id: 'payroll.payroll', userRequired: true, adminOnly: true }, controller), 
                     async (bot, message) => {
     const organization: Organization = message.organization;

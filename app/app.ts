@@ -160,7 +160,7 @@ export class App {
             return false;
         }
 
-        Console.log(`Responding to '${message.text}' (${id}) from ${user.name} in ${organization.name}`);
+        Console.info(`Responding to '${message.text}' (${id}) from ${user.name} in ${organization.name}`);
 
         if (adminOnly && !user.is_admin) {
             // Admin command, but user isn't in whitelist
@@ -206,7 +206,7 @@ export class App {
     loadScripts() {
         for (let key in scripts) {
             const script = scripts[key];
-            Console.log(`Loading ${key} script`);
+            Console.info(`Loading ${key} script`);
             if (script && typeof script === 'function') {
                 script.call(null, this.controller);
             } else {

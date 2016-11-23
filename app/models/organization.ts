@@ -32,7 +32,7 @@ export class Organization {
     constructor(config: TeamConfig) {
         this.config = config;
         this.name = config.name;
-        Console.log('silly', `Welcome to ${this.name}!`);
+        Console.silly(`Welcome to ${this.name}!`);
         this.initTime = moment();
         this.spreadsheet = new Spreadsheet(config.google.sheetId);
 

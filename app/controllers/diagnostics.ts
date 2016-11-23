@@ -11,7 +11,7 @@ import { buildOptions } from '../middleware/access';
 
 import * as moment from 'moment';
 
-import { STRINGS, TIMEZONE } from '../shared/constants';
+import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.diagnostics;
 import * as Logger from '../logger';
 import { Organization } from '../models/organization';
@@ -22,7 +22,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // diagnostics.uptime, 
   controller.hears('uptime', 
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'],
+                   EVENTS.respond,
                    buildOptions({ id: 'diagnostics.uptime' }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -37,7 +37,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // id: diagnostics.users, userRequired: true, adminOnly: true
   controller.hears('users',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.users', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -58,7 +58,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // id: diagnostics.userHelp, adminOnly: true
   controller.hears('user$',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.userHelp', adminOnly: true }, controller), 
                    (bot, message) => {
     bot.reply(message, strings.userhelp);
@@ -68,7 +68,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // id: diagnostics.user, userRequired: true, adminOnly: true
   controller.hears('user (.*)',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.user', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -93,7 +93,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // id: diagnostics.dailyReport, adminOnly: true
   controller.hears('daily report',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.dailyReport', adminOnly: true }, controller), 
                    async (bot, message) => {
     const organization: Organization = message.organization;
@@ -126,7 +126,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // id: diagnostics.projects, userRequired: true, adminOnly: true
   controller.hears('projects',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.projects', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -146,7 +146,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // id: diagnostics.calendar, userRequired: true, adminOnly: true
   controller.hears('calendar',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.calendar', userRequired: true, adminOnly: true }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
@@ -162,7 +162,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // diagnostics.sync
   controller.hears('sync',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.sync' }, controller), 
                    async (bot, message) => {
     const organization: Organization = message.organization;
@@ -194,7 +194,7 @@ export default function (controller: botkit.Controller) {
       } else {
         const responseUrl = body.response_url || null;
         if (responseUrl) {
-          Logger.Console.log('POSTing to ${responseUrl}');
+          Console.log('POSTing to ${responseUrl}');
         }
         res.status(200);
         res.json({
@@ -203,7 +203,7 @@ export default function (controller: botkit.Controller) {
         try {
           const status = await organization.sync();
           const message = 'Resynced with spreadsheet';
-          Logger.Console.log(message);
+          Console.log(message);
           const payload = {
             text: message
           };
@@ -218,7 +218,7 @@ export default function (controller: botkit.Controller) {
                   response.send(`Request didn't come back HTTP 200 :(`);
                   return;
                 }
-                Logger.Console.log(body);
+                Console.log(body);
               });
           }
         } catch (err) {
@@ -240,7 +240,7 @@ export default function (controller: botkit.Controller) {
   // respond
   // diagnostics.help
   controller.hears('.*(help|docs|documentation|commands).*',
-                   ['direct_message', 'direct_mention', 'mention', 'ambient'], 
+                   EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.help' }, controller), 
                    (bot, message) => {
     const organization: Organization = message.organization;
