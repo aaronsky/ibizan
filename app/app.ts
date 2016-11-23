@@ -122,7 +122,7 @@ export class App {
         next();
     }
     onReceiveCheckAccessHandler(bot: botkit.Bot, message: botkit.Message): boolean {
-        const { user, options } = message;
+        const { user_obj, options } = message;
         const { id, userRequired, adminOnly } = options;
 
         if (!id) {
@@ -130,7 +130,7 @@ export class App {
             return true;
         }
 
-        if (user && user.name === 'ibizan') {
+        if (user_obj && user_obj.name === 'ibizan') {
             // Ignore self
             return false;
         }
@@ -146,9 +146,9 @@ export class App {
             return false;
         }
 
-        Console.info(`Responding to '${message.text}' (${id}) from ${user.name} in ${organization.name}`);
+        Console.info(`Responding to '${message.text}' (${id}) from ${user_obj.name} in ${organization.name}`);
 
-        if (adminOnly && !user.is_admin) {
+        if (adminOnly && !user_obj.is_admin) {
             // Admin command, but user isn't in whitelist
             const msg = {
                 text: strings.adminonly,
@@ -158,7 +158,7 @@ export class App {
             Slack.addReaction('x', message);
             return false;
         } else if (userRequired) {
-            const orgUser = organization.getUserBySlackName(user.name);
+            const orgUser = organization.getUserBySlackName(user_obj.name);
             if (!orgUser) {
                 // Slack user does not exist in Employee sheet, but user is required
                 const msg = {

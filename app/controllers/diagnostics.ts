@@ -45,7 +45,7 @@ export default function (controller: botkit.Controller) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
-    const user = organization.getUserBySlackName(message.user.name);
+    const user = organization.getUserBySlackName(message.user_obj.name);
     const response = 'All users:';
     const attachments = [];
     for (let user of organization.users) {
@@ -76,7 +76,7 @@ export default function (controller: botkit.Controller) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
-    const user = organization.getUserBySlackName(message.user.name);
+    const user = organization.getUserBySlackName(message.user_obj.name);
     const u = organization.getUserBySlackName(message.match[1]);
     let response = `User ${message.match[1]}`;
     if (u) {
@@ -134,7 +134,7 @@ export default function (controller: botkit.Controller) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
-    const user = organization.getUserBySlackName(message.user.name);
+    const user = organization.getUserBySlackName(message.user_obj.name);
     let response = '';
     for (let project of organization.projects) {
       response += project.description() + '\n\n';
@@ -154,7 +154,7 @@ export default function (controller: botkit.Controller) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
-    const user = organization.getUserBySlackName(message.user.name);
+    const user = organization.getUserBySlackName(message.user_obj.name);
     user.directMessage(organization.calendar.description(), Logger);
     Logger.Slack.addReaction('dog2', message);
   });
@@ -248,7 +248,7 @@ export default function (controller: botkit.Controller) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
-    const user = organization.getUserBySlackName(message.user.name);
+    const user = organization.getUserBySlackName(message.user_obj.name);
     user.directMessage(strings.help, Logger);
     Logger.Slack.addReaction('dog2', message);
   });

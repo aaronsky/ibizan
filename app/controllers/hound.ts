@@ -145,7 +145,7 @@ export default function (controller: botkit.Controller) {
 
   controller.on('presence_change', (bot, message: any) => {
     if (message.presence === 'active') {
-      controller.storage.users.get(message.user.id, (err, user) => {
+      controller.storage.users.get(message.user_obj.id, (err, user) => {
         //hound(user, { private: null, name: '' }, organization, false, true);
       });
     }
@@ -186,7 +186,7 @@ export default function (controller: botkit.Controller) {
         Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
-      const user = organization.getUserBySlackName(message.user.name);
+      const user = organization.getUserBySlackName(message.user_obj.name);
 
       const command = message.match[1]
       if (!command) {
@@ -198,7 +198,7 @@ export default function (controller: botkit.Controller) {
       let scope = comps[0] || 'self';
       if (scope === organization.name) {
         scope = 'org';
-      } else if (scope === message.user.name) {
+      } else if (scope === message.user_obj.name) {
         scope = 'self';
       } else if (scope !== 'self' && scope !== 'org') {
         if (!isNaN(+comps[0]) && (comps[1] === 'hour' || comps[1] === 'hours')) {

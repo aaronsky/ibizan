@@ -82,7 +82,7 @@ export default function (controller: botkit.Controller) {
       Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
-    const user = organization.getUserBySlackName(message.user.name);
+    const user = organization.getUserBySlackName(message.user_obj.name);
     let dates = message.match[1] && message.match[1].split(' ');
     if (dates && dates[0] && !dates[1]) {
       user.directMessage('You must provide both a start and end date.', Logger);

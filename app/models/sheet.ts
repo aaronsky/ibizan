@@ -102,8 +102,9 @@ export class Spreadsheet {
       const request = {
         spreadsheetId: this.id,
         range: this[sheet].properties.title,
-        auth: this.auth,
+        valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
+        auth: this.auth,
         resource: row.toGoogleValues()
       };
       this.service.spreadsheets.values.append(request, (err, response) => {

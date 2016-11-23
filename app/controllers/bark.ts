@@ -55,7 +55,7 @@ export default function (controller: botkit.Controller) {
     const thing = message.match[1];
     if (!thing) {
       const msg = {
-        text: `_perks up and fidgets impatiently, waiting for @${message.user.name} to \`fetch [thing]\`_`,
+        text: `_perks up and fidgets impatiently, waiting for @${message.user_obj.name} to \`fetch [thing]\`_`,
         channel: message.channel
       } as botkit.Message;
       bot.say(msg);
@@ -68,7 +68,7 @@ export default function (controller: botkit.Controller) {
       setTimeout(() => {
         if ((Math.floor(Math.random() * 10) + 1) === 1) {
           const msg = {
-            text: `_returns to @${message.user.name}, unable to find ${thing}${random(strings.fetchsuffix)}_`,
+            text: `_returns to @${message.user_obj.name}, unable to find ${thing}${random(strings.fetchsuffix)}_`,
             channel: message.channel
           } as botkit.Message;
           bot.say(msg);
@@ -80,7 +80,7 @@ export default function (controller: botkit.Controller) {
             }
           }
           const msg = {
-            text: `_drops ${thing} at @${message.user.name}'s feet${random(strings.fetchsuffix)}_`,
+            text: `_drops ${thing} at @${message.user_obj.name}'s feet${random(strings.fetchsuffix)}_`,
             channel: message.channel
           } as botkit.Message;
           bot.say(msg);

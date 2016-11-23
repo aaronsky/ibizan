@@ -119,13 +119,15 @@ declare module botkit {
         subtype?: string;
         text: string;
         // HACK: What in God's name is this
-        user: string | any;
-        channel: string | any;
+        user: string;
+        channel: string;
         ts: string;
         // custom botkit fields
         event?: string;
         match?: RegExpMatchArray;
         // custom ibizan fields
+        user_obj?: any;
+        channel_obj?: any;
         options?: {
             id?: string;
             userRequired?: boolean;
