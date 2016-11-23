@@ -117,10 +117,10 @@ declare module botkit {
     interface Message {
         type: MessageType;
         subtype?: string;
-        channel: string;
         text: string;
         // HACK: What in God's name is this
         user: string | any;
+        channel: string | any;
         ts: string;
         // custom botkit fields
         event?: string;

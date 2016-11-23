@@ -16,6 +16,7 @@ import { applyRoutes } from './routes';
 import { Organization } from './models/organization';
 
 import { setAccessHandler } from './middleware/access';
+import { applyReceiveMiddleware } from './middleware/receive';
 import * as scripts from './controllers';
 
 export class App {
@@ -48,8 +49,8 @@ export class App {
             this.controller.on('create_bot', this.onCreateBot.bind(this));
             this.controller.on('create_team', this.onCreateTeam.bind(this));
             this.controller.on('message_received', this.onReceiveMessage.bind(this));
+            applyReceiveMiddleware(this.controller);
             this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
-            this.controller.middleware.receive.use(this.onReceiveSetUser.bind(this));
             this.controller.middleware.receive.use(this.onReceiveSetAccessHandler.bind(this));
             this.controller.storage.teams.all(this.connectTeamsToSlack.bind(this));
             this.loadScripts();
@@ -115,21 +116,6 @@ export class App {
             message.organization = org;
         }
         next();
-    }
-    onReceiveSetUser(bot: botkit.Bot, message: botkit.Message, next: () => void) {
-        if (!message.user) {
-            next();
-            return;
-        }
-        bot.api.users.info({ user: message.user }, (err, data) => {
-            if (!data.ok) {
-                next();
-                return;
-            }
-            const { user } = data;
-            message.user = user;
-            next();
-        });
     }
     onReceiveSetAccessHandler(bot: botkit.Bot, message: botkit.Message, next: () => void) {
         setAccessHandler(this.onReceiveCheckAccessHandler.bind(this, bot));
