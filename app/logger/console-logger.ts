@@ -1,7 +1,16 @@
 const winston = require('winston');
 
-const logger = new winston.Logger({
+const customLevels = {
   levels: winston.config.syslog.levels,
+  colors: winston.config.syslog.colors
+};
+const syslogLevels = Object.keys(winston.config.syslog.levels);
+customLevels.levels['silly'] = winston.config.syslog.levels[syslogLevels[syslogLevels.length - 1]] + 1;
+customLevels.colors['silly'] = 'pink';
+
+const logger = new winston.Logger({
+  levels: customLevels.levels,
+  colors: customLevels.colors,
   transports: [
     new winston.transports.Console({
       prettyPrint: true,

@@ -11,8 +11,8 @@ import { Project } from './project';
 import { User, Settings } from './user';
 
 interface GoogleAuth {
-    clientEmail: string;
-    privateKey: string;
+    clientEmail?: string;
+    privateKey?: string;
 }
 
 export class Organization {
@@ -48,30 +48,33 @@ export class Organization {
     ready() {
         return this.spreadsheet.initialized;
     }
-    async sync(auth?: GoogleAuth) {
+    async sync(auth: GoogleAuth = {}) {
         try {
-            await this.spreadsheet.authorize(auth.clientEmail, auth.privateKey);
+            if (auth && auth.clientEmail && auth.privateKey) {
+                await this.spreadsheet.authorize(auth.clientEmail, auth.privateKey);
+            }
             let opts = await this.spreadsheet.loadOptions();
-            if (opts) {
-                let old;
-                if (this.users) {
-                    old = this.users.slice(0);
-                }
-                this.users = opts.users;
-                if (old) {
-                    for (let user of old) {
-                        let newUser;
-                        if (newUser = this.getUserBySlackName(user.slack)) {
-                            newUser.settings = Settings.fromSettings(user.settings);
-                        }
+            if (!opts) {
+                throw new Error('loaded data was null');
+            }
+            let old;
+            if (this.users) {
+                old = this.users.slice(0);
+            }
+            this.users = opts.users;
+            if (old) {
+                for (let user of old) {
+                    let newUser;
+                    if (newUser = this.getUserBySlackName(user.slack)) {
+                        newUser.settings = Settings.fromSettings(user.settings);
                     }
                 }
-                this.projects = opts.projects as Project[];
-                this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payWeek, opts.events);
-                this.houndFrequency = opts.houndFrequency;
-                this.clockChannel = opts.clockChannel;
-                this.exemptChannels = opts.exemptChannels;
             }
+            this.projects = opts.projects as Project[];
+            this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payWeek, opts.events);
+            this.houndFrequency = opts.houndFrequency;
+            this.clockChannel = opts.clockChannel;
+            this.exemptChannels = opts.exemptChannels;
         } catch (err) {
             throw err;
         }

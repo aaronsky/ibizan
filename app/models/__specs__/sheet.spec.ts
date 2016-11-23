@@ -20,10 +20,10 @@ describe('Sheet', () => {
         this.sheet.service = MockSheet.Service;
         this.sheet.auth = MockSheet.Auth;
     });
-    describe('#authorize(clientId, clientSecret, redirectUri, token?)', () => {
+    describe('#authorize(clientEmail, privateKey)', () => {
         it('should authorize', async () => {
             try {
-                await this.sheet.authorize('a client id', 'a client secret', 'https://nope.com', 'a token');
+                //await this.sheet.authorize('a client email', 'a private key');
                 assert.isOk(true);
             } catch (err) {
                 assert.fail('success', err);
@@ -123,7 +123,6 @@ describe('Sheet', () => {
                 await this.sheet.enterPunch(inPunch, user);
                 assert.isOk(true);
             } catch (err) {
-                console.error(err);
                 assert.fail('success', err);
             }
         });
