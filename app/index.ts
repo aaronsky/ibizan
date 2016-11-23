@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigFactory } from './config';
-import Logger from './logger';
+import { Console } from './logger';
 import { App } from './app';
 
 const yargs = require('yargs')
@@ -54,7 +54,7 @@ if (argv.version) {
         const packageJson = JSON.parse(packageJsonString);
         version = packageJson.version;
     }
-    console.log('Ibizan v' + version);
+    Console.log('Ibizan v' + version);
     process.exit();
 }
 
@@ -62,7 +62,7 @@ let config;
 try {
     config = ConfigFactory.loadConfiguration(argv.config, argv.opts, argv);
 } catch (err) {
-    Logger.Console.error(err.message, err);
+    Console.error(err.message, err);
     yargs.showHelp();
     process.exit(1);
 }

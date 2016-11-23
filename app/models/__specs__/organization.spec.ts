@@ -12,12 +12,7 @@ describe('Organization', () => {
   beforeEach(async () => {
     this.organization = new Organization(MockConfig.team);
     this.organization.spreadsheet.service = MockSheet.Service;
-    await this.organization.sync({
-      clientId: 'a client id',
-      clientSecret: 'a client secret',
-      redirectUri: 'https://nope.com',
-      token: 'a token'
-    });
+    await this.organization.sync();
   });
   describe('#constructor(config?)', () => {
 

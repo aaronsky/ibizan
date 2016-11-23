@@ -37,17 +37,21 @@ export class Spreadsheet {
   async authorize(clientEmail: string, privateKey: string) {
     return new Promise((resolve, reject) => {
       const auth = new googleAuth();
-      const jwtClient = this.auth || new auth.JWT(clientEmail, null, privateKey, ['https://www.googleapis.com/auth/spreadsheets']);
-      Console.info('Waiting for authorization');
-      jwtClient.authorize((err: Error, tokens: any[]) => {
-        if (err) {
-              Console.log('Error while trying to retrieve access token', err);
-              reject(err);
-            }
-            this.auth = jwtClient;
-            Console.info('Authorized successfully');
-            resolve(tokens);
-      });
+      try {
+        const jwtClient = this.auth || new auth.JWT(clientEmail, null, privateKey, ['https://www.googleapis.com/auth/spreadsheets']);
+        Console.info('Waiting for authorization');
+        jwtClient.authorize((err: Error, tokens: any[]) => {
+          if (err) {
+            Console.error('Error while trying to retrieve access token', err);
+            reject(err);
+          }
+          this.auth = jwtClient;
+          Console.info('Authorized successfully');
+          resolve(tokens);
+        });
+      } catch (err) {
+        reject(err);
+      }
     });
   }
   async loadOptions() {
@@ -483,7 +487,7 @@ interface SheetOptions {
   sick: number;
   houndFrequency: number;
   payWeek: moment.Moment;
-  holidays: { 
+  holidays: {
     name: string;
     date: moment.Moment;
   }[];
