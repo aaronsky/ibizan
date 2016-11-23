@@ -15,6 +15,7 @@ import { IbizanConfig, TeamConfig } from './config';
 import { applyRoutes } from './routes';
 import { Organization } from './models/organization';
 
+import { setAccessHandler } from './middleware/access';
 import * as scripts from './controllers';
 
 export class App {
@@ -48,7 +49,8 @@ export class App {
             this.controller.on('create_team', this.onCreateTeam.bind(this));
             this.controller.on('message_received', this.onReceiveMessage.bind(this));
             this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
-            this.controller.middleware.receive.use(this.onReceiveCheckAccess.bind(this));
+            this.controller.middleware.receive.use(this.onReceiveSetUser.bind(this));
+            this.controller.middleware.receive.use(this.onReceiveSetAccessHandler.bind(this));
             this.controller.storage.teams.all(this.connectTeamsToSlack.bind(this));
             this.loadScripts();
         });
@@ -64,7 +66,7 @@ export class App {
             const message = { user: team.createdBy } as botkit.Message;
             bot.startPrivateConversation(message, (err, convo) => {
                 if (err) {
-                    this.controller.log.error(err.message, err);
+                    Console.error(err.message, err);
                 } else {
                     convo.say('I am a bot that has just joined your team');
                     convo.say('You must now /invite me to a channel so that I can be of use!');
@@ -114,63 +116,75 @@ export class App {
         }
         next();
     }
-    onReceiveCheckAccess(bot: botkit.Bot, message: botkit.Message, next: () => void) {
-        const options = message.options;
-        if (options && options.id == null) {
-            // Ignore unknown commands or catch-alls
+    onReceiveSetUser(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+        if (!message.user) {
             next();
-        } else if (message.user) {
-            bot.api.users.info({ user: message.user }, (err, data) => {
-                const user = data.user;
-                const username = user.name;
-                message.user = {
-                    id: message.user,
-                    name: username
-                };
-                if (username === 'hubot' || username === 'ibizan') {
-                    // Ignore myself and messages overheard
-                    return;
-                } else {
-                    const organization: Organization = this.getOrganization(bot);
-                    if (!organization.ready()) {
-                        const msg = {
-                            text: strings.orgnotready,
-                            channel: message.channel
-                        } as botkit.Message;
-                        bot.say(msg);
-                        Slack.addReaction('x', message);
-                        return;
-                    } else {
-                        this.controller.log(`Responding to '${message}' (${options && options.id}) from ${username}`);
-                        if (options && options.adminOnly && !user.is_admin) {
-                            // Admin command, but user isn't in whitelist
-                            const msg = {
-                                text: strings.adminonly,
-                                channel: message.channel
-                            } as botkit.Message;
-                            bot.say(msg);
-                            Slack.addReaction('x', message);
-                            return;
-                        } else if (options && options.userRequired) {
-                            const user = organization.getUserBySlackName(username);
-                            if (!user) {
-                                // Slack user does not exist in Employee sheet, but user is required
-                                const msg = {
-                                    text: strings.notanemployee,
-                                    channel: message.channel
-                                } as botkit.Message;
-                                bot.say(msg);
-                                Slack.addReaction('x', message);
-                                return;
-                            }
-                        }
-                        next();
-                    }
-                }
-            });
-        } else {
-            next();
+            return;
         }
+        bot.api.users.info({ user: message.user }, (err, data) => {
+            if (!data.ok) {
+                next();
+                return;
+            }
+            const { user } = data;
+            message.user = user;
+            next();
+        });
+    }
+    onReceiveSetAccessHandler(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+        setAccessHandler(this.onReceiveCheckAccessHandler.bind(this, bot));
+        next();
+    }
+    onReceiveCheckAccessHandler(bot: botkit.Bot, message: botkit.Message): boolean {
+        const { user, options } = message;
+        const { id, userRequired, adminOnly } = options;
+
+        if (!id) {
+            // Ignore unknown commands or catch-alls
+            return true;
+        }
+
+        if (user && user.name === 'ibizan') {
+            // Ignore self
+            return false;
+        }
+
+        const organization: Organization = this.getOrganization(bot);
+        if (!organization.ready()) {
+            const msg = {
+                text: strings.orgnotready,
+                channel: message.channel
+            } as botkit.Message;
+            bot.say(msg);
+            Slack.addReaction('x', message);
+            return false;
+        }
+
+        Console.log(`Responding to '${message.text}' (${id}) from ${user.name} in ${organization.name}`);
+
+        if (adminOnly && !user.is_admin) {
+            // Admin command, but user isn't in whitelist
+            const msg = {
+                text: strings.adminonly,
+                channel: message.channel
+            } as botkit.Message;
+            bot.say(msg);
+            Slack.addReaction('x', message);
+            return false;
+        } else if (userRequired) {
+            const orgUser = organization.getUserBySlackName(user.name);
+            if (!orgUser) {
+                // Slack user does not exist in Employee sheet, but user is required
+                const msg = {
+                    text: strings.notanemployee,
+                    channel: message.channel
+                } as botkit.Message;
+                bot.say(msg);
+                Slack.addReaction('x', message);
+                return false;
+            }
+        }
+        return true;
     }
     connectTeamsToSlack(err, teams: any[]) {
         if (err) {
@@ -181,7 +195,7 @@ export class App {
             if (team.bot) {
                 this.controller.spawn(team).startRTM((err, bot) => {
                     if (err) {
-                        this.controller.log.error('Error connecting bot to Slack:', err);
+                        Console.error('Error connecting bot to Slack:', err);
                     } else {
                         this.trackBot(bot, team);
                     }
@@ -192,11 +206,11 @@ export class App {
     loadScripts() {
         for (let key in scripts) {
             const script = scripts[key];
-            this.controller.log(`Loading ${key} script`);
+            Console.log(`Loading ${key} script`);
             if (script && typeof script === 'function') {
                 script(this.controller);
             } else {
-                this.controller.log.error(`Expected ${key} to be a function, instead was a ${typeof script}`);
+                Console.error(`Expected ${key} to be a function, instead was a ${typeof script}`);
                 throw new Error(`Couldn't load ${key} script`);
             }
         }

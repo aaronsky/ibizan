@@ -4,7 +4,7 @@ const googleAuth = require('google-auth-library');
 
 import { Rows } from '../shared/rows';
 import { momentForHoliday } from '../shared/moment-holiday';
-import * as Logger from '../logger';
+import { Console } from '../logger';
 import { CalendarEvent } from './calendar';
 import { Project } from './project';
 import { Punch } from './punch';
@@ -38,14 +38,14 @@ export class Spreadsheet {
     return new Promise((resolve, reject) => {
       const auth = new googleAuth();
       const jwtClient = this.auth || new auth.JWT(clientEmail, null, privateKey, ['https://www.googleapis.com/auth/spreadsheets']);
-      Logger.Console.info('Waiting for authorization');
+      Console.info('Waiting for authorization');
       jwtClient.authorize((err: Error, tokens: any[]) => {
         if (err) {
-              console.log('Error while trying to retrieve access token', err);
+              Console.log('Error while trying to retrieve access token', err);
               reject(err);
             }
             this.auth = jwtClient;
-            Logger.Console.info('Authorized successfully');
+            Console.info('Authorized successfully');
             resolve(tokens);
       });
     });
@@ -74,10 +74,10 @@ export class Spreadsheet {
         let retry = 1;
         const timeout = setTimeout(async () => {
           if (retry <= 3) {
-            Logger.Console.debug(`Retrying save of row in ${sheet}, attempt ${retry}...`);
+            Console.debug(`Retrying save of row in ${sheet}, attempt ${retry}...`);
             try {
               await row.save();
-              Logger.Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
+              Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
               clearInterval(timeout);
               resolve();
               return;
@@ -86,7 +86,7 @@ export class Spreadsheet {
             }
             retry += 1;
           } else {
-            Logger.Console.error(`Unable to save row to ${sheet}`, new Error(err.toString()));
+            Console.error(`Unable to save row to ${sheet}`, new Error(err.toString()));
             reject(err);
           }
         }, 1000);
@@ -107,10 +107,10 @@ export class Spreadsheet {
           let retry = 1;
           const timeout = setTimeout(() => {
             if (retry <= 3) {
-              Logger.Console.debug(`Retrying adding row to ${sheet}, attempt ${retry}...`);
+              Console.debug(`Retrying adding row to ${sheet}, attempt ${retry}...`);
               this.service.spreadsheets.values.append(request, (err, response) => {
                 if (!err) {
-                  Logger.Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
+                  Console.debug(`Row was successfully saved to ${sheet} after ${retry} attempts.`);
                   clearInterval(timeout);
                   resolve(row);
                   return;
@@ -118,7 +118,7 @@ export class Spreadsheet {
               });
               retry += 1;
             } else {
-              Logger.Console.error(`Unable to add row to ${sheet}`, new Error(err));
+              Console.error(`Unable to add row to ${sheet}`, new Error(err));
               reject(err);
             }
           }, 1000);
@@ -263,7 +263,7 @@ export class Spreadsheet {
     return numberDone;
   }
   private async loadWorksheets() {
-    return new Promise<Options>((resolve, reject) => {
+    return new Promise<SheetOptions>((resolve, reject) => {
       const request = {
         spreadsheetId: this.id,
         auth: this.auth
@@ -289,15 +289,15 @@ export class Spreadsheet {
           if (!(this.rawData && this.payroll && this.variables && this.projects && this.users && this.events)) {
             reject('Worksheets failed to be associated properly');
           } else {
-            Logger.Console.log('silly', '----------------------------------------');
-            resolve({} as Options);
+            Console.log('silly', '----------------------------------------');
+            resolve({} as SheetOptions);
           }
         }
       });
     });
   }
-  private async loadVariables(opts: Options) {
-    return new Promise<Options>((resolve, reject) => {
+  private async loadVariables(opts: SheetOptions) {
+    return new Promise<SheetOptions>((resolve, reject) => {
       const title = this.variables.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -319,15 +319,15 @@ export class Spreadsheet {
             holidays: [],
             clockChannel: '',
             exemptChannels: []
-          } as Options;
+          } as SheetOptions;
           for (let row of rows) {
-            if (row.vacation || +row.vacation === 0) {
+            if (row.vacation && +row.vacation !== 0) {
               opts.vacation = +row.vacation;
             }
-            if (row.sick || +row.sick === 0) {
+            if (row.sick && +row.sick !== 0) {
               opts.sick = +row.sick;
             }
-            if (row.houndFrequency || +row.houndFrequency === 0) {
+            if (row.houndFrequency && +row.houndFrequency !== 0) {
               opts.houndFrequency = +row.houndFrequency;
             }
             if (row.holidays) {
@@ -350,15 +350,15 @@ export class Spreadsheet {
               opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
             }
           }
-          Logger.Console.log('silly', 'Loaded organization settings');
-          Logger.Console.log('silly', '----------------------------------------');
+          Console.log('silly', 'Loaded organization settings');
+          Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
     });
   }
-  private async loadProjects(opts: Options) {
-    return new Promise<Options>((resolve, reject) => {
+  private async loadProjects(opts: SheetOptions) {
+    return new Promise<SheetOptions>((resolve, reject) => {
       const title = this.projects.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -380,15 +380,15 @@ export class Spreadsheet {
             }
           }
           opts.projects = projects;
-          Logger.Console.log('silly', `Loaded ${projects.length} projects`);
-          Logger.Console.log('silly', '----------------------------------------');
+          Console.log('silly', `Loaded ${projects.length} projects`);
+          Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
     });
   }
-  private async loadEmployees(opts: Options) {
-    return new Promise<Options>((resolve, reject) => {
+  private async loadEmployees(opts: SheetOptions) {
+    return new Promise<SheetOptions>((resolve, reject) => {
       const title = this.users.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -410,15 +410,15 @@ export class Spreadsheet {
             }
           }
           opts.users = users;
-          Logger.Console.log('silly', `Loaded ${users.length} users`);
-          Logger.Console.log('silly', '----------------------------------------');
+          Console.log('silly', `Loaded ${users.length} users`);
+          Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
     });
   }
-  private async loadEvents(opts: Options) {
-    return new Promise<Options>((resolve, reject) => {
+  private async loadEvents(opts: SheetOptions) {
+    return new Promise<SheetOptions>((resolve, reject) => {
       const title = this.events.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -440,15 +440,15 @@ export class Spreadsheet {
             }
           }
           opts.events = events;
-          Logger.Console.log('silly', `Loaded ${events.length} calendar events`);
-          Logger.Console.log('silly', '----------------------------------------');
+          Console.log('silly', `Loaded ${events.length} calendar events`);
+          Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       })
     });
   }
-  private async loadPunches(opts: Options) {
-    return new Promise<Options>((resolve, reject) => {
+  private async loadPunches(opts: SheetOptions) {
+    return new Promise<SheetOptions>((resolve, reject) => {
       const title = this.rawData.properties.title;
       const request = {
         spreadsheetId: this.id,
@@ -469,8 +469,8 @@ export class Spreadsheet {
               user.punches.push(punch);
             }
           });
-          Logger.Console.log('silly', `Loaded ${rows.length} punches for ${opts.users.length} users`);
-          Logger.Console.log('silly', '----------------------------------------');
+          Console.log('silly', `Loaded ${rows.length} punches for ${opts.users.length} users`);
+          Console.log('silly', '----------------------------------------');
           resolve(opts);
         }
       });
@@ -478,7 +478,7 @@ export class Spreadsheet {
   }
 }
 
-interface Options {
+interface SheetOptions {
   vacation: number;
   sick: number;
   houndFrequency: number;

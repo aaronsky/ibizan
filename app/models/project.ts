@@ -1,5 +1,3 @@
-import * as console from 'console';
-
 import * as moment from 'moment';
 
 import { Rows } from '../shared/rows';

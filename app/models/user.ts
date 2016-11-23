@@ -1,4 +1,3 @@
-import * as console from 'console';
 import * as moment from 'moment-timezone';
 
 import { TIMEZONE } from '../shared/constants';

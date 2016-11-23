@@ -75,7 +75,7 @@ export default function (controller: botkit.Controller) {
   // { id: 'payroll.payroll', userRequired: true, adminOnly: true }
   controller.hears('payroll\s*(.*)?$', 
                     ['ambient'], 
-                    buildOptions.bind(null, { id: 'payroll.payroll', userRequired: true, adminOnly: true }, controller), 
+                    buildOptions({ id: 'payroll.payroll', userRequired: true, adminOnly: true }, controller), 
                     async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
