@@ -109,19 +109,19 @@ export default function (controller: botkit.Controller) {
   }
 
   // Parse a textual punch and produce a new Punch object
-  function parse(bot: botkit.Bot, message: any, mode: string, organization: Organization) {
+  function parse(bot: botkit.Bot, message: botkit.Message, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
     const user = organization.getUserBySlackName(message.user.name);
     Logger.Console.info(`Parsing '${message.text} for @${user.slack}.`);
-    canPunchHere(message.room, organization, (isAllowed) => {
+    canPunchHere(message.channel, organization, (isAllowed) => {
       if (isAllowed) {
         Logger.Slack.addReaction('clock4', message);
         const msg = message.match.input.replace(REGEX.ibizan, '').trim();
         const tz = user.timetable.timezone.name || TIMEZONE;
         const punch = Punch.parse(organization, user, msg, mode, tz);
-        isProjectChannel(message.room, organization, (isProjectChannel) => {
+        isProjectChannel(message.channel, organization, (isProjectChannel) => {
           if (!punch.projects.length && isProjectChannel) {
-            const project = organization.getProjectByName(message.room);
+            const project = organization.getProjectByName(message.channel);
             if (project) {
               punch.projects.push(project);
             }
@@ -150,7 +150,7 @@ export default function (controller: botkit.Controller) {
   }
 
   // Send the punch to the org's Spreadsheet
-  async function sendPunch(punch: Punch, user: User, message: any, organization: Organization) {
+  async function sendPunch(punch: Punch, user: User, message: botkit.Message, organization: Organization) {
     if (!punch) {
       Logger.Slack.errorToSlack(`Somehow, a punch was not generated for \"${user.slack}\". Punch:\n`, message.match.input);
       user.directMessage('An unexpected error occured while generating your punch.', Logger);
