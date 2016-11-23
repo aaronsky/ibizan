@@ -289,7 +289,7 @@ export class Spreadsheet {
           if (!(this.rawData && this.payroll && this.variables && this.projects && this.users && this.events)) {
             reject('Worksheets failed to be associated properly');
           } else {
-            Console.log('silly', '----------------------------------------');
+            Console.silly('----------------------------------------');
             resolve({} as SheetOptions);
           }
         }
@@ -350,8 +350,8 @@ export class Spreadsheet {
               opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
             }
           }
-          Console.log('silly', 'Loaded organization settings');
-          Console.log('silly', '----------------------------------------');
+          Console.silly('Loaded organization settings');
+          Console.silly('----------------------------------------');
           resolve(opts);
         }
       });
@@ -380,8 +380,8 @@ export class Spreadsheet {
             }
           }
           opts.projects = projects;
-          Console.log('silly', `Loaded ${projects.length} projects`);
-          Console.log('silly', '----------------------------------------');
+          Console.silly(`Loaded ${projects.length} projects`);
+          Console.silly('----------------------------------------');
           resolve(opts);
         }
       });
@@ -410,8 +410,8 @@ export class Spreadsheet {
             }
           }
           opts.users = users;
-          Console.log('silly', `Loaded ${users.length} users`);
-          Console.log('silly', '----------------------------------------');
+          Console.silly(`Loaded ${users.length} users`);
+          Console.silly('----------------------------------------');
           resolve(opts);
         }
       });
@@ -440,8 +440,8 @@ export class Spreadsheet {
             }
           }
           opts.events = events;
-          Console.log('silly', `Loaded ${events.length} calendar events`);
-          Console.log('silly', '----------------------------------------');
+          Console.silly(`Loaded ${events.length} calendar events`);
+          Console.silly('----------------------------------------');
           resolve(opts);
         }
       })
@@ -469,8 +469,8 @@ export class Spreadsheet {
               user.punches.push(punch);
             }
           });
-          Console.log('silly', `Loaded ${rows.length} punches for ${opts.users.length} users`);
-          Console.log('silly', '----------------------------------------');
+          Console.silly(`Loaded ${rows.length} punches for ${opts.users.length} users`);
+          Console.silly('----------------------------------------');
           resolve(opts);
         }
       });

@@ -21,4 +21,6 @@ const logger = new winston.Logger({
 
 logger.cli();
 
-export = logger;
+export {
+  logger as ConsoleLogger
+};
