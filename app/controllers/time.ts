@@ -102,7 +102,7 @@ export default function (controller: botkit.Controller) {
   function parse(bot: botkit.Bot, message: botkit.Message, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
     const user = organization.getUserBySlackName(message.user_obj.name);
-    Console.info(`Parsing '${message.text} for @${user.slack}.`);
+    Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
     const isAllowed = canPunchHere(message.channel_obj.name, organization);
     if (!isAllowed) {
       Slack.addReaction('x', message);
@@ -131,20 +131,20 @@ export default function (controller: botkit.Controller) {
     } else {
       article = 'an';
     }
-    Console.info(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slack}: ${punch.description(user)}`);
+    Console.info(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slackName}: ${punch.description(user)}`);
     sendPunch(punch, user, message, organization);
   }
 
   // Send the punch to the org's Spreadsheet
   async function sendPunch(punch: Punch, user: User, message: botkit.Message, organization: Organization) {
     if (!punch) {
-      Slack.error(`Somehow, a punch was not generated for \"${user.slack}\". Punch:\n`, message.match.input);
+      Slack.error(`Somehow, a punch was not generated for \"${user.slackName}\". Punch:\n`, message.match.input);
       user.directMessage('An unexpected error occured while generating your punch.');
       return;
     }
     try {
       const enteredPunch = await organization.spreadsheet.enterPunch(punch, user, organization);
-      Console.info(`@${user.slack}'s punch was successfully entered into the spreadsheet.`);
+      Console.info(`@${user.slackName}'s punch was successfully entered into the spreadsheet.`);
       const punchEnglish = `Punched you *${enteredPunch.description(user)}*.`;
       if (enteredPunch.mode === 'in') {
         user.directMessage(punchEnglish);
@@ -157,7 +157,7 @@ export default function (controller: botkit.Controller) {
     } catch (err) {
       const errorMsg = Console.clean(err);
       Console.error(errorMsg);
-      Slack.error(`"${errorMsg}" was returned for ${user.slack}. Punch:\n`, message.match.input);
+      Slack.error(`"${errorMsg}" was returned for ${user.slackName}. Punch:\n`, message.match.input);
       user.directMessage(`\n${errorMsg}`);
       Slack.addReaction('x', message);
       Slack.removeReaction('clock4', message);
@@ -234,7 +234,7 @@ export default function (controller: botkit.Controller) {
           punch.appendNotes(msgWithoutOperator);
           results = `'${msgWithoutOperator}'`;
         }
-        const row = punch.toRawRow(user.name);
+        const row = punch.toRawRow(user.realName);
         try {
           await organization.spreadsheet.saveRow(row, 'rawData');
           user.directMessage(`Added ${operator} ${results}`);
@@ -301,7 +301,7 @@ export default function (controller: botkit.Controller) {
           Slack.removeReaction('clock4', message);
           user.directMessage(`Undid your last punch, which was: *${lastPunchDescription}*\n\nYour most current punch is now: *${user.lastPunch().description(user)}*`);
         } catch (err) {
-          Slack.error(`"${err}" was returned for an undo operation by ${user.slack}`);
+          Slack.error(`"${err}" was returned for an undo operation by ${user.slackName}`);
           user.directMessage('Something went horribly wrong while undoing your punch.');
         }
       } else {

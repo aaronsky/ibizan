@@ -9,11 +9,11 @@ export namespace SlackLogger {
   let controller: botkit.Controller;
   let bot: botkit.Bot;
 
-  export function setController(control: botkit.Controller) {
-    controller = control;
+  export function setController(newController: botkit.Controller) {
+    controller = newController;
   }
-  export function setBot(bot: botkit.Bot) {
-    bot = bot;
+  export function setBot(newBot: botkit.Bot) {
+    bot = newBot;
   }
 
   export async function log(text: string, channel: string, attachment?: string | { text: string, fallback: string }[], isUser?: boolean) {

@@ -170,7 +170,7 @@ export class Spreadsheet {
             reject('You haven\'t punched out yet.');
           }
           last.out(punch, organization);
-          const row = last.toRawRow(user.name);
+          const row = last.toRawRow(user.realName);
           row.bindGoogleApis(this.service, this.id, this.auth);
           try {
             await this.saveRow(row, 'rawData');
@@ -198,7 +198,7 @@ export class Spreadsheet {
           }
         }
       } else {
-        const row = punch.toRawRow(user.name);
+        const row = punch.toRawRow(user.realName);
         try {
           const newRow = await this.newRow(row, 'rawData');
           const title = this.rawData.properties.title;
@@ -468,7 +468,7 @@ export class Spreadsheet {
         } else {
           const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title, Rows.RawDataRow);
           rows.forEach((row, index, arr) => {
-            const user: User = opts.users.filter((item, index, arr) => item.name === row.name)[0];
+            const user: User = opts.users.filter((item, index, arr) => item.realName === row.name)[0];
             const punch = Punch.parseRaw(user, row, this, opts.projects);
             if (punch && user) {
               user.punches.push(punch);

@@ -33,14 +33,14 @@ describe('Organization', () => {
     it('should return a User when provided a Slack username', () => {
       const user = this.organization.getUserBySlackName('aaronsky');
       expect(user).to.exist;
-      expect(user).to.have.deep.property('slack', 'aaronsky');
+      expect(user).to.have.deep.property('slackName', 'aaronsky');
     });
   });
   describe('#getUserByRealName(name, users?)', () => {
     it('should return a User when provided a real name', () => {
       const user = this.organization.getUserByRealName('Aaron Sky');
       expect(user).to.exist;
-      expect(user).to.have.deep.property('name', 'Aaron Sky');
+      expect(user).to.have.deep.property('realName', 'Aaron Sky');
     });
   });
   describe('#getProjectByName(name, projects?)', () => {

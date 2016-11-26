@@ -147,6 +147,10 @@ export class App {
         }
 
         Console.info(`Responding to '${message.text}' (${id}) from ${user_obj.name} in ${organization.name}`);
+        const orgUser = organization.getUserBySlackName(user_obj.name);
+        if (orgUser) {
+            orgUser.slackId = message.user;
+        }
 
         if (adminOnly && !user_obj.is_admin) {
             // Admin command, but user isn't in whitelist
@@ -158,7 +162,6 @@ export class App {
             Slack.addReaction('x', message);
             return false;
         } else if (userRequired) {
-            const orgUser = organization.getUserBySlackName(user_obj.name);
             if (!orgUser) {
                 // Slack user does not exist in Employee sheet, but user is required
                 const msg = {
