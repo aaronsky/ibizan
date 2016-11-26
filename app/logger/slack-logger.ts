@@ -1,5 +1,5 @@
 
-import { ConsoleLogger } from './console-logger';
+import { ConsoleLogger as Console } from './console-logger';
 import { STRINGS } from '../shared/constants';
 const strings = STRINGS.logger;
 import { typeIsArray } from '../shared/common';
@@ -15,86 +15,87 @@ export namespace SlackLogger {
   export function setBot(bot: botkit.Bot) {
     bot = bot;
   }
-  export function getSlackDM(username: string, resolve: (id: string) => void) {
-    controller.storage.channels.get(username, (err, dm) => {
-      if (dm) {
-        resolve(dm.id);
-      } else {
-        controller.storage.users.get(username, (err, user) => {
-          bot.api.im.open({ user: user.id }, (err, response) => {
-            if (err) {
-              ConsoleLogger.error(`Error opening DM: ${err}`);
-            } else {
-              if (response && response.channel) {
-                resolve(response.channel.id);
-              } else {
-                ConsoleLogger.error(`Unable to open DM with ${username}`);
-              }
-            }
-          });
-        });
-      }
-    });
-  }
-  export function logToChannel(msg: string, channel: string, attachment?: any, isUser?: boolean) {
-    if (msg) {
-      if (bot) {
-        const message: any = {
-          text: msg,
-          channel: null,
-          parse: 'full',
-          username: 'ibizan',
-          icon_url: ICON_URL || undefined,
-          icon_emoji: ICON_URL ? undefined : ':dog2:',
-          attachments: null
+
+  export async function log(text: string, channel: string, attachment?: string | { text: string, fallback: string }[], isUser?: boolean) {
+    if (!text) {
+      Console.error(`No robot available to send message: ${text}`);
+      return
+    }
+    if (!bot) {
+      return;
+    }
+    const message: any = {
+      text,
+      channel: '',
+      parse: 'full',
+      username: 'ibizan',
+      icon_url: ICON_URL || undefined,
+      icon_emoji: ICON_URL ? undefined : ':dog2:',
+      attachments: null
+    };
+
+    if (attachment) {
+      if (typeof attachment === 'string') {
+        message.attachments = {
+          text: attachment,
+          fallback: attachment.replace(/\W/g, '')
         };
-        if (attachment && typeIsArray(attachment)) {
-          message.attachments = attachment;
-        } else if (attachment) {
-          message.attachments = {
-            text: attachment,
-            fallback: attachment.replace(/\W/g, ''),
-          };
-        }
-        let room = channel;
-        if (isUser) {
-          getSlackDM(channel, (room) => {
-            message.channel = room;
-            bot.say(message);
-          });
-        } else {
-          message.channel = room;
-          bot.say(message);
-        }
       } else {
-        ConsoleLogger.error(`No robot available to send message: ${msg}`);
+        message.attachments = attachment;
       }
     }
-  }
-  export function errorToSlack(msg: string, error?: any) {
-    if (msg) {
-      controller.storage.channels.get('ibizan-diagnostics', (err, channel) => {
-        if (err) {
-          ConsoleLogger.error(msg, error);
-          return;
-        }
-        const message = {
-          text: `(${new Date()}) ERROR: ${msg}\n${error || ''}`,
-          channel: channel.id
-        } as botkit.Message;
+
+    if (isUser) {
+      openDM(channel, (err, room) => {
+        message.channel = channel;
         bot.say(message);
       });
     } else {
-      ConsoleLogger.error('errorToSlack called with no message');
+      message.channel = channel;
+      bot.say(message);
     }
   }
-  export function addReaction(reaction: string, message: any, attempt: number = 0) {
+
+  export function error(text: string, error?: any) {
+    if (!text) {
+      Console.error('SlackLogger#error called with no message');
+      return;
+    }
+    controller.storage.channels.get('ibizan-diagnostics', (err, data) => {
+      if (err) {
+        Console.error(err);
+        return;
+      }
+      const message = {
+        text: `(${new Date()}) ERROR: ${text}\n${error || ''}`,
+        channel: data.id
+      } as botkit.Message;
+      bot.say(message);
+    });
+  }
+
+  export function openDM(id: string, onOpenIm: (err: string | Error, channel?: string) => void) {
+    bot.api.im.open({ user: id }, (err, response) => {
+      if (err) {
+        Console.error('Error opening DM', err);
+        onOpenIm(err);
+        return;
+      } else if (!response || !response.ok || !response.channel) {
+        Console.error(`Unable to open DM with ${id}`);
+        onOpenIm(null);
+        return;
+      }
+      onOpenIm(null, response.channel.id);
+    });
+  }
+
+  export function addReaction(reaction: string, message: botkit.Message, attempt: number = 0) {
     if (attempt > 0 && attempt <= 2) {
-      ConsoleLogger.debug(`Retrying adding ${reaction}, attempt ${attempt}...`);
+      Console.debug(`Retrying adding ${reaction}, attempt ${attempt}...`);
     }
     if (attempt >= 3) {
-      ConsoleLogger.error(`Failed to add ${reaction} to ${message} after ${attempt} attempts`);
-      logToChannel(strings.failedreaction, message.user.name);
+      Console.error(`Failed to add ${reaction} to ${message} after ${attempt} attempts`);
+      log(strings.failedreaction, message.user_obj.name);
     } else if (bot && reaction && message) {
       setTimeout(() => {
         bot.api.reactions.add({
@@ -107,22 +108,23 @@ export namespace SlackLogger {
             addReaction(reaction, message, attempt);
           } else {
             if (attempt >= 1) {
-              ConsoleLogger.debug(`Added ${reaction} to ${message} after ${attempt} attempts`);
+              Console.debug(`Added ${reaction} to ${message} after ${attempt} attempts`);
             }
           }
         });
       }, 1000 * attempt);
     } else {
-      ConsoleLogger.error('Slack web client unavailable');
+      Console.error('Slack web client unavailable');
     }
   }
-  export function removeReaction(reaction: string, message: any, attempt: number = 0) {
+
+  export function removeReaction(reaction: string, message: botkit.Message, attempt: number = 0) {
     if (attempt > 0 && attempt <= 2) {
-      ConsoleLogger.debug(`Retrying removal of ${reaction}, attempt ${attempt}...`);
+      Console.debug(`Retrying removal of ${reaction}, attempt ${attempt}...`);
     }
     if (attempt >= 3) {
-      ConsoleLogger.error(`Failed to remove ${reaction} from ${message} after ${attempt} attempts`);
-      logToChannel(strings.failedreaction, message.user.name);
+      Console.error(`Failed to remove ${reaction} from ${message} after ${attempt} attempts`);
+      log(strings.failedreaction, message.user_obj.name);
     } else if (bot && reaction && message) {
       setTimeout(() => {
         bot.api.reactions.remove({
@@ -135,13 +137,13 @@ export namespace SlackLogger {
             removeReaction(reaction, message, attempt);
           } else {
             if (attempt >= 1) {
-              ConsoleLogger.debug(`Removed ${reaction} from ${message} after ${attempt} attempts`);
+              Console.debug(`Removed ${reaction} from ${message} after ${attempt} attempts`);
             }
           }
         });
       }, 1000 * attempt);
     } else {
-      ConsoleLogger.error('Slack web client unavailable');
+      Console.error('Slack web client unavailable');
     }
   }
 }

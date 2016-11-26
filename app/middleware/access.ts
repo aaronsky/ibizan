@@ -6,7 +6,6 @@
 // Author:
 //   bcoia
 
-import * as Logger from '../logger';
 import { Organization } from '../models/organization';
 
 interface HearsOptions {

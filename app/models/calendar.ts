@@ -3,7 +3,6 @@ import * as moment from 'moment';
 
 import { TIMEZONE } from '../shared/constants';
 import { Rows } from '../shared/rows';
-import * as Logger from '../logger';
 
 export class Calendar {
   vacation: any;

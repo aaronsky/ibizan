@@ -11,11 +11,11 @@ import * as moment from 'moment';
 import { REGEX, EVENTS, STRINGS } from '../shared/constants';
 const strings = STRINGS.bark;
 import { random } from '../shared/common';
-import * as Logger from '../logger';
+import { Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
-  Logger.Slack.setController(controller);
+  Slack.setController(controller);
 
   // bark.bark
   controller.hears('bark', 
@@ -76,7 +76,7 @@ export default function (controller: botkit.Controller) {
           const match = thing.match(/:(.*?):/g);
           if (match) {
             for (let el of match) {
-              Logger.Slack.addReaction(el.replace(/:/g, ''), message);
+              Slack.addReaction(el.replace(/:/g, ''), message);
             }
           }
           const msg = {

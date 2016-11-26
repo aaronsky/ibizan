@@ -3,7 +3,7 @@ import * as moment from 'moment-timezone';
 import { TIMEZONE } from '../shared/constants';
 import { Rows } from '../shared/rows';
 import { holidayForMoment } from '../shared/moment-holiday';
-import * as Logger from '../logger';
+import { Console, Slack } from '../logger';
 import { Punch } from './punch';
 
 function getPositiveNumber(input?: number | any, current: number = 0) {
@@ -277,7 +277,7 @@ export class User {
   }
   async undoPunch() {
     const lastPunch = this.lastPunch();
-    Logger.Console.info(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
+    Console.info(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
     let elapsed;
     if (lastPunch.times.block) {
       elapsed = lastPunch.times.block;
@@ -434,17 +434,17 @@ export class User {
       throw 'Row is null';
     }
   }
-  directMessage(msg: string, logger = Logger, attachment?: any) {
-    logger.Slack.logToChannel(msg, this.slack, attachment, true);
+  directMessage(msg: string, attachment?: any) {
+    Slack.log(msg, this.slack, attachment, true);
   }
-  hound(msg: string, logger = Logger) {
+  hound(msg: string) {
     const now = moment.tz(TIMEZONE);
     this.settings.lastPing = now;
     if (!this.salary && this.settings.houndFrequency > 0) {
       msg = `You have been on the clock for ${this.settings.houndFrequency} hours.\n` + msg;
     }
-    setTimeout(() => this.directMessage(msg, logger), 1000 * (Math.floor(Math.random() * 3) + 1));
-    Logger.Console.info(`Hounded ${this.slack} with '${msg}'`);
+    setTimeout(() => this.directMessage(msg), 1000 * (Math.floor(Math.random() * 3) + 1));
+    Console.info(`Hounded ${this.slack} with '${msg}'`);
     this.updateRow();
   }
   hexColor() {

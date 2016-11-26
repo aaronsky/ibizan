@@ -1,4 +1,3 @@
-import { buildOptions } from '../middleware/access';
 // Description:
 //   Punch your timesheet from the comfort of Slack
 //
@@ -52,13 +51,14 @@ import moment from 'moment-timezone';
 import { REGEX, REGEX_STR, STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
 import { Rows } from '../shared/rows';
-import * as Logger from '../logger';
+import { Console, Slack } from '../logger';
 import { Punch } from '../models/punch';
 import { User } from '../models/user';
 import { Organization } from '../models/organization';
+import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
-  Logger.Slack.setController(controller);
+  Slack.setController(controller);
 
   function isDM(channel: string) {
     return channel.substring(0, 1) === 'D';
@@ -102,14 +102,14 @@ export default function (controller: botkit.Controller) {
   function parse(bot: botkit.Bot, message: botkit.Message, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
     const user = organization.getUserBySlackName(message.user_obj.name);
-    Logger.Console.info(`Parsing '${message.text} for @${user.slack}.`);
+    Console.info(`Parsing '${message.text} for @${user.slack}.`);
     const isAllowed = canPunchHere(message.channel_obj.name, organization);
     if (!isAllowed) {
-      Logger.Slack.addReaction('x', message);
-      user.directMessage(`You cannot punch in #${message.channel_obj.name}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`, Logger);
+      Slack.addReaction('x', message);
+      user.directMessage(`You cannot punch in #${message.channel_obj.name}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`);
       return;
     }
-    Logger.Slack.addReaction('clock4', message);
+    Slack.addReaction('clock4', message);
     const msg = message.match.input.replace(REGEX.ibizan, '').trim();
     const tz = user.timetable.timezone.name || TIMEZONE;
     const punch = Punch.parse(organization, user, msg, mode, tz);
@@ -131,35 +131,36 @@ export default function (controller: botkit.Controller) {
     } else {
       article = 'an';
     }
-    Logger.Console.info(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slack}: ${punch.description(user)}`);
+    Console.info(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slack}: ${punch.description(user)}`);
     sendPunch(punch, user, message, organization);
   }
 
   // Send the punch to the org's Spreadsheet
   async function sendPunch(punch: Punch, user: User, message: botkit.Message, organization: Organization) {
     if (!punch) {
-      Logger.Slack.errorToSlack(`Somehow, a punch was not generated for \"${user.slack}\". Punch:\n`, message.match.input);
-      user.directMessage('An unexpected error occured while generating your punch.', Logger);
+      Slack.error(`Somehow, a punch was not generated for \"${user.slack}\". Punch:\n`, message.match.input);
+      user.directMessage('An unexpected error occured while generating your punch.');
       return;
     }
     try {
       const enteredPunch = await organization.spreadsheet.enterPunch(punch, user, organization);
-      Logger.Console.info(`@${user.slack}'s punch was successfully entered into the spreadsheet.`);
+      Console.info(`@${user.slack}'s punch was successfully entered into the spreadsheet.`);
       const punchEnglish = `Punched you *${enteredPunch.description(user)}*.`;
       if (enteredPunch.mode === 'in') {
-        user.directMessage(punchEnglish, Logger);
+        user.directMessage(punchEnglish);
       } else {
-        user.directMessage(punchEnglish, Logger, [enteredPunch.slackAttachment()]);
+        const attachments = [ enteredPunch.slackAttachment() ];
+        user.directMessage(punchEnglish, attachments);
       }
-      Logger.Slack.addReaction('dog2', message);
-      Logger.Slack.removeReaction('clock4', message);
+      Slack.addReaction('dog2', message);
+      Slack.removeReaction('clock4', message);
     } catch (err) {
-      const errorMsg = Logger.Console.clean(err);
-      Logger.Console.error(errorMsg);
-      Logger.Slack.errorToSlack(`"${errorMsg}" was returned for ${user.slack}. Punch:\n`, message.match.input);
-      user.directMessage(`\n${errorMsg}`, Logger);
-      Logger.Slack.addReaction('x', message);
-      Logger.Slack.removeReaction('clock4', message);
+      const errorMsg = Console.clean(err);
+      Console.error(errorMsg);
+      Slack.error(`"${errorMsg}" was returned for ${user.slack}. Punch:\n`, message.match.input);
+      user.directMessage(`\n${errorMsg}`);
+      Slack.addReaction('x', message);
+      Slack.removeReaction('clock4', message);
     }
   }
 
@@ -172,7 +173,7 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       parse(bot, message, message.match[1], organization);
@@ -187,7 +188,7 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       parse(bot, message, message.match[1], organization);
@@ -203,7 +204,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -217,7 +218,7 @@ export default function (controller: botkit.Controller) {
       if (operator === 'project' || operator === 'projects' || operator === 'note' || operator === 'notes') {
         const punch = user.lastPunch('in');
         if (!punch) {
-          user.directMessage(strings.notpunchedin, Logger);
+          user.directMessage(strings.notpunchedin);
           return;
         }
         if (operator === 'project' || operator === 'projects') {
@@ -236,43 +237,43 @@ export default function (controller: botkit.Controller) {
         const row = punch.toRawRow(user.name);
         try {
           await organization.spreadsheet.saveRow(row, 'rawData');
-          user.directMessage(`Added ${operator} ${results}`, Logger);
-          Logger.Slack.addReaction('dog2', message);
+          user.directMessage(`Added ${operator} ${results}`);
+          Slack.addReaction('dog2', message);
         } catch (err) {
-          user.directMessage(err, Logger);
-          Logger.Console.error('Unable to append row', new Error(err));
+          user.directMessage(err);
+          Console.error('Unable to append row', new Error(err));
         }
       } else if (operator === 'event' || operator === 'calendar' || operator === 'upcoming') {
-        Logger.Slack.addReaction('clock4', message);
+        Slack.addReaction('clock4', message);
         const date = moment(words[0], 'MM/DD/YYYY');
         if (!date.isValid()) {
-          Logger.Slack.addReaction('x', message);
-          Logger.Slack.removeReaction('clock4', message);
+          Slack.addReaction('x', message);
+          Slack.removeReaction('clock4', message);
           bot.reply(message, 'Your event has an invalid date. Make sure you\'re using the proper syntax, emit.g. `ibizan add event 3/21 Dog Time`');
           return;
         }
         words.shift();
         const name = words.join(' ').trim();
         if (!name || name.length === 0) {
-          Logger.Slack.addReaction('x', message)
-          Logger.Slack.removeReaction('clock4', message);
+          Slack.addReaction('x', message)
+          Slack.removeReaction('clock4', message);
           bot.reply(message, 'Your event needs a name. Make sure you\'re using the proper syntax, encode.g. `ibizan add event 3/21 Dog Time`');
           return;
         }
-        Logger.Console.debug(`Adding event on ${date} named ${name}`);
+        Console.debug(`Adding event on ${date} named ${name}`);
         try {
           const calendarEvent = await organization.addEvent(date, name);
-          Logger.Slack.addReaction('dog2', message);
-          Logger.Slack.removeReaction('clock4', message);
+          Slack.addReaction('dog2', message);
+          Slack.removeReaction('clock4', message);
           bot.reply(message, `Added new event: *${calendarEvent.name}* on *${calendarEvent.date.format('M/DD/YYYY')}*`);
         } catch (err) {
-          Logger.Console.error(err);
-          Logger.Slack.addReaction('x', message);
-          Logger.Slack.removeReaction('clock4', message);
+          Console.error(err);
+          Slack.addReaction('x', message);
+          Slack.removeReaction('clock4', message);
           bot.reply(message, 'Something went wrong when adding your event.');
         }
       } else {
-        user.directMessage(strings.addfail, Logger);
+        user.directMessage(strings.addfail);
       }
     });
 
@@ -284,27 +285,27 @@ export default function (controller: botkit.Controller) {
     async (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
       if (user.punches && user.punches.length > 0) {
-        Logger.Slack.addReaction('clock4', message);
+        Slack.addReaction('clock4', message);
         let punch;
         let lastPunch = user.lastPunch();
         const lastPunchDescription = lastPunch.description(user);
         try {
           await user.undoPunch();
           await user.updateRow();
-          Logger.Slack.addReaction('dog2', message);
-          Logger.Slack.removeReaction('clock4', message);
-          user.directMessage(`Undid your last punch, which was: *${lastPunchDescription}*\n\nYour most current punch is now: *${user.lastPunch().description(user)}*`, Logger);
+          Slack.addReaction('dog2', message);
+          Slack.removeReaction('clock4', message);
+          user.directMessage(`Undid your last punch, which was: *${lastPunchDescription}*\n\nYour most current punch is now: *${user.lastPunch().description(user)}*`);
         } catch (err) {
-          Logger.Slack.errorToSlack(`"${err}" was returned for an undo operation by ${user.slack}`);
-          user.directMessage('Something went horribly wrong while undoing your punch.', Logger);
+          Slack.error(`"${err}" was returned for an undo operation by ${user.slack}`);
+          user.directMessage('Something went horribly wrong while undoing your punch.');
         }
       } else {
-        user.directMessage(strings.undofail, Logger);
+        user.directMessage(strings.undofail);
       }
     });
 
@@ -316,7 +317,7 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       let response = '';
@@ -334,7 +335,7 @@ export default function (controller: botkit.Controller) {
         channel: message.channel
       } as botkit.Message;
       bot.say(msg);
-      Logger.Slack.addReaction('dog2', message);
+      Slack.addReaction('dog2', message);
     });
 
   /** User feedback **/
@@ -351,7 +352,7 @@ export default function (controller: botkit.Controller) {
         channel: message.channel
       } as botkit.Message;
       bot.say(msg);
-      Logger.Slack.addReaction('dog2', message);
+      Slack.addReaction('dog2', message);
     });
 
   // Returns the hours worked on a given date
@@ -363,16 +364,16 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
       const tz = user.timetable.timezone.name;
       const date = moment(message.match[1], 'MM/DD/YYYY');
       if (!date.isValid()) {
-        Logger.Console.info(`hours: ${message.match[1]} is an invalid date`);
-        user.directMessage(`${message.match[1]} is not a valid date`, Logger);
-        Logger.Slack.addReaction('x', message);
+        Console.info(`hours: ${message.match[1]} is an invalid date`);
+        user.directMessage(`${message.match[1]} is not a valid date`);
+        Slack.addReaction('x', message);
         return;
       }
       const formattedDate = date.format('dddd, MMMM D, YYYY');
@@ -419,8 +420,8 @@ export default function (controller: botkit.Controller) {
         }
         msg += ')';
       }
-      Logger.Slack.addReaction('dog2', message);
-      user.directMessage(msg, Logger, attachments);
+      Slack.addReaction('dog2', message);
+      user.directMessage(msg, attachments);
     });
 
   // Returns the hours worked for the given time period
@@ -432,7 +433,7 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -545,8 +546,8 @@ export default function (controller: botkit.Controller) {
         msg += ')';
       }
 
-      Logger.Slack.addReaction('dog2', message);
-      user.directMessage(msg, Logger, attachments);
+      Slack.addReaction('dog2', message);
+      user.directMessage(msg, attachments);
     });
 
   // Returns the user's info as a slackAttachment
@@ -558,12 +559,12 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
-      user.directMessage('Your status:', Logger, [user.slackAttachment()]);
-      Logger.Slack.addReaction('dog2', message);
+      user.directMessage('Your status:', [user.slackAttachment()]);
+      Slack.addReaction('dog2', message);
     });
 
   // Returns the user's time in their timezone, as well as Ibizan's default time
@@ -575,7 +576,7 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -585,8 +586,8 @@ export default function (controller: botkit.Controller) {
       if (userTime.format('z') !== ibizanTime.format('z')) {
         msg += `\n\nIt's ${ibizanTime.format('h:mm A')} in the default timezone (${ibizanTime.format('z, Z')}).`;
       }
-      user.directMessage(msg, Logger);
-      Logger.Slack.addReaction('dog2', message);
+      user.directMessage(msg);
+      Slack.addReaction('dog2', message);
     });
 
   // Returns the user's timezone
@@ -598,13 +599,13 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
       const userTime = moment.tz(user.timetable.timezone.name);
-      user.directMessage(`Your timezone is set to *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`, Logger);
-      Logger.Slack.addReaction('dog2', message);
+      user.directMessage(`Your timezone is set to *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`);
+      Slack.addReaction('dog2', message);
     });
 
   // Sets the user's timezone
@@ -616,7 +617,7 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -643,10 +644,10 @@ export default function (controller: botkit.Controller) {
       }
       if (isTzSet) {
         const userTime = moment.tz(user.timetable.timezone.name);
-        user.directMessage(`Your timezone is now *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`, Logger);
+        user.directMessage(`Your timezone is now *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`);
       } else {
-        user.directMessage('I do not recognize that timezone. Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list> for a valid time zone name.', Logger);
-        Logger.Slack.addReaction('x', message);
+        user.directMessage('I do not recognize that timezone. Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list> for a valid time zone name.');
+        Slack.addReaction('x', message);
       }
     });
 
@@ -659,7 +660,7 @@ export default function (controller: botkit.Controller) {
     (bot, message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot, new Error());
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -671,7 +672,7 @@ export default function (controller: botkit.Controller) {
           channel: message.channel
         } as botkit.Message;
         bot.say(msg);
-        Logger.Slack.addReaction('dog2', message);
+        Slack.addReaction('dog2', message);
         return;
       }
 
@@ -682,30 +683,30 @@ export default function (controller: botkit.Controller) {
       if (scope !== 'unknown' && time !== 'notime') {
         const newTime = moment.tz(time, 'h:mm A', user.timetable.timezone.name);
         if (!newTime.isValid()) {
-          user.directMessage(`${time} is not a valid timers.`, Logger);
-          Logger.Slack.addReaction('x', message);
+          user.directMessage(`${time} is not a valid timers.`);
+          Slack.addReaction('x', message);
           return;
         }
         if (scope === 'start') {
           if (!newTime.isBefore(user.timetable.end)) {
-            user.directMessage(`${newTime.format('h:mm A')} is not before your current end time of ${user.timetable.start.format('h:mm A')}.`, Logger);
-            Logger.Slack.addReaction('x', message);
+            user.directMessage(`${newTime.format('h:mm A')} is not before your current end time of ${user.timetable.start.format('h:mm A')}.`);
+            Slack.addReaction('x', message);
             return;
           }
           user.setStart(newTime);
         } else if (scope === 'end') {
           if (!newTime.isAfter(user.timetable.start)) {
-            user.directMessage(`${newTime.format('h:mm A')} is not after your current start time of ${user.timetable.start.format('h:mm A')}.`, Logger);
-            Logger.Slack.addReaction('x', message);
+            user.directMessage(`${newTime.format('h:mm A')} is not after your current start time of ${user.timetable.start.format('h:mm A')}.`);
+            Slack.addReaction('x', message);
             return;
           }
           user.setEnd(newTime);
         }
-        user.directMessage(`Your active *${scope}* time is now *${newTime.format('h:mm A')}*.`, Logger);
-        Logger.Slack.addReaction('dog2', message);
+        user.directMessage(`Your active *${scope}* time is now *${newTime.format('h:mm A')}*.`);
+        Slack.addReaction('dog2', message);
       } else {
-        user.directMessage(strings.activefail, Logger);
-        Logger.Slack.addReaction('x', message);
+        user.directMessage(strings.activefail);
+        Slack.addReaction('x', message);
       }
     });
 };
