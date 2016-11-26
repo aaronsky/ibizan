@@ -111,6 +111,7 @@ export namespace Rows {
             const request = {
                 spreadsheetId: sheetId,
                 range: values.range,
+                valueInputOption: 'USER_ENTERED',
                 auth: auth,
                 resource: values
             };
