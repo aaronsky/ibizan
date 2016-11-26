@@ -65,7 +65,7 @@ export class Organization {
             if (old) {
                 for (let user of old) {
                     let newUser;
-                    if (newUser = this.getUserBySlackName(user.slack)) {
+                    if (newUser = this.getUserBySlackName(user.slackName)) {
                         newUser.settings = Settings.fromSettings(user.settings);
                     }
                 }
@@ -86,7 +86,7 @@ export class Organization {
         }
         if (users) {
             for (let user of users) {
-                if (name === user.slack) {
+                if (name === user.slackName) {
                     return user;
                 }
             }
@@ -99,7 +99,7 @@ export class Organization {
         }
         if (users) {
             for (let user of users) {
-                if (name === user.name) {
+                if (name === user.realName) {
                     return user;
                 }
             }

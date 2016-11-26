@@ -151,8 +151,9 @@ export class Settings {
 }
 
 export class User {
-  name: string;
-  slack: string;
+  realName: string;
+  slackName: string;
+  slackId: string;
   salary: boolean;
   timetable: Timetable;
   row: Rows.UsersRow;
@@ -160,8 +161,9 @@ export class User {
   settings: Settings;
 
   constructor(name: string, slack: string, salary: boolean, timetable: Timetable, row: any = null) {
-    this.name = name;
-    this.slack = slack;
+    this.realName = name;
+    this.slackName = slack;
+    this.slackId = null;
     this.salary = salary;
     this.timetable = timetable;
     this.row = row;
@@ -277,7 +279,7 @@ export class User {
   }
   async undoPunch() {
     const lastPunch = this.lastPunch();
-    Console.info(`Undoing ${this.slack}'s punch: ${lastPunch.description(this)}'`);
+    Console.info(`Undoing ${this.slackName}'s punch: ${lastPunch.description(this)}'`);
     let elapsed;
     if (lastPunch.times.block) {
       elapsed = lastPunch.times.block;
@@ -332,7 +334,7 @@ export class User {
     let row = new Rows.PayrollReportsRow([], '');
 
     row.date = moment.tz(TIMEZONE).format('M/DD/YYYY');
-    row.name = this.name;
+    row.name = this.realName;
     let loggedTime = 0,
       unpaidTime = 0,
       vacationTime = 0,
@@ -400,7 +402,7 @@ export class User {
     row.overtime = Math.max(0, loggedTime - 80).toString();
     row.holiday = (this.timetable.holiday || 0).toString();
     row.extra = {
-      slack: this.slack,
+      slack: this.slackName,
       projects: projectsForPeriod
     };
     return row;
@@ -435,7 +437,7 @@ export class User {
     }
   }
   directMessage(msg: string, attachment?: any) {
-    Slack.log(msg, this.slack, attachment, true);
+    Slack.log(msg, this.slackId, attachment, true);
   }
   hound(msg: string) {
     const now = moment.tz(TIMEZONE);
@@ -444,13 +446,13 @@ export class User {
       msg = `You have been on the clock for ${this.settings.houndFrequency} hours.\n` + msg;
     }
     setTimeout(() => this.directMessage(msg), 1000 * (Math.floor(Math.random() * 3) + 1));
-    Console.info(`Hounded ${this.slack} with '${msg}'`);
+    Console.info(`Hounded ${this.slackName} with '${msg}'`);
     this.updateRow();
   }
   hexColor() {
     let hash = 0;
-    for (let i = 0, len = this.slack.length; i < len; i++) {
-      hash = this.slack.charCodeAt(i) + ((hash << 3) - hash);
+    for (let i = 0, len = this.slackName.length; i < len; i++) {
+      hash = this.slackName.charCodeAt(i) + ((hash << 3) - hash);
     }
     const color = Math.abs(hash).toString(16).substring(0, 6);
     const hexColor = "#" + '000000'.substring(0, 6 - color.length) + color;
@@ -501,15 +503,15 @@ export class User {
       fields.push(unpaidField);
     }
     const attachment = {
-      title: this.name + ' (@' + this.slack + ')',
+      title: this.realName + ' (@' + this.slackName + ')',
       text: statusString,
-      fallback: this.name.replace(/\W/g, '') + ' @' + this.slack.replace(/\W/g, ''),
+      fallback: this.realName.replace(/\W/g, '') + ' @' + this.slackName.replace(/\W/g, ''),
       color: this.hexColor(),
       fields
     };
     return attachment;
   }
   description() {
-    return `User: ${this.name} (${this.slack})\nThey have ${(this.punches || []).length} punches on record\nLast punch was ${this.lastPunchTime()}\nTheir active hours are from ${this.timetable.start.format('h:mm a')} to ${this.timetable.end.format('h:mm a')}\nThey are in ${this.timetable.timezone.name}\nThe last time they sent a message was ${+(moment.tz(TIMEZONE).diff(this.settings.lastMessage && this.settings.lastMessage.time, 'hours', true).toFixed(2))} hours ago`;
+    return `User: ${this.realName} (${this.slackName})\nThey have ${(this.punches || []).length} punches on record\nLast punch was ${this.lastPunchTime()}\nTheir active hours are from ${this.timetable.start.format('h:mm a')} to ${this.timetable.end.format('h:mm a')}\nThey are in ${this.timetable.timezone.name}\nThe last time they sent a message was ${+(moment.tz(TIMEZONE).diff(this.settings.lastMessage && this.settings.lastMessage.time, 'hours', true).toFixed(2))} hours ago`;
   }
 }

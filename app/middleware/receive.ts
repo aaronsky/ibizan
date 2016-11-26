@@ -1,4 +1,11 @@
+import { Slack } from '../logger';
+
 export function applyReceiveMiddleware(controller: botkit.Controller) {
+    function onReceiveSetSlackLoggerBot(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+        Slack.setBot(bot);
+        next();
+    }
+
     function onReceiveSetUser(bot: botkit.Bot, message: botkit.Message, next: () => void) {
         if (!message.user) {
             next();
@@ -31,6 +38,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         });
     }
 
+    controller.middleware.receive.use(onReceiveSetSlackLoggerBot);
     controller.middleware.receive.use(onReceiveSetChannel);
     controller.middleware.receive.use(onReceiveSetUser);
 }

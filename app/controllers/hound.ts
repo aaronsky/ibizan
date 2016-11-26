@@ -83,28 +83,28 @@ export default function (controller: botkit.Controller) {
       const timeSinceLastMessage = user.settings.lastMessage.time.diff(last.time, 'hours', true) || 0;
       const timeSinceLastPing = +Math.abs(now.diff(lastPing, 'hours', true)) || 0;
 
-      Console.debug(`${user.slack} - ${user.salary}, now: ${now.format('h:mm A, z')}, isInactive: ${user.isInactive()}, start: ${start.format('h:mm A')}, end: ${end.format('h:mm A')}, timeSinceLastPunch: ${timeSinceLastPunch}, timeSinceLastMessage: ${timeSinceLastMessage}, timeSinceStart: ${timeSinceStart}, timeSinceEnd: ${timeSinceEnd}, timeSinceLastPing: ${timeSinceLastPing}, houndFrequency: ${user.settings.houndFrequency}`);
+      Console.debug(`${user.slackName} - ${user.salary}, now: ${now.format('h:mm A, z')}, isInactive: ${user.isInactive()}, start: ${start.format('h:mm A')}, end: ${end.format('h:mm A')}, timeSinceLastPunch: ${timeSinceLastPunch}, timeSinceLastMessage: ${timeSinceLastMessage}, timeSinceStart: ${timeSinceStart}, timeSinceEnd: ${timeSinceEnd}, timeSinceLastPing: ${timeSinceLastPing}, houndFrequency: ${user.settings.houndFrequency}`);
 
       if (user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
         if (!lastPunch && !user.isInactive() && !passive) {
-          Console.debug(`Considering hounding ${user.slack} because of missing lastPunch during active period`);
+          Console.debug(`Considering hounding ${user.slackName} because of missing lastPunch during active period`);
           if (now.isAfter(start) && timeSinceStart >= 0.5) {
             user.hound(houndMessage('in'));
           } else if (now.isAfter(end) && timeSinceEnd >= 0.5) {
             user.hound(houndMessage('out'));
           }
         } else if (lastPunch.mode === 'in' && user.isInactive()) {
-          Console.debug(`Considering hounding ${user.slack} because lastPunch is in and it's outside of their active period`);
+          Console.debug(`Considering hounding ${user.slackName} because lastPunch is in and it's outside of their active period`);
           if (now.isAfter(end) && timeSinceEnd >= 0.5) {
             user.hound(houndMessage('out'));
           }
         } else if (lastPunch.mode === 'out' && !passive) {
-          Console.debug(`Considering hounding ${user.slack} because lastPunch is out during active period`);
+          Console.debug(`Considering hounding ${user.slackName} because lastPunch is out during active period`);
           if (!user.isInactive() && timeSinceStart >= 0.5) {
             user.hound(houndMessage('in'));
           }
         } else if (lastPunch.mode === 'vacation' || lastPunch.mode === 'sick' || lastPunch.mode === 'unpaid') {
-          Console.debug(`Considering hounding ${user.slack} because lastPunch is special`);
+          Console.debug(`Considering hounding ${user.slackName} because lastPunch is special`);
           if (lastPunch.times.length > 0 && !now.isBetween(lastPunch.times[0], lastPunch.times[1]) && !passive) {
             user.hound(houndMessage('in'));
           } else if (lastPunch.times.block && !passive) {
@@ -114,14 +114,14 @@ export default function (controller: botkit.Controller) {
             }
           }
         } else if (user.salary && timeSinceLastPunch <= 0.25) {
-          Console.debug(`${user.slack} is safe from hounding because they punched ${timeSinceLastPunch.toFixed(2)} hours ago`);
+          Console.debug(`${user.slackName} is safe from hounding because they punched ${timeSinceLastPunch.toFixed(2)} hours ago`);
         } else if (!user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
           // Ping part-timers when their shift is longer than their houndFrequency
           if (lastPunch && lastPunch.mode === 'in' && timeSinceLastPunch > user.settings.houndFrequency) {
             user.hound(houndMessage('out'));
           }
         } else {
-          Console.debug(`${user.slack} is safe from hounding for another ${user.settings.houndFrequency - +timeSinceLastPing.toFixed(2)} hours`);
+          Console.debug(`${user.slackName} is safe from hounding for another ${user.settings.houndFrequency - +timeSinceLastPing.toFixed(2)} hours`);
         }
       }
     }
