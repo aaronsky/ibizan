@@ -13,11 +13,11 @@ import * as moment from 'moment';
 
 import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.diagnostics;
-import * as Logger from '../logger';
+import { Console, Slack } from '../logger';
 import { Organization } from '../models/organization';
 
 export default function (controller: botkit.Controller) {
-  Logger.Slack.setController(controller);
+  Slack.setController(controller);
 
   // respond
   // diagnostics.uptime, 
@@ -27,11 +27,11 @@ export default function (controller: botkit.Controller) {
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
     bot.reply(message, `${organization.name}'s Ibizan has been up since ${organization.initTime.toDate()} _(${+moment().diff(organization.initTime, 'minutes', true).toFixed(2)} minutes)_`);
-    Logger.Slack.addReaction('dog2', message);
+    Slack.addReaction('dog2', message);
   });
 
   // respond
@@ -42,7 +42,7 @@ export default function (controller: botkit.Controller) {
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
@@ -51,8 +51,8 @@ export default function (controller: botkit.Controller) {
     for (let user of organization.users) {
       attachments.push(user.slackAttachment());
     }
-    user.directMessage(response, Logger, attachments);
-    Logger.Slack.addReaction('dog2', message);
+    user.directMessage(response, attachments);
+    Slack.addReaction('dog2', message);
   });
 
   // respond
@@ -62,7 +62,7 @@ export default function (controller: botkit.Controller) {
                    buildOptions({ id: 'diagnostics.userHelp', adminOnly: true }, controller), 
                    (bot, message) => {
     bot.reply(message, strings.userhelp);
-    Logger.Slack.addReaction('dog2', message);
+    Slack.addReaction('dog2', message);
   });
 
   // respond
@@ -73,7 +73,7 @@ export default function (controller: botkit.Controller) {
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
@@ -81,12 +81,12 @@ export default function (controller: botkit.Controller) {
     let response = `User ${message.match[1]}`;
     if (u) {
       response += ':';
-      user.directMessage(response, Logger, [u.slackAttachment()]);
-      Logger.Slack.addReaction('dog2', message);
+      user.directMessage(response, [u.slackAttachment()]);
+      Slack.addReaction('dog2', message);
     } else {
       response += ' could not be found. Make sure you\'re using their Slack name.';
-      user.directMessage(response, Logger);
-      Logger.Slack.addReaction('x', message);
+      user.directMessage(response);
+      Slack.addReaction('x', message);
     }
   });
 
@@ -98,7 +98,7 @@ export default function (controller: botkit.Controller) {
                    async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
     const yesterday = moment.tz({
@@ -118,9 +118,9 @@ export default function (controller: botkit.Controller) {
         bot.reply(message, report);
       }
     } catch (err) {
-      Logger.Slack.errorToSlack('Failed to produce a daily report', err);
+      Slack.error('Failed to produce a daily report', err);
     }
-    Logger.Slack.addReaction('dog2', message);
+    Slack.addReaction('dog2', message);
   });
 
   // respond
@@ -131,7 +131,7 @@ export default function (controller: botkit.Controller) {
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
@@ -139,8 +139,8 @@ export default function (controller: botkit.Controller) {
     for (let project of organization.projects) {
       response += project.description() + '\n\n';
     }
-    user.directMessage(response, Logger);
-    Logger.Slack.addReaction('dog2', message);
+    user.directMessage(response);
+    Slack.addReaction('dog2', message);
   });
 
   // respond
@@ -151,12 +151,12 @@ export default function (controller: botkit.Controller) {
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
-    user.directMessage(organization.calendar.description(), Logger);
-    Logger.Slack.addReaction('dog2', message);
+    user.directMessage(organization.calendar.description());
+    Slack.addReaction('dog2', message);
   });
 
   // respond
@@ -167,19 +167,19 @@ export default function (controller: botkit.Controller) {
                    async (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
-    Logger.Slack.addReaction('clock4', message);
+    Slack.addReaction('clock4', message);
     try {
       const status = await organization.sync();
       bot.reply(message, 'Resynced with spreadsheet');
-      Logger.Slack.removeReaction('clock4', message);
-      Logger.Slack.addReaction('dog2', message);
+      Slack.removeReaction('clock4', message);
+      Slack.addReaction('dog2', message);
     } catch (err) {
-      Logger.Slack.errorToSlack('Failed to resync', err);
-      Logger.Slack.removeReaction('clock4', message);
-      Logger.Slack.addReaction('x', message);
+      Slack.error('Failed to resync', err);
+      Slack.removeReaction('clock4', message);
+      Slack.addReaction('x', message);
     }
   });
 
@@ -223,7 +223,7 @@ export default function (controller: botkit.Controller) {
           }
         } catch (err) {
           const message = 'Failed to resync';
-          Logger.Slack.errorToSlack(message, err);
+          Logger.Slack.error(message, err);
           const payload = {
             text: message
           };
@@ -245,11 +245,11 @@ export default function (controller: botkit.Controller) {
                    (bot, message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Logger.Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot, new Error());
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
-    user.directMessage(strings.help, Logger);
-    Logger.Slack.addReaction('dog2', message);
+    user.directMessage(strings.help);
+    Slack.addReaction('dog2', message);
   });
 };

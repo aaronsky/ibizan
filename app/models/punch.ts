@@ -4,8 +4,8 @@ import * as uuid from 'node-uuid';
 
 import { MODES, REGEX, TIMEZONE } from '../shared/constants';
 import { holidayForMoment } from '../shared/moment-holiday';
+import { Console } from '../logger';
 import { Rows } from '../shared/rows';
-import * as Logger from '../logger';
 import { Project } from './project';
 import { User } from './user';
 import { Organization } from './organization';
@@ -234,10 +234,10 @@ export class Punch {
   }
   static parse(organization: Organization, user: User, command: string, mode: string = 'none', timezone?: string) {
     if (!user) {
-      Logger.Console.error('No user passed', new Error(command));
+      Console.error('No user passed', new Error(command));
       return;
     } else if (!command) {
-      Logger.Console.error('No command passed', new Error(user.toString()));
+      Console.error('No command passed', new Error(user.toString()));
       return;
     }
     if (mode && mode !== 'none') {
@@ -291,7 +291,7 @@ export class Punch {
       }
     } else if (datetimes.length === 2) {
       if (mode === 'out') {
-        Logger.Console.error('An out-punch cannot be a range', new Error(original));
+        Console.error('An out-punch cannot be a range', new Error(original));
         return;
       }
       if (datetimes[1].isBefore(datetimes[0])) {
@@ -320,7 +320,7 @@ export class Punch {
 
     // UUID sanity check
     if (row.id.length != 36) {
-      Logger.Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
+      Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
       row.id = uuid.v1();
       spreadsheet.saveRow(row, 'rawData');
     }
@@ -378,15 +378,15 @@ export class Punch {
       }
       elapsed = calculateElapsed(datetimes[0], datetimes[1], mode, user)
       if (elapsed < 0) {
-        Logger.Console.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes.toString()));
+        Console.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes.toString()));
         return;
       } else if (elapsed !== rawElapsed && (rawElapsed == null || Math.abs(elapsed - rawElapsed) > 0.02)) {
-        Logger.Console.debug(`${row.id} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
+        Console.debug(`${row.id} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
         const hours = Math.floor(elapsed);
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
         row.totalTime = `${hours}:${minute_str}:00.000`;
-        spreadsheet.saveRow(row, 'rawData').catch((err) => Logger.Console.error('Unable to save row', new Error(err)));
+        spreadsheet.saveRow(row, 'rawData').catch((err) => Console.error('Unable to save row', new Error(err)));
       }
     }
 
@@ -655,7 +655,13 @@ export class Punch {
     return attachment;
   }
   description(user: User, full: boolean = false) {
-    let modeQualifier, timeQualifier, blockTimeQualifier, elapsedQualifier, projectsQualifier, notesQualifier, warningQualifier;
+    let modeQualifier = '',
+        timeQualifier = '',
+        blockTimeQualifier = '',
+        elapsedQualifier = '',
+        projectsQualifier = '',
+        notesQualifier = '',
+        warningQualifier = '';
     let time = this.times.slice(-1)[0];
 
     let timeStr;
