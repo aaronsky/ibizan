@@ -1,6 +1,7 @@
 
 import * as express from 'express';
 import * as moment from 'moment';
+import { Console, Slack } from '../logger';
 
 export function applyRoutes(webserver: express.Application, controller: botkit.Controller) {
     // controller.createWebhookEndpoints(webserver);
