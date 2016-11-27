@@ -183,60 +183,6 @@ export default function (controller: botkit.Controller) {
     }
   });
 
-  /*
-    controller.webserver.post('/diagnostics/sync', async (req, res) => {
-      const body = req.body;
-      if (!organization.ready()) {
-        res.status(401);
-        res.json({
-          text: 'Organization is not ready to resync'
-        });
-      } else {
-        const responseUrl = body.response_url || null;
-        if (responseUrl) {
-          Console.log('POSTing to ${responseUrl}');
-        }
-        res.status(200);
-        res.json({
-          text: 'Beginning to resync...'
-        });
-        try {
-          const status = await organization.sync();
-          const message = 'Resynced with spreadsheet';
-          Console.log(message);
-          const payload = {
-            text: message
-          };
-          if (responseUrl) {
-            controller.webserver.http(responseUrl)
-              .header('Content-Type', 'application/json')
-              .post(JSON.stringify(payload), (err, response, body) => {
-                if (err) {
-                  response.send(`Encountered an error :( ${err})`);
-                  return;
-                } else if (res.statusCode !== 200) {
-                  response.send(`Request didn't come back HTTP 200 :(`);
-                  return;
-                }
-                Console.log(body);
-              });
-          }
-        } catch (err) {
-          const message = 'Failed to resync';
-          Logger.Slack.error(message, err);
-          const payload = {
-            text: message
-          };
-          if (responseUrl) {
-            controller.http(responseUrl)
-              .header('Content-Type', 'application/json')
-              .post(JSON.stringify(payload));
-          }
-        }
-      }
-    });
-    */
-
   // respond
   // diagnostics.help
   controller.hears('.*(help|docs|documentation|commands).*',

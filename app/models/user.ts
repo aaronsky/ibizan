@@ -227,9 +227,8 @@ export class User {
       return true;
     } else if (current.isBetween(start, end)) {
       return false;
-    } else {
-      return true;
     }
+    return true;
   }
   lastPunch(modes?: string | string[]): Punch {
     if (typeof modes === 'string') {

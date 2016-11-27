@@ -61,6 +61,7 @@ export namespace SlackLogger {
       Console.error('SlackLogger#error called with no message');
       return;
     }
+    // TODO: This will not work, need a better way to get the ID of this channel, or don't enable this function
     controller.storage.channels.get('ibizan-diagnostics', (err, data) => {
       if (err) {
         Console.error(err);
