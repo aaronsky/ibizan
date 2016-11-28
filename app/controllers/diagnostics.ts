@@ -1,4 +1,3 @@
-import { buildOptions } from '../middleware/access';
 // Description:
 //   Your dog friend makes sure everything's in order
 //
@@ -15,6 +14,7 @@ import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.diagnostics;
 import { Console, Slack } from '../logger';
 import { Organization } from '../models/organization';
+import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
   Slack.setController(controller);
@@ -156,7 +156,8 @@ export default function (controller: botkit.Controller) {
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
-    user.directMessage(organization.calendar.description());
+    const attachment = [organization.calendar.slackAttachment()];
+    user.directMessage('Organization calendar:', attachment);
     Slack.addReaction('dog2', message);
   });
 

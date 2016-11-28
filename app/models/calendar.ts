@@ -7,10 +7,13 @@ import { Rows } from '../shared/rows';
 export class Calendar {
   vacation: any;
   sick: any;
-  holidays: any;
+  holidays: {
+    name: string;
+    date: moment.Moment;
+  }[];
   referencePayWeek: any;
   events: any;
-  constructor(vacation: any, sick: any, holidays: any, referencePayWeek: any, events: any) {
+  constructor(vacation: number, sick: number, holidays: { name: string, date: moment.Moment }[], referencePayWeek: moment.Moment, events: CalendarEvent[]) {
     this.vacation = vacation;
     this.sick = sick;
     this.holidays = holidays;
@@ -31,6 +34,30 @@ export class Calendar {
       }
     }
     return upcomingEvents;
+  }
+  hexColor() {
+    let hash = 0;
+    for (let i = 0, len = this.holidays.length; i < len; i++) {
+      hash = this.holidays[i].name.charCodeAt(i) + ((hash << 3) - hash);
+    }
+    const color = Math.abs(hash).toString(16).substring(0, 6);
+    const hexColor = "#" + '000000'.substring(0, 6 - color.length) + color;
+    return hexColor;
+  }
+  slackAttachment() {
+    const fields = [];
+    for (let holiday of this.holidays) {
+      fields.push({
+        title: holiday.name,
+        value: holiday.date.format('MM/DD/YYYY'),
+        short: true
+      });
+    }
+    const attachment = {
+      color: this.hexColor(),
+      fields
+    };
+    return attachment;
   }
   description() {
     let str = "Organization calendar:\n"
