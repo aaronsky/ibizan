@@ -48,6 +48,30 @@ export class Project {
       throw 'Row is null';
     }
   }
+  hexColor() {
+    let hash = 0;
+    for (let i = 0, len = this.name.length; i < len; i++) {
+      hash = this.name.charCodeAt(i) + ((hash << 3) - hash);
+    }
+    const color = Math.abs(hash).toString(16).substring(0, 6);
+    const hexColor = "#" + '000000'.substring(0, 6 - color.length) + color;
+    return hexColor;
+  }
+  slackAttachment() {
+    const attachment = {
+      title: this.name,
+      text: `Started on ${this.start.format('MM/DD/YYYY')}`,
+      color: this.hexColor(),
+      fields: [
+        {
+          title: 'Total hours',
+          value: `${this.total} hours`,
+          short: true
+        }
+      ]
+    };
+    return attachment;
+  }
   description() {
     return `Project: ${this.name}\nStart date: ${this.start.format('MM/DD/YYYY')}\nTotal hours: ${this.total}`;
   }
