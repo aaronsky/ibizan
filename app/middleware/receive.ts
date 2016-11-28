@@ -1,10 +1,10 @@
 import { REGEX, STRINGS } from '../shared/constants';
 const strings = STRINGS.access;
-import { random } from '../shared/common';
+import { Message, random } from '../shared/common';
 import { Slack } from '../logger';
 
 export function applyReceiveMiddleware(controller: botkit.Controller) {
-    function onReceiveMessage(bot: botkit.Bot, message: botkit.Message) {
+    function onReceiveMessage(bot: botkit.Bot, message: Message) {
         if (message &&
             message.text &&
             message.text.length < 30 &&
@@ -15,13 +15,13 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         }
     }
 
-    function onReceiveUpdateSlackLogger(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+    function onReceiveUpdateSlackLogger(bot: botkit.Bot, message: Message, next: () => void) {
         Slack.setController(controller);
         Slack.setBot(bot);
         next();
     }
 
-    function onReceiveSetUser(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+    function onReceiveSetUser(bot: botkit.Bot, message: Message, next: () => void) {
         if (!message.user) {
             next();
             return;
@@ -37,7 +37,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         });
     }
 
-    function onReceiveSetChannel(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+    function onReceiveSetChannel(bot: botkit.Bot, message: Message, next: () => void) {
         if (!message.channel) {
             next();
             return;

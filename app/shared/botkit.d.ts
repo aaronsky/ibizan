@@ -125,15 +125,6 @@ declare module botkit {
         // custom botkit fields
         event?: string;
         match?: RegExpMatchArray;
-        // custom ibizan fields
-        user_obj?: any;
-        channel_obj?: any;
-        options?: {
-            id?: string;
-            userRequired?: boolean;
-            adminOnly?: boolean;
-        };
-        organization?: any;
     }
     interface User {
         id: string;

@@ -1,3 +1,4 @@
+import { Organization } from '../models/organization';
 import * as moment from 'moment';
 
 import { TeamConfig } from '../config';
@@ -12,4 +13,24 @@ export function random(items: any[]): any {
 
 export interface Team extends botkit.Team {
   config?: TeamConfig;
+}
+
+export interface Message extends botkit.Message {
+  user_obj?: {
+    [props: string]: any;
+    id: string;
+    name: string;
+    is_admin: boolean;
+  };
+  channel_obj?: {
+    [props: string]: any;
+    id: string;
+    name: string;
+  };
+  options?: {
+    id?: string;
+    userRequired?: boolean;
+    adminOnly?: boolean;
+  };
+  organization?: Organization;
 }

@@ -12,6 +12,7 @@ import * as moment from 'moment';
 
 import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.diagnostics;
+import { Message } from '../shared/common';
 import { Console, Slack } from '../logger';
 import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
@@ -22,7 +23,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('uptime', 
                    EVENTS.respond,
                    buildOptions({ id: 'diagnostics.uptime' }, controller), 
-                   (bot, message) => {
+                   (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -37,7 +38,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('users',
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.users', userRequired: true, adminOnly: true }, controller), 
-                   (bot, message) => {
+                   (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -68,7 +69,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('user (.*)',
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.user', userRequired: true, adminOnly: true }, controller), 
-                   (bot, message) => {
+                   (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -93,7 +94,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('daily report',
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.dailyReport', adminOnly: true }, controller), 
-                   async (bot, message) => {
+                   async (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -126,7 +127,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('projects',
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.projects', userRequired: true, adminOnly: true }, controller), 
-                   (bot, message) => {
+                   (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -147,7 +148,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('calendar',
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.calendar', userRequired: true, adminOnly: true }, controller), 
-                   (bot, message) => {
+                   (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -164,7 +165,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('sync',
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.sync' }, controller), 
-                   async (bot, message) => {
+                   async (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -188,7 +189,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('.*(help|docs|documentation|commands).*',
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.help' }, controller), 
-                   (bot, message) => {
+                   (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
       Console.error('No Organization was found for the team: ' + bot, new Error());

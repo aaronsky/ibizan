@@ -2,7 +2,7 @@
 import { ConsoleLogger as Console } from './console';
 import { STRINGS } from '../shared/constants';
 const strings = STRINGS.logger;
-import { typeIsArray } from '../shared/common';
+import { Message, typeIsArray } from '../shared/common';
 const ICON_URL = process.env.ICON_URL || false;
 
 export namespace SlackLogger {
@@ -70,7 +70,7 @@ export namespace SlackLogger {
       const message = {
         text: `(${new Date()}) ERROR: ${text}\n${error || ''}`,
         channel: data.id
-      } as botkit.Message;
+      } as Message;
       bot.say(message);
     });
   }
@@ -90,7 +90,7 @@ export namespace SlackLogger {
     });
   }
 
-  export function addReaction(reaction: string, message: botkit.Message, attempt: number = 0) {
+  export function addReaction(reaction: string, message: Message, attempt: number = 0) {
     if (attempt > 0 && attempt <= 2) {
       Console.debug(`Retrying adding ${reaction}, attempt ${attempt}...`);
     }
@@ -119,7 +119,7 @@ export namespace SlackLogger {
     }
   }
 
-  export function removeReaction(reaction: string, message: botkit.Message, attempt: number = 0) {
+  export function removeReaction(reaction: string, message: Message, attempt: number = 0) {
     if (attempt > 0 && attempt <= 2) {
       Console.debug(`Retrying removal of ${reaction}, attempt ${attempt}...`);
     }

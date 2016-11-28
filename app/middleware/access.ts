@@ -6,6 +6,7 @@
 // Author:
 //   bcoia
 
+import { Message } from '../shared/common';
 import { Organization } from '../models/organization';
 
 interface HearsOptions {
@@ -14,14 +15,14 @@ interface HearsOptions {
   adminOnly?: boolean;
 }
 
-let onReceiveCheckAccessHandlerFn: (message: botkit.Message) => boolean = null;
+let onReceiveCheckAccessHandlerFn: (message: Message) => boolean = null;
 
-export function setAccessHandler(handler: (message: botkit.Message) => boolean) {
+export function setAccessHandler(handler: (message: Message) => boolean) {
   onReceiveCheckAccessHandlerFn = handler;
 }
 
 export function buildOptions(options: HearsOptions, controller: botkit.Controller) {
-  return function (patterns: string[] | RegExp[], message: botkit.Message) {
+  return function (patterns: string[] | RegExp[], message: Message) {
     message.options = options;
     if (controller.hears_test(patterns, message)) {
       if (onReceiveCheckAccessHandlerFn) {

@@ -20,6 +20,7 @@ const schedule = require('node-schedule');
 
 import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.hound;
+import { Message } from '../shared/common';
 import { Console, Slack } from '../logger';
 import { Organization } from '../models/organization';
 
@@ -178,7 +179,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('hound\s*(.*)?$',
                    EVENTS.respond,
                    buildOptions({ id: 'hound.hound', userRequired: true }, controller),
-                   (bot, message) => {
+                   (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());

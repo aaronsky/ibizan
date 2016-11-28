@@ -10,7 +10,7 @@ import * as moment from 'moment';
 
 import { REGEX, EVENTS, STRINGS } from '../shared/constants';
 const strings = STRINGS.bark;
-import { random } from '../shared/common';
+import { Message, random } from '../shared/common';
 import { Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 
@@ -41,7 +41,7 @@ export default function (controller: botkit.Controller) {
     const msg = {
       text: strings.goodboy,
       channel: message.channel
-    } as botkit.Message;
+    } as Message;
     bot.say(msg);
   });
 
@@ -49,26 +49,26 @@ export default function (controller: botkit.Controller) {
   controller.hears('fetch\s*(.*)?$', 
                    EVENTS.respond, 
                    buildOptions({ id: 'bark.fetch' }, controller), 
-                   (bot, message) => {
+                   (bot, message: Message) => {
     const thing = message.match[1];
     if (!thing) {
       const msg = {
         text: `_perks up and fidgets impatiently, waiting for @${message.user_obj.name} to \`fetch [thing]\`_`,
         channel: message.channel
-      } as botkit.Message;
+      } as Message;
       bot.say(msg);
     } else {
       const msg = {
         text: `_runs to fetch ${thing}!_`,
         channel: message.channel
-      } as botkit.Message;
+      } as Message;
       bot.say(msg);
       setTimeout(() => {
         if ((Math.floor(Math.random() * 10) + 1) === 1) {
           const msg = {
             text: `_returns to @${message.user_obj.name}, unable to find ${thing}${random(strings.fetchsuffix)}_`,
             channel: message.channel
-          } as botkit.Message;
+          } as Message;
           bot.say(msg);
         } else {
           const match = thing.match(/:(.*?):/g);
@@ -80,7 +80,7 @@ export default function (controller: botkit.Controller) {
           const msg = {
             text: `_drops ${thing} at @${message.user_obj.name}'s feet${random(strings.fetchsuffix)}_`,
             channel: message.channel
-          } as botkit.Message;
+          } as Message;
           bot.say(msg);
         }
       }, 2000 * (Math.floor(Math.random() * 5) + 1));
