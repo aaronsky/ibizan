@@ -1,5 +1,5 @@
-import { ConsoleLogger } from './console-logger';
-import { SlackLogger } from './slack-logger';
+import { ConsoleLogger } from './console';
+import { SlackLogger } from './slack';
 
 export {
     ConsoleLogger as Console,
