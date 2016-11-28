@@ -135,11 +135,12 @@ export default function (controller: botkit.Controller) {
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
-    let response = '';
+    const response = 'All projects:';
+    const attachments = [];
     for (let project of organization.projects) {
-      response += project.description() + '\n\n';
+      attachments.push(project.slackAttachment());
     }
-    user.directMessage(response);
+    user.directMessage(response, attachments);
     Slack.addReaction('dog2', message);
   });
 
