@@ -50,6 +50,7 @@ import moment from 'moment-timezone';
 
 import { REGEX, REGEX_STR, STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
+import { Message } from '../shared/common';
 import { Rows } from '../shared/rows';
 import { Console, Slack } from '../logger';
 import { Punch } from '../models/punch';
@@ -97,7 +98,7 @@ export default function (controller: botkit.Controller) {
   }
 
   // Parse a textual punch and produce a new Punch object
-  function parse(bot: botkit.Bot, message: botkit.Message, mode: string, organization: Organization) {
+  function parse(bot: botkit.Bot, message: Message, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
     const user = organization.getUserBySlackName(message.user_obj.name);
     Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
@@ -134,7 +135,7 @@ export default function (controller: botkit.Controller) {
   }
 
   // Send the punch to the org's Spreadsheet
-  async function sendPunch(punch: Punch, user: User, message: botkit.Message, organization: Organization) {
+  async function sendPunch(punch: Punch, user: User, message: Message, organization: Organization) {
     if (!punch) {
       Slack.error(`Somehow, a punch was not generated for \"${user.slackName}\". Punch:\n`, message.match.input);
       user.directMessage('An unexpected error occured while generating your punch.');
@@ -168,7 +169,7 @@ export default function (controller: botkit.Controller) {
   controller.hears(REGEX_STR.modes,
     EVENTS.respond,
     buildOptions({ id: 'time.punchByMode', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -183,7 +184,7 @@ export default function (controller: botkit.Controller) {
   controller.hears(REGEX_STR.rel_time,
     EVENTS.respond,
     buildOptions({ id: 'time.punchByTime', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -199,7 +200,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('(append|add)',
     EVENTS.respond,
     buildOptions({ id: 'time.append', userRequired: true }, controller),
-    async (bot, message) => {
+    async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -280,7 +281,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('undo',
     EVENTS.respond,
     buildOptions({ id: 'time.undo', userRequired: true }, controller),
-    async (bot, message) => {
+    async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -312,7 +313,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('\b(events|upcoming)$',
     EVENTS.respond,
     buildOptions({ id: 'time.events' }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -331,7 +332,7 @@ export default function (controller: botkit.Controller) {
       const msg = {
         text: response,
         channel: message.channel
-      } as botkit.Message;
+      } as Message;
       bot.say(msg);
       Slack.addReaction('dog2', message);
     });
@@ -348,7 +349,7 @@ export default function (controller: botkit.Controller) {
       const msg = {
         text: strings.hourshelp,
         channel: message.channel
-      } as botkit.Message;
+      } as Message;
       bot.say(msg);
       Slack.addReaction('dog2', message);
     });
@@ -359,7 +360,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('hours (.*)',
     EVENTS.respond,
     buildOptions({ id: 'time.hoursOnDate', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -428,7 +429,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('.*(hours|today|week|month|year|period)+[\?\!\.¿¡]',
     EVENTS.respond,
     buildOptions({ id: 'time.hours', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -554,7 +555,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('\b(status|info)$',
     EVENTS.respond,
     buildOptions({ id: 'time.status', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -571,7 +572,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('\btime$',
     EVENTS.respond,
     buildOptions({ id: 'time.time', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -594,7 +595,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('\btimezone$',
     EVENTS.respond,
     buildOptions({ id: 'time.time', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -612,7 +613,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('timezone (.*)',
     EVENTS.respond,
     buildOptions({ id: 'time.time', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -655,7 +656,7 @@ export default function (controller: botkit.Controller) {
   controller.hears('active\s*(.*)?$',
     EVENTS.respond,
     buildOptions({ id: 'time.active', userRequired: true }, controller),
-    (bot, message) => {
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot, new Error());
@@ -668,7 +669,7 @@ export default function (controller: botkit.Controller) {
         const msg = {
           text: strings.activehelp,
           channel: message.channel
-        } as botkit.Message;
+        } as Message;
         bot.say(msg);
         Slack.addReaction('dog2', message);
         return;

@@ -10,7 +10,7 @@ const request = require('request');
 
 import { REGEX, STRINGS } from './shared/constants';
 const strings = STRINGS.access;
-import { Team, random } from './shared/common';
+import { Team, Message, random } from './shared/common';
 import { Console, Slack } from './logger';
 import { IbizanConfig, TeamConfig } from './config';
 import { applyRoutes } from './routes';
@@ -68,7 +68,7 @@ export class App {
             if (!err) {
                 this.trackBot(bot, team);
             }
-            const message = { user: team.createdBy } as botkit.Message;
+            const message = { user: team.createdBy } as Message;
             bot.startPrivateConversation(message, (err, convo) => {
                 if (err) {
                     Console.error(err.message, err);
@@ -104,18 +104,18 @@ export class App {
         }
         return null;
     }
-    onReceiveSetOrganization(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+    onReceiveSetOrganization(bot: botkit.Bot, message: Message, next: () => void) {
         const org = this.getOrganization(bot);
         if (org) {
             message.organization = org;
         }
         next();
     }
-    onReceiveSetAccessHandler(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+    onReceiveSetAccessHandler(bot: botkit.Bot, message: Message, next: () => void) {
         setAccessHandler(this.onReceiveCheckAccessHandler.bind(this, bot));
         next();
     }
-    onReceiveCheckAccessHandler(bot: botkit.Bot, message: botkit.Message): boolean {
+    onReceiveCheckAccessHandler(bot: botkit.Bot, message: Message): boolean {
         const { user_obj, options } = message;
         const { id, userRequired, adminOnly } = options;
 
@@ -134,7 +134,7 @@ export class App {
             const msg = {
                 text: strings.orgnotready,
                 channel: message.channel
-            } as botkit.Message;
+            } as Message;
             bot.say(msg);
             Slack.addReaction('x', message);
             return false;
@@ -151,7 +151,7 @@ export class App {
             const msg = {
                 text: strings.adminonly,
                 channel: message.channel
-            } as botkit.Message;
+            } as Message;
             bot.say(msg);
             Slack.addReaction('x', message);
             return false;
@@ -161,7 +161,7 @@ export class App {
                 const msg = {
                     text: strings.notanemployee,
                     channel: message.channel
-                } as botkit.Message;
+                } as Message;
                 bot.say(msg);
                 Slack.addReaction('x', message);
                 return false;
