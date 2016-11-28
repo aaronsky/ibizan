@@ -355,7 +355,7 @@ export class Spreadsheet {
               opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
             }
           }
-          Console.silly('Loaded organization settings');
+          Console.silly(`Loaded organization settings`);
           Console.silly('----------------------------------------');
           resolve(opts);
         }

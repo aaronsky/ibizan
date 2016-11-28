@@ -5,7 +5,7 @@ export const HEADERS = {
         { field: 'vacation', header: 'Vacation Hours (for Salaried Employees)' },
         { field: 'sick', header: 'Sick Hours (for Salaried Employees)' },
         { field: 'houndFrequency', header: 'Default Hounding Frequency in Hours' },
-        { field: 'payweek', header: 'Pay Day for a Reference Point' },
+        //{ field: 'payweek', header: 'Pay Day for a Reference Point' },
         { field: 'clockChannel', header: 'Time Logging Channel' },
         { field: 'exemptChannels', header: 'Hounding Channel Exemptions' },
         { field: 'holidays', header: 'Work Holidays' },
