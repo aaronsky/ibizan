@@ -1,7 +1,22 @@
+import { REGEX, STRINGS } from '../shared/constants';
+const strings = STRINGS.access;
+import { random } from '../shared/common';
 import { Slack } from '../logger';
 
 export function applyReceiveMiddleware(controller: botkit.Controller) {
-    function onReceiveSetSlackLoggerBot(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+    function onReceiveMessage(bot: botkit.Bot, message: botkit.Message) {
+        if (message &&
+            message.text &&
+            message.text.length < 30 &&
+            (message.text.match(REGEX.ibizan) || message.channel && message.channel.substring(0, 1) === 'D')) {
+            bot.reply(message, `_${random(strings.unknowncommand)} ${random(strings.askforhelp)}_`);
+            Slack.addReaction('question', message);
+            return;
+        }
+    }
+
+    function onReceiveUpdateSlackLogger(bot: botkit.Bot, message: botkit.Message, next: () => void) {
+        Slack.setController(controller);
         Slack.setBot(bot);
         next();
     }
@@ -38,7 +53,9 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         });
     }
 
-    controller.middleware.receive.use(onReceiveSetSlackLoggerBot);
+    controller.on('message_received', onReceiveMessage);
+
+    controller.middleware.receive.use(onReceiveUpdateSlackLogger);
     controller.middleware.receive.use(onReceiveSetChannel);
     controller.middleware.receive.use(onReceiveSetUser);
 }

@@ -51,13 +51,12 @@ export class App {
 
             this.controller.on('create_bot', this.onCreateBot.bind(this));
             this.controller.on('create_team', this.onCreateTeam.bind(this));
-            this.controller.on('message_received', this.onReceiveMessage.bind(this));
-            
+
             applyReceiveMiddleware(this.controller);
             this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
             this.controller.middleware.receive.use(this.onReceiveSetAccessHandler.bind(this));
             this.controller.storage.teams.all(this.connectTeamsToSlack.bind(this));
-            
+
             this.loadScripts();
         });
     }
@@ -82,16 +81,6 @@ export class App {
     }
     onCreateTeam(bot: botkit.Bot, team: Team) {
         this.controller.saveTeam(team);
-    }
-    onReceiveMessage(bot: botkit.Bot, message: botkit.Message) {
-        if (message &&
-            message.text &&
-            message.text.length < 30 &&
-            (message.text.match(REGEX.ibizan) || message.channel && message.channel.substring(0, 1) === 'D')) {
-            bot.reply(message, `_${random(strings.unknowncommand)} ${random(strings.askforhelp)}_`);
-            Slack.addReaction('question', message);
-            return;
-        }
     }
     trackBot(bot: botkit.Bot, team: Team) {
         this.bots[bot.config.token] = bot;
@@ -181,61 +170,61 @@ export class App {
         return true;
     }
     async onDiagnosticsSyncRoute(req: express.Request, res: express.Response) {
-      const body = req.body;
-      const bot = this.bots[body.token];
-      const organization = this.getOrganization(bot);
-      if (!organization.ready()) {
-        res.status(401);
-        res.json({
-          text: 'Organization is not ready to resync'
-        });
-      } else {
-        const responseUrl = body.response_url || null;
-        if (responseUrl) {
-          Console.log(`POSTing to ${responseUrl}`);
-        }
-        res.status(200);
-        res.json({
-          text: 'Beginning to resync...'
-        });
-        try {
-          const status = await organization.sync();
-          const message = 'Resynced with spreadsheet';
-          Console.log(message);
-          if (responseUrl) {
-              request({
-                  url: responseUrl,
-                  method: 'POST',
-                  json: true,
-                  body: {
-                      text: message
-                  }
-              }, (err: Error, response: http.IncomingMessage, body: any) => {
-                if (err) {
-                  Console.error('Encountered an error :(', err);
-                  return;
-                } else if (res.statusCode !== 200) {
-                  Console.error('Request didn\'t come back HTTP 200 :(');
-                  return;
+        const body = req.body;
+        const bot = this.bots[body.token];
+        const organization = this.getOrganization(bot);
+        if (!organization.ready()) {
+            res.status(401);
+            res.json({
+                text: 'Organization is not ready to resync'
+            });
+        } else {
+            const responseUrl = body.response_url || null;
+            if (responseUrl) {
+                Console.log(`POSTing to ${responseUrl}`);
+            }
+            res.status(200);
+            res.json({
+                text: 'Beginning to resync...'
+            });
+            try {
+                const status = await organization.sync();
+                const message = 'Resynced with spreadsheet';
+                Console.log(message);
+                if (responseUrl) {
+                    request({
+                        url: responseUrl,
+                        method: 'POST',
+                        json: true,
+                        body: {
+                            text: message
+                        }
+                    }, (err: Error, response: http.IncomingMessage, body: any) => {
+                        if (err) {
+                            Console.error('Encountered an error :(', err);
+                            return;
+                        } else if (res.statusCode !== 200) {
+                            Console.error('Request didn\'t come back HTTP 200 :(');
+                            return;
+                        }
+                        Console.log(body);
+                    });
                 }
-                Console.log(body);
-              });
-          }
-        } catch (err) {
-          const message = 'Failed to resync';
-          Slack.error(message, err);
-          if (responseUrl) {
-              request({
-                  url: responseUrl,
-                  method: 'POST',
-                  json: true,
-                  body: {
-                      text: message
-                  }
-              });
-          }
+            } catch (err) {
+                const message = 'Failed to resync';
+                Slack.error(message, err);
+                if (responseUrl) {
+                    request({
+                        url: responseUrl,
+                        method: 'POST',
+                        json: true,
+                        body: {
+                            text: message
+                        }
+                    });
+                }
+            }
         }
-      }
     }
     connectTeamsToSlack(err, teams: any[]) {
         if (err) {
@@ -244,7 +233,7 @@ export class App {
         // connect all teams with bots up to slack!
         for (let team of teams) {
             if (team.bot) {
-                this.controller.spawn(team).startRTM((err, bot) => {
+                this.controller.spawn(team).startRTM((err, bot, res) => {
                     if (err) {
                         Console.error('Error connecting bot to Slack:', err);
                     } else {
