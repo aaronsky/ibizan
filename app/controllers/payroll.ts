@@ -18,8 +18,6 @@ import { Console, Slack } from '../logger';
 import { Organization } from '../models/organization';
 
 export default function (controller: botkit.Controller) {
-  Slack.setController(controller);
-
   // const generateDailyReportJob = schedule.scheduleJob('0 9 * * *', async () => {
   //   if (!organization.ready()) {
   //     Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);

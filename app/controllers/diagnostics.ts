@@ -17,8 +17,6 @@ import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
-  Slack.setController(controller);
-
   // respond
   // diagnostics.uptime, 
   controller.hears('uptime', 

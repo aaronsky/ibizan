@@ -58,8 +58,6 @@ import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
-  Slack.setController(controller);
-
   function isDM(channel: string) {
     return channel.substring(0, 1) === 'D';
   }

@@ -15,8 +15,6 @@ import { Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
-  Slack.setController(controller);
-
   // bark.bark
   controller.hears('bark', 
                    EVENTS.hear, 

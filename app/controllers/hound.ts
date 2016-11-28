@@ -24,8 +24,6 @@ import { Console, Slack } from '../logger';
 import { Organization } from '../models/organization';
 
 export default function (controller: botkit.Controller) {
-  Slack.setController(controller);
-
   // Generates a random [in/out] hound message
   function houndMessage(mode: 'in' | 'out') {
     let message;
