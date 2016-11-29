@@ -1,13 +1,6 @@
 const winston = require('winston');
 
-const logger = new winston.Logger({
-  level: 'info'
-});
-
-logger.cli();
-
-if (!process.env.TEST) {
-  const customLevels = {
+const customLevels = {
     levels: {
       emerg: 0,
       alert: 1,
@@ -31,20 +24,25 @@ if (!process.env.TEST) {
       debug: 'blue'
     }
   };
+
+const logger = new winston.Logger({
+  level: 'info',
+  levels: customLevels.levels,
+  colors: customLevels.colors
+});
+
+logger.setLevels(customLevels.levels);
+winston.addColors(customLevels.colors);
+logger.cli();
+
+if (!process.env.TEST) {
   logger.add(winston.transports.Console, {
     level: 'info',
     levels: customLevels.levels,
     prettyPrint: true,
     colorize: true,
-    timestamp: () => {
-      return new Date();
-    },
-    formatter: (options) => {
-      return `[Ibizan] (${options.timestamp()}) ${options.level.toUpperCase()}: ${!!options.message ? options.message : ''} ${(options.meta && Object.keys(options.meta).length ? '\n\t' + JSON.stringify(options.meta) : '')}`;
-    }
+    timestamp: true
   });
-  logger.setLevels(customLevels.levels);
-  winston.addColors(customLevels.colors);
 }
 
 export {
