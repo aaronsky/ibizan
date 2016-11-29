@@ -126,7 +126,7 @@ export default function (controller: botkit.Controller) {
     }
   }
 
-  controller.on('user_typing', (bot, message) => {
+  controller.on('user_typing', (bot, message: Message) => {
     controller.storage.channels.get(message.channel, (err, channel) => {
       if (err || !channel) {
         Console.error('No channel found for this user typing action', err);
@@ -138,7 +138,7 @@ export default function (controller: botkit.Controller) {
           name: 'DM'
         };
       }
-      //hound(message.user, channel, organization, false);
+      //hound(message.user_obj, channel, organization, false);
     });
   });
 

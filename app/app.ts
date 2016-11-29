@@ -1,7 +1,3 @@
-import * as fs from 'fs';
-import * as http from 'http';
-import * as path from 'path';
-
 const Botkit = require('botkit');
 const FirebaseStorage = require('botkit-storage-firebase');
 import * as express from 'express';
@@ -199,7 +195,7 @@ export class App {
                         body: {
                             text: message
                         }
-                    }, (err: Error, response: http.IncomingMessage, body: any) => {
+                    }, (err: Error, response: any, body: any) => {
                         if (err) {
                             Console.error('Encountered an error :(', err);
                             return;

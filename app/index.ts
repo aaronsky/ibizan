@@ -43,9 +43,10 @@ const yargs = require('yargs')
     .alias('version', 'V')
     .describe('version', 'Outputs the version of Ibizan')
     .help('help')
-    .epilog('For more information, check out http://ibizan.github.io/ or https://github.com/ibizan/ibizan')
+    .epilog('For more information, check out http://ibizan.github.io or https://github.com/ibizan/ibizan')
     .showHelpOnFail(false);
 const argv = yargs.argv;
+Console.transports.console.level = !!argv.verbose ? 'debug' : 'info';
 
 if (argv.version) {
     let version = process.env.npm_package_version;
