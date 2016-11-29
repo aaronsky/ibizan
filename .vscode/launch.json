@@ -8,7 +8,7 @@
             "program": "${workspaceRoot}/bin/index.js",
             "stopOnEntry": false,
             "args": [
-                "-vvvv"
+                
             ],
             "cwd": "${workspaceRoot}",
             "preLaunchTask": null,
