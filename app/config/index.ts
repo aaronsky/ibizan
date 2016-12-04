@@ -55,23 +55,9 @@ export class ConfigFactory {
                 privateKey: null
             }
         };
-        let temp: IbizanConfig = {
-            port: null,
-            storageUri: null,
-            slack: {
-                clientId: null,
-                clientSecret: null,
-                verificationToken: null,
-                scopes: null
-            },
-            google: {
-                clientEmail: null,
-                privateKey: null
-            }
-        };
-        for (let key in temp) {
-            if ((key === 'slack' || key === 'google') && typeof temp[key] === 'object') {
-                for (let subKey in temp[key]) {
+        for (let key in config) {
+            if ((key === 'slack' || key === 'google') && typeof config[key] === 'object') {
+                for (let subKey in config[key]) {
                     config[key][subKey] = rcConfig && rcConfig[key] && (rcConfig[key][subKey] || '');
                     if (shouldCheckOpts && optsConfig[key] && optsConfig[key][subKey]) {
                         config[key][subKey] = optsConfig[key][subKey];

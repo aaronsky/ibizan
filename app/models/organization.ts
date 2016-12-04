@@ -142,7 +142,7 @@ export class Organization {
         calendar.events.push(calendarEvent);
         return calendarEvent;
     }
-    async generateReport(start: any, end: any, send: boolean = false): Promise<number | Rows.PayrollReportsRow[]> {
+    async generateReport(start: any, end: any, shouldPublish: boolean = false): Promise<number | Rows.PayrollReportsRow[]> {
         if (!this.spreadsheet) {
             throw 'No spreadsheet is loaded, report cannot be generated';
         } else if (!start || !end) {
@@ -166,10 +166,14 @@ export class Organization {
             }
             return 0;
         });
-        if (send) {
+        if (shouldPublish) {
             try {
                 const numberDone = await this.spreadsheet.generateReport(reports);
-                return numberDone;
+                if (numberDone === reports.length) {
+                    return reports;
+                } else {
+                    return numberDone;
+                }
             } catch (err) {
                 throw err;
             }
