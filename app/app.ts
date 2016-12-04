@@ -6,7 +6,7 @@ const request = require('request');
 
 import { REGEX, STRINGS } from './shared/constants';
 const strings = STRINGS.access;
-import { Team, Message, random } from './shared/common';
+import { Team, Message } from './shared/common';
 import { Console, Slack } from './logger';
 import { IbizanConfig, TeamConfig } from './config';
 import { applyRoutes } from './routes';
