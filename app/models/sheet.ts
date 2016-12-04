@@ -98,15 +98,15 @@ export class Spreadsheet {
     });
   }
   async newRow(row: Rows.Row, sheet: Rows.SheetKind) {
+    const request = {
+      spreadsheetId: this.id,
+      range: this[sheet].properties.title,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      auth: this.auth,
+      resource: row.toGoogleValues()
+    };
     return new Promise((resolve, reject) => {
-      const request = {
-        spreadsheetId: this.id,
-        range: this[sheet].properties.title,
-        valueInputOption: 'USER_ENTERED',
-        insertDataOption: 'INSERT_ROWS',
-        auth: this.auth,
-        resource: row.toGoogleValues()
-      };
       this.service.spreadsheets.values.append(request, (err, response) => {
         if (err) {
           let retry = 1;

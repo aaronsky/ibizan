@@ -16,7 +16,6 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
     }
 
     function onReceiveUpdateSlackLogger(bot: botkit.Bot, message: Message, next: () => void) {
-        Slack.setController(controller);
         Slack.setBot(bot);
         next();
     }

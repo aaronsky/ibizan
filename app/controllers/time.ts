@@ -46,7 +46,7 @@
 // Author:
 //   aaronsky
 
-import moment from 'moment-timezone';
+import * as moment from 'moment-timezone';
 
 import { REGEX, REGEX_STR, STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
@@ -78,9 +78,7 @@ export default function (controller: botkit.Controller) {
   function toTimeStr(duration: number) {
     const hours = Math.floor(duration);
     let hoursStr;
-    if (hours === 0) {
-      hoursStr = '';
-    } else if (hours === 1) {
+    if (hours === 1) {
       hoursStr = `${hours} hour`;
     } else {
       hoursStr = `${hours} hours`;
@@ -402,11 +400,12 @@ export default function (controller: botkit.Controller) {
         }
         for (let kind of ['vacation', 'sick', 'unpaid']) {
           if (report[kind]) {
+            const value = +report[kind];
             if (!loggedAny) {
-              msg += `, but you have *${toTimeStr(+report[kind])} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
+              msg += `, but you have *${toTimeStr(value)} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
               loggedAny = true;
             } else {
-              msg += ` and *${toTimeStr(+report[kind])} of ${kind} time*`;
+              msg += ` and *${toTimeStr(value)} of ${kind} time*`;
             }
           }
         }
