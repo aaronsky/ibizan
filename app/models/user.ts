@@ -436,7 +436,7 @@ export class User {
     }
   }
   directMessage(msg: string, attachment?: any) {
-    Slack.log(msg, this.slackId, attachment, true);
+    Slack.logDM(msg, this.slackId, attachment);
   }
   hound(msg: string) {
     const now = moment.tz(TIMEZONE);

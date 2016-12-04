@@ -6,31 +6,20 @@ import { Message, typeIsArray } from '../shared/common';
 const ICON_URL = process.env.ICON_URL || false;
 
 export namespace SlackLogger {
-  let controller: botkit.Controller;
   let bot: botkit.Bot;
 
-  export function setController(newController: botkit.Controller) {
-    controller = newController;
-  }
   export function setBot(newBot: botkit.Bot) {
     bot = newBot;
   }
 
-  export async function log(text: string, channel: string, attachment?: string | { text: string, fallback: string }[], isUser?: boolean) {
-    if (!text) {
-      Console.error(`No robot available to send message: ${text}`);
-      return
-    }
-    if (!bot) {
-      return;
-    }
+  function composeMessage(text: string, channel: string, attachment?: string | { text: string, fallback: string }[]) {
     const message: any = {
       text,
-      channel: '',
+      channel,
       parse: 'full',
       username: 'ibizan',
-      icon_url: ICON_URL || undefined,
-      icon_emoji: ICON_URL ? undefined : ':dog2:',
+      // icon_url: ICON_URL || undefined,
+      // icon_emoji: ICON_URL ? undefined : ':dog2:',
       attachments: null
     };
 
@@ -44,15 +33,36 @@ export namespace SlackLogger {
         message.attachments = attachment;
       }
     }
+    
+    return message;
+  }
 
-    if (isUser) {
-      openDM(channel, (err, room) => {
-        message.channel = channel;
-        bot.say(message);
+  export function log(text: string, channel: string, attachment?: string | { text: string, fallback: string }[]) {
+    if (!text) {
+      Console.error('No text passed to log function');
+      return
+    } else if (!bot) {
+      Console.error(`No robot available to send message: ${text}`);
+      return;
+    }
+    const message = composeMessage(text, channel, attachment);
+    bot.send(message, (err) => {
+
+    });
+  }
+
+  export function logDM(text: string, id: string, attachment?: string | { text: string, fallback: string }[]) {
+    if (bot && text && id) {
+      bot.api.im.open({ user: id }, (err, data) => {
+        if (err) {
+          Console.error(err);
+          return;
+        }
+        const message = composeMessage(text, data.channel.id, attachment);
+        bot.send(message, (err) => {
+
+        });
       });
-    } else {
-      message.channel = channel;
-      bot.say(message);
     }
   }
 
@@ -61,32 +71,31 @@ export namespace SlackLogger {
       Console.error('SlackLogger#error called with no message');
       return;
     }
-    // TODO: This will not work, need a better way to get the ID of this channel, or don't enable this function
-    controller.storage.channels.get('ibizan-diagnostics', (err, data) => {
+    bot.api.channels.list({}, (err, data) => {
       if (err) {
         Console.error(err);
         return;
       }
-      const message = {
-        text: `(${new Date()}) ERROR: ${text}\n${error || ''}`,
-        channel: data.id
-      } as Message;
-      bot.say(message);
-    });
-  }
-
-  export function openDM(id: string, onOpenIm: (err: string | Error, channel?: string) => void) {
-    bot.api.im.open({ user: id }, (err, response) => {
-      if (err) {
-        Console.error('Error opening DM', err);
-        onOpenIm(err);
-        return;
-      } else if (!response || !response.ok || !response.channel) {
-        Console.error(`Unable to open DM with ${id}`);
-        onOpenIm(null);
+      for (let channel of data.channels) {
+        if (channel.name !== 'ibizan-diagnostics') {
+          continue;
+        }
+        const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, channel.id);
+        bot.send(message, (err) => {
+          
+        });
         return;
       }
-      onOpenIm(null, response.channel.id);
+      bot.api.channels.join({ name: 'ibizan-diagnostics' }, (err, data) => {
+        if (err) {
+          Console.error(err);
+          return;
+        }
+        const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, data.channel.id);
+        bot.send(message, (err) => {
+          
+        });
+      });
     });
   }
 
