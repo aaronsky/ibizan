@@ -170,7 +170,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       parse(bot, message, message.match[1], organization);
@@ -185,7 +185,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       parse(bot, message, message.match[1], organization);
@@ -201,7 +201,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -282,7 +282,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -314,7 +314,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       let response = '';
@@ -361,7 +361,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -431,7 +431,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -557,7 +557,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -574,7 +574,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -597,7 +597,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -615,7 +615,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -658,7 +658,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot, new Error());
+        Console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
