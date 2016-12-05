@@ -78,7 +78,7 @@ export default function (controller: botkit.Controller) {
                     async (bot, message: Message) => {
     const organization: Organization = message.organization;
     if (!organization) {
-      Console.error('No Organization was found for the team: ' + bot, new Error());
+      Console.error('No Organization was found for the team: ' + bot);
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
