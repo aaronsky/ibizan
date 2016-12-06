@@ -3,7 +3,6 @@ import { ConsoleLogger as Console } from './console';
 import { STRINGS } from '../shared/constants';
 const strings = STRINGS.logger;
 import { Message, typeIsArray } from '../shared/common';
-const ICON_URL = process.env.ICON_URL || false;
 
 export namespace SlackLogger {
   let bot: botkit.Bot;
@@ -18,8 +17,6 @@ export namespace SlackLogger {
       channel,
       parse: 'full',
       username: 'ibizan',
-      // icon_url: ICON_URL || undefined,
-      // icon_emoji: ICON_URL ? undefined : ':dog2:',
       attachments: null
     };
 
