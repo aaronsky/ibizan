@@ -83,7 +83,7 @@ describe('momentForHoliday(holiday)', () => {
   it('should return \"2016-11-24\" for \"Thanksgiving Day\"', () => {
     testMomentMatchesString('Thanksgiving Day', 10, 24, 2016);
   });
-  it('should return \"null\" for \"', () => {
+  it('should return \"null\" for \"\"', () => {
     const date = momentForHoliday('');
     expect(date).to.be.null;
   });

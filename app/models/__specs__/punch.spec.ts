@@ -106,9 +106,9 @@ describe('Punch', () => {
       const punch = Punch.parse(org, this.user, 'in 9:15', 'in');
       expect(punch).to.have.property('mode', 'in');
       expect(punch).to.have.deep.property('times[0]');
-      const now = moment();
-      const amPm = now.format('A');
-      const expectedTime = moment(`9:15 ${amPm}`, 'h:mm A');
+      const now = moment.tz(this.user.timetable.timezone.name);
+      const amPm = now.format('a');
+      const expectedTime = moment(`9:15 ${amPm}`, 'h:mm a');
       if (expectedTime.isAfter(now) && expectedTime.diff(now, 'hours', true) > 6) {
         expectedTime.subtract(12, 'hours');
       }
