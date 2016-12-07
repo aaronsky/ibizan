@@ -16,7 +16,7 @@ interface PunchTime extends Array<moment.Moment> {
   block?: number;
 };
 
-function mergeDateTime(date: moment.Moment, time: any, tz: any = TIMEZONE) {
+function mergeDateTime(date: moment.Moment, time: moment.Moment, tz: string = TIMEZONE) {
   return moment.tz({
     year: date.get('year'),
     month: date.get('month'),
@@ -39,14 +39,14 @@ function parseMode(command: string): [string, string] {
   }
   return ['none', commandWithoutMode];
 }
-function parseTime(command: string, activeStart: any, activeEnd: any, tz: string): [PunchTime, string] {
+function parseTime(command: string, activeStart: moment.Moment, activeEnd: moment.Moment, tz: string): [PunchTime, string] {
   // parse time component
   command = command.replace(/^\s+/, '') || '';
   if (command.indexOf('at') === 0) {
     command = command.replace('at', '');
     command = command.replace(/^\s+/, '');
   }
-  const activeTime = activeEnd.diff(activeStart, 'hours', true).toFixed(2);
+  const activeTime = +(activeEnd.diff(activeStart, 'hours', true).toFixed(2));
   const time: PunchTime = [];
   let match;
   if (match = command.match(REGEX.rel_time)) {
@@ -222,7 +222,7 @@ export class Punch {
   projects: Project[];
   notes: string;
   date: moment.Moment;
-  timezone: any;
+  timezone: string;
   elapsed?: number;
   row: Rows.RawDataRow;
 

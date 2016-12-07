@@ -142,7 +142,7 @@ export class Organization {
         calendar.events.push(calendarEvent);
         return calendarEvent;
     }
-    async generateReport(start: any, end: any, shouldPublish: boolean = false): Promise<number | Rows.PayrollReportsRow[]> {
+    async generateReport(start: moment.Moment, end: moment.Moment, shouldPublish: boolean = false): Promise<number | Rows.PayrollReportsRow[]> {
         if (!this.spreadsheet) {
             throw 'No spreadsheet is loaded, report cannot be generated';
         } else if (!start || !end) {
@@ -181,7 +181,7 @@ export class Organization {
             return reports;
         }
     }
-    dailyReport(reports: Rows.PayrollReportsRow[], today: any, yesterday: any) {
+    dailyReport(reports: Rows.PayrollReportsRow[], today: moment.Moment, yesterday: moment.Moment) {
         let response = `DAILY WORK LOG: *${yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n`;
         let logBuffer = '';
         let offBuffer = '';
@@ -269,7 +269,7 @@ export class Organization {
         }
         return i;
     }
-    setHoundFrequency(frequency: any) {
+    setHoundFrequency(frequency: number) {
         let i = 0;
         for (let user of this.users) {
             user.settings.fromSettings({

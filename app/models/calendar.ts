@@ -5,14 +5,14 @@ import { TIMEZONE } from '../shared/constants';
 import { Rows } from '../shared/rows';
 
 export class Calendar {
-  vacation: any;
-  sick: any;
+  vacation: number;
+  sick: number;
   holidays: {
     name: string;
     date: moment.Moment;
   }[];
-  referencePayWeek: any;
-  events: any;
+  referencePayWeek: moment.Moment;
+  events: CalendarEvent[];
   constructor(vacation: number, sick: number, holidays: { name: string, date: moment.Moment }[], referencePayWeek: moment.Moment, events: CalendarEvent[]) {
     this.vacation = vacation;
     this.sick = sick;
@@ -70,14 +70,14 @@ export class Calendar {
 
 export class CalendarEvent {
   readonly date: moment.Moment;
-  readonly name: any;
+  readonly name: string;
   row: Rows.EventsRow;
-  constructor(date: moment.Moment, name: any, row?: Rows.EventsRow) {
+  constructor(date: moment.Moment, name: string, row?: Rows.EventsRow) {
     this.date = date;
     this.name = name;
     this.row = row;
   }
-  static parse(row: any): CalendarEvent {
+  static parse(row: Rows.EventsRow): CalendarEvent {
     if (!row) {
       return;
     }

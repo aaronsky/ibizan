@@ -134,12 +134,12 @@ export class Settings {
     this.lastMessage = null
     this.lastPing = null
   }
-  static fromSettings(settings?: any) {
+  static fromSettings(settings?: Object) {
     const newSetting = new Settings();
     newSetting.fromSettings(settings);
     return newSetting;
   }
-  fromSettings(opts) {
+  fromSettings(opts: Object) {
     if (!opts || typeof opts !== 'object') {
       return;
     }
@@ -160,7 +160,7 @@ export class User {
   punches: Punch[];
   settings: Settings;
 
-  constructor(name: string, slack: string, salary: boolean, timetable: Timetable, row: any = null) {
+  constructor(name: string, slack: string, salary: boolean, timetable: Timetable, row: Rows.UsersRow = null) {
     this.realName = name;
     this.slackName = slack;
     this.slackId = null;
