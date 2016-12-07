@@ -4,10 +4,10 @@ import { Rows } from '../shared/rows';
 
 export class Project {
   readonly name: string;
-  readonly start: any;
-  total: any;
+  readonly start: moment.Moment;
+  total: number;
   row: Rows.ProjectsRow;
-  constructor(name: string, start: any, total: any, row: Rows.ProjectsRow = null) {
+  constructor(name: string, start: moment.Moment, total: number, row: Rows.ProjectsRow = null) {
     this.name = name.replace('#', '');
     this.start = start;
     this.total = total;
@@ -27,7 +27,7 @@ export class Project {
     if (row.total) {
       total = 0;
       if (!isNaN(+row.total)) {
-        total = parseInt(row.total);
+        total = +row.total;
       }
     }
     const project = new Project(name, startDate, total, row);
