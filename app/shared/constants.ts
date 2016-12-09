@@ -101,5 +101,10 @@ export const TIMEZONE = 'America/Phoenix';
 
 export const EVENTS = {
   hear: ['direct_mention', 'mention', 'ambient'],
-  respond: ['direct_mention', 'mention']
+  respond: ['direct_mention', 'mention'],
+  shouldHound: 'ibizan_should_hound',
+  resetHound: 'ibizan_reset_hound',
+  dailyReport: 'ibizan_daily_report',
+  payrollReport: 'ibizan_payroll_report',
+  payrollWarning: 'ibizan_payroll_warning'
 };
