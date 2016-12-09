@@ -47,7 +47,7 @@ declare module botkit {
         hears(pattern: string | string[], modes: string | string[], callback: (bot: Bot, message: Message) => void);
         hears(pattern: string | string[], modes: string | string[], middleware: HearFunction, callback: (bot: Bot, message: Message) => void);
         on(event: string, callback: (bot: Bot, message: Message) => void);
-        trigger(event: string, data): void;
+        trigger(event: string, data: any[]): void;
         startConversation(bot: Bot, message: Message, cb: (err: Error, convo: Conversation) => void): never;
         createConversation(bot: Bot, message: Message, cb: (err: Error, convo: Conversation) => void): never;
         defineBot(unit: Function): never;

@@ -4,7 +4,7 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 const request = require('request');
 
-import { REGEX, STRINGS } from './shared/constants';
+import { EVENTS, REGEX, STRINGS } from './shared/constants';
 const strings = STRINGS.access;
 import { Team, Message } from './shared/common';
 import { Console, Slack } from './logger';
@@ -47,6 +47,11 @@ export class App {
 
             this.controller.on('create_bot', this.onCreateBot.bind(this));
             this.controller.on('create_team', this.onCreateTeam.bind(this));
+            this.controller.on(EVENTS.shouldHound, this.onIbizanEventPassOrganization.bind(this));
+            this.controller.on(EVENTS.resetHound, this.onIbizanEventPassOrganization.bind(this));
+            this.controller.on(EVENTS.dailyReport, this.onIbizanEventPassOrganization.bind(this));
+            this.controller.on(EVENTS.payrollReport, this.onIbizanEventPassOrganization.bind(this));
+            this.controller.on(EVENTS.payrollWarning, this.onIbizanEventPassOrganization.bind(this));
 
             applyReceiveMiddleware(this.controller);
             this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
@@ -77,6 +82,13 @@ export class App {
     }
     onCreateTeam(bot: botkit.Bot, team: Team) {
         this.controller.saveTeam(team);
+    }
+    onIbizanEventPassOrganization(next: (organization: Organization) => void) {
+        for (let token in this.bots) {
+            const bot = this.bots[token];
+            const organization = this.getOrganization(bot);
+            next(organization);
+        }
     }
     trackBot(bot: botkit.Bot, team: Team) {
         this.bots[bot.config.token] = bot;

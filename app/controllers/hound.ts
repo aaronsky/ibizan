@@ -1,4 +1,3 @@
-import { buildOptions } from '../middleware/access';
 // Description:
 //   Your dog friend can keep you in line
 //
@@ -22,6 +21,7 @@ import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.hound;
 import { Message } from '../shared/common';
 import { Console, Slack } from '../logger';
+import { buildOptions } from '../middleware/access';
 import { Organization } from '../models/organization';
 
 export default function (controller: botkit.Controller) {
@@ -151,35 +151,39 @@ export default function (controller: botkit.Controller) {
   });
 
   // Every five minutes, attempt to hound non-salaried users
-  // const autoHoundJob = schedule.scheduleJob('*/5 * * * *', () => {
-  //   if (!organization.ready()) {
-  //     Console.warn('Don\'t autohound, Organization isn\'t ready yet');
-  //     return;
-  //   }
-  //   for (let user of organization.users) {
-  //     hound({ name: user.slack }, { private: null, name: '' }, organization, true, true);
-  //   }
-  // });
+  const autoHoundJob = schedule.scheduleJob('*/5 * * * *', () => {
+    controller.trigger(EVENTS.shouldHound, [(organization: Organization) => {
+      if (!organization.ready()) {
+        Console.warn('Don\'t autohound, Organization isn\'t ready yet');
+        return;
+      }
+      for (let user of organization.users) {
+        hound({ id: user.slackId, name: user.slackName }, { private: null, name: '' }, organization, true, true);
+      }
+    }]);
+  });
 
   // Every morning, reset hound status for each user
-  // const resetHoundJob = schedule.scheduleJob('0 9 * * 1-5', () => {
-  //   if (!organization.ready()) {
-  //     Console.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
-  //     return;
-  //   }
-  //   const count = organization.resetHounding();
-  //   const response = `Reset ${count} ${count === 1 ? 'person\'s' : 'peoples\''} hound status for the morning`;
-  //   Slack.log(response, 'ibizan-diagnostics');
-  // });
+  const resetHoundJob = schedule.scheduleJob('0 9 * * 1-5', () => {
+    controller.trigger(EVENTS.resetHound, [(organization: Organization) => {
+      if (!organization.ready()) {
+        Console.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
+        return;
+      }
+      const count = organization.resetHounding();
+      const response = `Reset ${count} ${count === 1 ? 'person\'s' : 'peoples\''} hound status for the morning`;
+      Slack.log(response, 'ibizan-diagnostics');
+    }]);
+  });
 
 
   // Check/adjust hounding settings
   // respond
   // hound.hound, userRequired: true
   controller.hears('hound\s*(.*)?$',
-                   EVENTS.respond,
-                   buildOptions({ id: 'hound.hound', userRequired: true }, controller),
-                   (bot, message: Message) => {
+    EVENTS.respond,
+    buildOptions({ id: 'hound.hound', userRequired: true }, controller),
+    (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
         Console.error('No Organization was found for the team: ' + bot);
