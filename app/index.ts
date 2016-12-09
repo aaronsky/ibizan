@@ -55,7 +55,7 @@ if (argv.version) {
         const packageJson = JSON.parse(packageJsonString);
         version = packageJson.version;
     }
-    Console.info('Ibizan v' + version);
+    console.info('Ibizan v' + version);
     process.exit();
 }
 
