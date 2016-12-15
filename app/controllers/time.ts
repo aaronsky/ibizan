@@ -101,10 +101,6 @@ export default function (controller: botkit.Controller) {
     const channelName = message.channel || message.channel_obj.name;
     const user = organization.getUserBySlackName(message.user_obj.name);
     Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
-    for (var x in message) {
-      Console.info(`${x}`);
-    }
-    Console.info(`${message.channel}`);
     const isAllowed = canPunchHere(channelName, organization);
     if (!isAllowed) {
       Slack.addReaction('x', message);
