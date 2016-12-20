@@ -86,21 +86,22 @@ export default function (controller: botkit.Controller) {
   // Parse a textual punch and produce a new Punch object
   function parse(bot: botkit.Bot, message: Message, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
+    const channelName = message.channel_obj.name;
     const user = organization.getUserBySlackName(message.user_obj.name);
     Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
-    const isAllowed = canPunchHere(message.channel_obj.name, organization);
+    const isAllowed = canPunchHere(channelName, organization);
     if (!isAllowed) {
       Slack.addReaction('x', message);
-      user.directMessage(`You cannot punch in #${message.channel_obj.name}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`);
+      user.directMessage(`You cannot punch in #${channelName}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`);
       return;
     }
     Slack.addReaction('clock4', message);
     const msg = message.match.input.replace(REGEX.ibizan, '').trim();
     const tz = user.timetable.timezone.name || TIMEZONE;
     const punch = Punch.parse(organization, user, msg, mode, tz);
-    const channelIsProject = organization.matchesProject(message.channel_obj.name);
+    const channelIsProject = organization.matchesProject(channelName);
     if (!punch.projects.length && channelIsProject) {
-      const project = organization.getProjectByName(message.channel);
+      const project = organization.getProjectByName(channelName);
       if (project) {
         punch.projects.push(project);
       }
@@ -192,6 +193,7 @@ export default function (controller: botkit.Controller) {
         Console.error('No Organization was found for the team: ' + bot);
         return;
       }
+      const channelName = message.channel_obj.name;
       const user = organization.getUserBySlackName(message.user_obj.name);
       const msg = message.match.input.replace(REGEX.ibizan, '').replace(/(append|add)/i, '').trim();
       const words = msg.split(' ');
@@ -209,9 +211,9 @@ export default function (controller: botkit.Controller) {
         if (operator === 'project' || operator === 'projects') {
           const projectNames = msgWithoutOperator.split(' ');
           const projects = [];
-          const channelIsProject = organization.matchesProject(message.channel_obj.name);
+          const channelIsProject = organization.matchesProject(channelName);
           if (projectNames.length === 0 && channelIsProject) {
-            projects.push(organization.getProjectByName(message.channel));
+            projects.push(organization.getProjectByName(channelName));
           }
           punch.appendProjects(organization, projects);
           results = projects.join(', ') || '';
@@ -513,7 +515,7 @@ export default function (controller: botkit.Controller) {
           loggedAny = true
         }
         for (let kind of ['vacation', 'sick', 'unpaid']) {
-          if (report[kind]) {
+          if (report[kind] && report[kind] > 0) {
             if (!loggedAny) {
               msg += `, but you have *${toTimeStr(+report[kind])} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
               loggedAny = true;
@@ -522,14 +524,15 @@ export default function (controller: botkit.Controller) {
             }
           }
         }
-        msg += ' recorded for ${dateArticle}.';
+        msg += ` recorded for ${dateArticle}.`;
       }
       if (report.extra && report.extra.projects && report.extra.projects.length > 0) {
         msg += ' (';
         for (let project of report.extra.projects) {
-          msg += `#${project.name}`;
+          msg += `#${project.name} `;
         }
         msg += ')';
+        msg = msg.replace(' )', ')');
       }
 
       Slack.addReaction('dog2', message);

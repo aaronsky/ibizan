@@ -100,8 +100,8 @@ export const MODES = ['in', 'out', 'vacation', 'unpaid', 'sick'];
 export const TIMEZONE = 'America/Phoenix';
 
 export const EVENTS = {
-  hear: ['direct_mention', 'mention', 'ambient'],
-  respond: ['direct_mention', 'mention'],
+  hear: ['direct_message', 'direct_mention', 'mention', 'ambient'],
+  respond: ['direct_message', 'direct_mention', 'mention'],
   shouldHound: 'ibizan_should_hound',
   resetHound: 'ibizan_reset_hound',
   dailyReport: 'ibizan_daily_report',
