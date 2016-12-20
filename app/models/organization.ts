@@ -1,7 +1,7 @@
-import { App } from '../app';
 
 import * as moment from 'moment';
 
+import { isDMChannel } from '../shared/common';
 import { Rows } from '../shared/rows';
 import { Console } from '../logger';
 import { TeamConfig } from '../config';
@@ -9,6 +9,7 @@ import { Calendar, CalendarEvent } from './calendar';
 import { Spreadsheet } from './sheet';
 import { Project } from './project';
 import { User, Settings } from './user';
+import { App } from '../app';
 
 interface GoogleAuth {
     clientEmail?: string;
@@ -119,6 +120,12 @@ export class Organization {
             }
         }
         Console.debug(`Project ${name} could not be found`);
+    }
+    matchesClockChannel(name: string): boolean {
+        return name === this.clockChannel;
+    }
+    matchesProject(channel: string): boolean {
+        return !this.matchesClockChannel(channel) && !isDMChannel(channel) && !!this.getProjectByName(channel);
     }
     async addEvent(date: string | moment.Moment, name: string) {
         let dateObject;

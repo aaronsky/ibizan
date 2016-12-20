@@ -50,7 +50,7 @@ import * as moment from 'moment-timezone';
 
 import { REGEX, REGEX_STR, STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
-import { Message } from '../shared/common';
+import { Message, isDMChannel } from '../shared/common';
 import { Rows } from '../shared/rows';
 import { Console, Slack } from '../logger';
 import { Punch } from '../models/punch';
@@ -59,20 +59,8 @@ import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
-  function isDM(channel: string) {
-    return channel.substring(0, 1) === 'D';
-  }
-
-  function isClockChannel(channel: string, organization: Organization) {
-    return channel === organization.clockChannel;
-  }
-
-  function isProjectChannel(channel: string, organization: Organization) {
-    return !isClockChannel(channel, organization) && !isDM(channel) && !!organization.getProjectByName(channel);
-  }
-
   function canPunchHere(channel: string, organization: Organization) {
-    return isDM(channel) || isClockChannel(channel, organization) || isProjectChannel(channel, organization);
+    return isDMChannel(channel) || organization.matchesClockChannel(channel) || organization.matchesProject(channel);
   }
 
   function toTimeStr(duration: number) {
@@ -110,7 +98,7 @@ export default function (controller: botkit.Controller) {
     const msg = message.match.input.replace(REGEX.ibizan, '').trim();
     const tz = user.timetable.timezone.name || TIMEZONE;
     const punch = Punch.parse(organization, user, msg, mode, tz);
-    const channelIsProject = isProjectChannel(message.channel_obj.name, organization);
+    const channelIsProject = organization.matchesProject(message.channel_obj.name);
     if (!punch.projects.length && channelIsProject) {
       const project = organization.getProjectByName(message.channel);
       if (project) {
@@ -221,7 +209,7 @@ export default function (controller: botkit.Controller) {
         if (operator === 'project' || operator === 'projects') {
           const projectNames = msgWithoutOperator.split(' ');
           const projects = [];
-          const channelIsProject = isProjectChannel(message.channel_obj.name, organization);
+          const channelIsProject = organization.matchesProject(message.channel_obj.name);
           if (projectNames.length === 0 && channelIsProject) {
             projects.push(organization.getProjectByName(message.channel));
           }

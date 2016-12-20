@@ -108,3 +108,5 @@ export const EVENTS = {
   payrollReport: 'ibizan_payroll_report',
   payrollWarning: 'ibizan_payroll_warning'
 };
+
+export const BLACKLISTED_SLACK_MESSAGE_TYPES = ['desktop_notification'];
