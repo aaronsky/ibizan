@@ -1,0 +1,9 @@
+{
+    "name": "<arbitrary name for your Ibizan>",
+    "port": "<port to run the server from>",
+    "storageUri": "<url to a firebase instance for database>",
+    "slackClientId": "<slack app client id>",
+    "slackClientSecret": "<slack app client secret key>",
+    "googleClientEmail": "<client_email from your Google Service Auth JSON>",
+    "googlePrivateKey": "<private_key from your Google Service Auth JSON, or a file path to that private key (.pem or .p12)>"
+}

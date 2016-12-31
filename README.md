@@ -3,7 +3,7 @@ _Dog-themed Employee Time Tracking Slack Bot_
 
 [![Build Status](https://travis-ci.org/ibizan/ibizan.svg?branch=master)](https://travis-ci.org/ibizan/ibizan) [![Dependency Status](https://gemnasium.com/ibizan/ibizan.svg)](https://gemnasium.com/ibizan/ibizan) [![Coverage Status](https://coveralls.io/repos/github/ibizan/ibizan/badge.svg?branch=master)](https://coveralls.io/github/ibizan/ibizan?branch=master) [![Gratipay Team](https://img.shields.io/gratipay/team/shields.svg?maxAge=2592000)](https://gratipay.com/ibizan/)
 
-Ibizan is a chat bot built on the [Hubot](https://github.com/github/hubot) framework, originally contracted by [Fangamer](http://fangamer.com/). Ibizan is designed to provide an intuitive and interactive interface to managing a timesheet.
+Ibizan is a chat bot built on the [Botkit](https://github.com/howdyai/botkit) framework, originally contracted by [Fangamer](http://fangamer.com/). Ibizan is designed to provide an intuitive and interactive interface to managing a timesheet.
 
 ## Setup
 
@@ -27,42 +27,22 @@ In its current form, Ibizan punch functionality is tightly coupled to the layout
 3. Share your spreadsheet (the one you just created) with the email address given in the downloaded JSON.
 4. Make note of the client email, the private key, and the spreadsheet ID.
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
-
-Make note of the app name and FQDN, because you'll need them in the next section. After this deploys correctly, you'll need to set the following configuration variables:
-
-```
-export ORG_NAME=<slack organization name (from login URL)>
-export HUBOT_SLACK_TOKEN=<hubot token from Slack>
-export SHEET_ID=<id from your timesheet>
-export CLIENT_EMAIL=<client_email from your Service Auth JSON>
-export PRIVATE_KEY=<private_key from your Service Auth JSON>
-export ADMINS=<space separated list of Slack admins>
-export LOG_LEVEL=<preferred logging level of debug/info/warn/error>
-```
-
-Note: This file is not under source control. In order to use Ibizan with Heroku, you must set environment variables manually using the Heroku Toolbelt.
-
 ## Deploying to Heroku
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-Make note of the app name and FQDN, because you'll need them in the next section. After this deploys correctly, you'll need to set the following environment variables, if available (some may not be until adding your Hubot to Slack below):
+Click the button above to automatically deploy an Ibizan to Heroku. Make note of the app name and FQDN, because you'll need them in the next section. 
+
+After deploying to Heroku, you'll need to set the following environment variables:
 
 ```
-ORG_NAME = <slack organization name (from login URL)>
-HUBOT_SLACK_TOKEN = <hubot token from Slack>
-SHEET_ID = <id from your timesheet>
-CLIENT_EMAIL = <client_email from your Service Auth JSON>
-PRIVATE_KEY = <private_key from your Service Auth JSON>
-ADMINS = <space separated list of Slack admins>
-LOG_LEVEL = <preferred logging level of debug/info/warn/error>
+IBIZAN_PORT = <port to run the server from>
+IBIZAN_STORAGE_URI = <url to a firebase instance for database>
+IBIZAN_SLACK_CLIENT_ID = <slack app client id>
+IBIZAN_SLACK_CLIENT_SECRET = <slack app client secret key>
+IBIZAN_SLACK_VERIFICATION_TOKEN = <slack app verificiation token>
+IBIZAN_GOOGLE_CLIENT_EMAIL = <client_email from your Google Service Auth JSON>
+IBIZAN_GOOGLE_PRIVATE_KEY = <private_key from your Google Service Auth JSON>
 ```
-
-### Add Hubot to Slack
-
-1. Go to your Slack team's app management page. You may need admin access for this step.
-2. Add a Hubot as an integration and fill in the details. Make note of the Slack token, which you'll need in the next section.
-3. Fill in the tokens you previously noted into the appropriate configuration variables in Heroku.
 
 If Ibizan doesn't automatically start after you finish setting all the environment variables, use the Heroku Toolbelt to run `heroku restart --app={YOUR APP NAME}` in the terminal.
