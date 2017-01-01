@@ -220,10 +220,10 @@ export class User {
   toDays(hours) {
     return this.timetable.toDays(hours);
   }
-  isInactive(current?: moment.Moment) {
+  isInactive(current?: moment.Moment, ignoreHolidays = false) {
     current = current || moment.tz(this.timetable.timezone.name);
     const [start, end] = this.activeHours;
-    if (holidayForMoment(current)) {
+    if (holidayForMoment(current) && !ignoreHolidays) {
       return true;
     } else if (current.isBetween(start, end)) {
       return false;

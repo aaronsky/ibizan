@@ -47,8 +47,8 @@ export function momentForHoliday(name: string): moment.Moment {
         if (holidays['M'][key] === name) {
             const comps = key.split('/') as [string, string];
             const year = new Date().getFullYear();
-            const month = parseInt(comps[0]) - 1;
-            const day = parseInt(comps[1]);
+            const month = +comps[0] - 1;
+            const day = +comps[1];
             const newHoliday = moment({
                 year,
                 month,
@@ -61,7 +61,7 @@ export function momentForHoliday(name: string): moment.Moment {
         if (holidays['W'][key] === name) {
             const comps = key.split('/') as [string, string, string];
             const year = new Date().getFullYear();
-            const month = parseInt(comps[0]) - 1;
+            const month = +comps[0] - 1;
             const newHoliday = moment({
                 year,
                 month
@@ -70,11 +70,13 @@ export function momentForHoliday(name: string): moment.Moment {
                 year,
                 month
             }).endOf('month').date();
-            let week = parseInt(comps[1]);
+            let week = +comps[1];
             if (maxDays < 31) {
                 week = week <= 1 ? 1 : week - 1;
+            } else if (week === 5) {
+                week = week - 1;
             }
-            const day = parseInt(comps[2]);
+            const day = +comps[2];
             newHoliday.date(7 * week).day(day);
             return newHoliday;
         }

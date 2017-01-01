@@ -145,7 +145,7 @@ describe('Punch', () => {
       expect(punch).to.have.property('mode', 'in');
       expect(punch).to.have.deep.property('times[0]');
       const expectedTime = '04:00:00 PM';
-      const expectedDate = '04/22/2016';
+      const expectedDate = '04/22/2017';
       expect(punch.times[0].format('hh:mm:ss A')).to.equal(expectedTime);
       expect(punch.date.format('MM/DD/YYYY')).to.equal(expectedDate);
       expect(punch).to.have.property('projects');
@@ -191,7 +191,7 @@ describe('Punch', () => {
       const punch = Punch.parse(org, this.user, '15 hours on 4/22');
       expect(punch).to.have.property('mode', 'none');
       expect(punch).to.have.deep.property('times.block', 15);
-      const expectedDate = '04/22/2016';
+      const expectedDate = '04/22/2017';
       expect(punch.date.format('MM/DD/YYYY')).to.equal(expectedDate);
       expect(punch).to.have.property('projects');
       expect(punch.projects).to.be.empty;

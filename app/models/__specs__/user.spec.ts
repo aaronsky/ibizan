@@ -178,21 +178,21 @@ describe('User', () => {
   describe('#toDays(hours)', () => {
 
   });
-  describe('#isInactive(current?)', () => {
+  describe('#isInactive(current?, ignoreHolidays?)', () => {
     it('should be true when it is earlier than the start time', () => {
       const [start, end] = this.user.activeHours;
       const time = moment(start).subtract(2, 'hours');
-      expect(this.user.isInactive(time)).to.be.true;
+      expect(this.user.isInactive(time, true)).to.be.true;
     });
     it('should be true when it is later than the end time', () => {
       const [start, end] = this.user.activeHours;
       const time = moment(end).add(2, 'hours');
-      expect(this.user.isInactive(time)).to.be.true;
+      expect(this.user.isInactive(time, true)).to.be.true;
     });
     it('should be false when it is in between the start and end time', () => {
       const [start, end] = this.user.activeHours;
       const time = moment(start).add(end.diff(start, 'hours') / 2, 'hours');
-      expect(this.user.isInactive(time)).to.be.false;
+      expect(this.user.isInactive(time, true)).to.be.false;
     });
   });
   describe('#lastPunch(modes?)', () => {
