@@ -54,8 +54,8 @@ export class App {
             this.controller.on(EVENTS.payrollWarning, this.onIbizanEventPassOrganization.bind(this));
 
             applyReceiveMiddleware(this.controller);
-            this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this));
-            this.controller.middleware.receive.use(this.onReceiveSetAccessHandler.bind(this));
+            this.controller.middleware.receive.use(this.onReceiveSetOrganization.bind(this))
+                .use(this.onReceiveSetAccessHandler.bind(this));
             this.controller.storage.teams.all(this.connectTeamsToSlack.bind(this));
 
             this.loadScripts();

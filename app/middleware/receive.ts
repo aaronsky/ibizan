@@ -1,7 +1,7 @@
 import { REGEX, STRINGS, BLACKLISTED_SLACK_MESSAGE_TYPES } from '../shared/constants';
 const strings = STRINGS.access;
 import { isDMChannel, Message, random } from '../shared/common';
-import { Slack } from '../logger';
+import { Console, Slack } from '../logger';
 
 export function applyReceiveMiddleware(controller: botkit.Controller) {
     function onReceiveMessage(bot: botkit.Bot, message: Message) {
@@ -48,12 +48,30 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
             next();
             return;
         } else if (isDMChannel(message.channel)) {
-            message.channel_obj = {
-                id: message.channel,
-                name: message.user_obj.name
-            };
-            next();
-            return;
+            bot.api.im.list({}, (err, data) => {
+                if (!data.ok) {
+                    next();
+                    return;
+                }
+                const ims = data.ims.filter(im => im.id === message.channel) || [];
+                if (!ims || (ims && ims.length !== 1)) {
+                    next();
+                    return;
+                }
+                const matchingIm = ims[0];
+                bot.api.users.info({ user: matchingIm.user }, (err, data) => {
+                    if (!data.ok) {
+                        next();
+                        return;
+                    }
+                    const { user } = data;
+                    message.channel_obj = {
+                        id: message.channel,
+                        name: user.name
+                    }
+                    next();
+                });
+            });
         } else {
             bot.api.channels.info({ channel: message.channel }, (err, data) => {
                 if (!data.ok) {
@@ -69,8 +87,8 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
 
     controller.on('message_received', onReceiveMessage);
 
-    controller.middleware.receive.use(onReceiveSwallowBlacklistedMessageTypes);
-    controller.middleware.receive.use(onReceiveUpdateSlackLogger);
-    controller.middleware.receive.use(onReceiveSetUser);
-    controller.middleware.receive.use(onReceiveSetChannel);
+    controller.middleware.receive.use(onReceiveSwallowBlacklistedMessageTypes)
+        .use(onReceiveUpdateSlackLogger)
+        .use(onReceiveSetUser)
+        .use(onReceiveSetChannel);
 }

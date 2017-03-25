@@ -59,13 +59,12 @@
   },
   "scripts": {
     "clean": "rm -rf ./bin",
-    "build": "npm run build:dev",
-    "build:dev": "tsc",
-    "build:prod": "npm run clean && tsc -p ./tsconfig.prod.json",
+    "build": "npm run clean && npm run compile",
+    "compile": "tsc",
     "heroku-prebuild": "npm i --only=dev",
-    "heroku-postbuild": "npm run build:prod",
-    "start": "node ./bin/index.js",
-    "prepublish": "npm run build:prod",
+    "heroku-postbuild": "npm run build",
+    "start": "npm run build && node ./bin/index.js",
+    "prepublish": "npm run build",
     "test": "TEST=true mocha",
     "test:cover": "nyc --reporter=html -x **/*.spec.ts npm test",
     "coverage": "nyc report --reporter=text-lcov | coveralls"

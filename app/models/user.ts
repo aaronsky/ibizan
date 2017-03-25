@@ -128,12 +128,13 @@ export class Settings {
   lastPing: moment.Moment;
 
   private constructor() {
-    this.shouldHound = true
-    this.shouldResetHound = true
-    this.houndFrequency = -1
-    this.lastMessage = null
-    this.lastPing = null
+    this.shouldHound = true;
+    this.shouldResetHound = true;
+    this.houndFrequency = -1;
+    this.lastMessage = null;
+    this.lastPing = null;
   }
+  
   static fromSettings(settings?: Object) {
     const newSetting = new Settings();
     newSetting.fromSettings(settings);
@@ -178,12 +179,18 @@ export class User {
     timetable.loggedTotal = +row.totalLogged;
     timetable.averageLogged = +row.averageLogged;
     const user = new User(row.name, row.slackname, (row.salary === 'Y'), timetable, row);
+    let lastPing;
+    if (row.lastPing && row.lastPing.length !== 0) {
+      lastPing = moment.tz(row.lastPing, 'MM/DD/YYYY h:mm:ss A', row.timezone);
+    } else {
+      lastPing = moment.tz(row.timezone);
+    }
     user.settings = Settings.fromSettings({
-      shouldHound: row.shouldHound,
+      shouldHound: row.shouldHound === 'Y',
       shouldResetHound: +row.houndFrequency !== -1,
-      houndFrequency: row.houndFrequency,
+      houndFrequency: row.houndFrequency || 0,
       lastMessage: null,
-      lastPing: row.lastPing
+      lastPing
     });
     return user;
   }

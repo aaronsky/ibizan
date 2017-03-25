@@ -86,22 +86,22 @@ export default function (controller: botkit.Controller) {
   // Parse a textual punch and produce a new Punch object
   function parse(bot: botkit.Bot, message: Message, mode: string, organization: Organization) {
     mode = mode.toLowerCase();
-    const channelName = message.channel_obj.name;
+    const channel = message.channel_obj;
     const user = organization.getUserBySlackName(message.user_obj.name);
     Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
-    const isAllowed = canPunchHere(channelName, organization);
+    const isAllowed = canPunchHere(channel.id, organization);
     if (!isAllowed) {
       Slack.addReaction('x', message);
-      user.directMessage(`You cannot punch in #${channelName}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`);
+      user.directMessage(`You cannot punch in #${channel.name}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`);
       return;
     }
     Slack.addReaction('clock4', message);
     const msg = message.match.input.replace(REGEX.ibizan, '').trim();
     const tz = user.timetable.timezone.name || TIMEZONE;
     const punch = Punch.parse(organization, user, msg, mode, tz);
-    const channelIsProject = organization.matchesProject(channelName);
+    const channelIsProject = organization.matchesProject(channel.name);
     if (!punch.projects.length && channelIsProject) {
-      const project = organization.getProjectByName(channelName);
+      const project = organization.getProjectByName(channel.name);
       if (project) {
         punch.projects.push(project);
       }
