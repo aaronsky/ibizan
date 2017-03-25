@@ -30,8 +30,8 @@ describe('holidayForMoment(date)', () => {
   it('should return \"Martin Luther King Jr. Day\" for \"2017-01-18\"', () => {
     testMomentMatchesString(moment('2017-01-16'), 'Martin Luther King Jr. Day');
   });
-  it('should return \"Washington\'s Birthday\" for \"2017-02-13\"', () => {
-    testMomentMatchesString(moment('2017-02-13'), 'Washington\'s Birthday');
+  it('should return \"Washington\'s Birthday\" for \"2017-02-20\"', () => {
+    testMomentMatchesString(moment('2017-02-20'), 'Washington\'s Birthday');
   });
   it('should return \"Memorial Day\" for \"2017-05-30\"', () => {
     testMomentMatchesString(moment('2017-05-29'), 'Memorial Day');
