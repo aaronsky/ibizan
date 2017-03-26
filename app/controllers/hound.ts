@@ -74,11 +74,11 @@ export default function (controller: botkit.Controller) {
       });
 
       const [start, end] = user.activeHours;
-      const lastPunch = user.lastPunch(['in', 'out', 'vacation', 'sick', 'unpaid']);
+      const lastPunch = user.lastPunch();
       const lastPing = user.settings.lastPing || now;
       const timeSinceStart = +Math.abs(now.diff(start, 'hours', true)).toFixed(2) || 0;
       const timeSinceEnd = +Math.abs(now.diff(end, 'hours', true)).toFixed(2) || 0;
-      const timeSinceLastPunch = now.diff(lastPunch.times.slice(-1)[0], 'hours', true) || 0;
+      const timeSinceLastPunch = (lastPunch && now.diff(lastPunch.times.slice(-1)[0], 'hours', true)) || 0;
       const timeSinceLastMessage = user.settings.lastMessage.time.diff(last.time, 'hours', true) || 0;
       const timeSinceLastPing = +Math.abs(now.diff(lastPing, 'hours', true)) || 0;
 

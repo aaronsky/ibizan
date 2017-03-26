@@ -1,6 +1,6 @@
 import * as moment from 'moment-timezone';
 
-import { TIMEZONE } from '../shared/constants';
+import { MODES, TIMEZONE } from '../shared/constants';
 import { Mode } from '../shared/common';
 import { Rows } from '../shared/rows';
 import { holidayForMoment } from '../shared/moment-holiday';
@@ -238,18 +238,15 @@ export class User {
     return true;
   }
   lastPunch(modes?: Mode | Mode[]): Punch {
-    if (typeof modes === 'string') {
+    if (!modes) {
+      modes = MODES as Mode[];
+    } else if (typeof modes === 'string') {
       modes = [modes]
-    }
-    if (!modes || modes.length === 0) {
-      return this.punches.slice(-1)[0]
     }
     if (this.punches && this.punches.length > 0) {
       for (let len = this.punches.length, i = len - 1; i >= 0; --i) {
         const last = this.punches[i];
-        if (modes.indexOf('in') !== -1 && modes.indexOf('out') === -1 && last.mode === 'out') {
-          return;
-        } else if (modes.indexOf(last.mode) !== -1) {
+        if (modes.indexOf(last.mode) !== -1) {
           return last;
         }
       }

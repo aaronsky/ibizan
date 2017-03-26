@@ -278,7 +278,6 @@ export default function (controller: botkit.Controller) {
       const user = organization.getUserBySlackName(message.user_obj.name);
       if (user.punches && user.punches.length > 0) {
         Slack.addReaction('clock4', message);
-        let punch;
         let lastPunch = user.lastPunch();
         const lastPunchDescription = lastPunch.description(user);
         try {
@@ -286,7 +285,14 @@ export default function (controller: botkit.Controller) {
           await user.updateRow();
           Slack.addReaction('dog2', message);
           Slack.removeReaction('clock4', message);
-          user.directMessage(`Undid your last punch, which was: *${lastPunchDescription}*\n\nYour most current punch is now: *${user.lastPunch().description(user)}*`);
+          let msg = `Undid your last punch, which was: *${lastPunchDescription}*\n\n`;
+          lastPunch = user.lastPunch();
+          if (lastPunch) {
+            msg += `Your most current punch is now: *${lastPunch.description(user)}*`;
+          } else {
+            msg += `That was your last punch on record.`;
+          }
+          user.directMessage(msg);
         } catch (err) {
           Slack.error(`"${err}" was returned for an undo operation by ${user.slackName}`);
           user.directMessage('Something went horribly wrong while undoing your punch.');
@@ -298,7 +304,7 @@ export default function (controller: botkit.Controller) {
 
   // respond
   // time.events
-  controller.hears('\b(events|upcoming)$',
+  controller.hears('(events|upcoming)$',
     EVENTS.respond,
     buildOptions({ id: 'time.events' }, controller),
     (bot, message: Message) => {
@@ -327,7 +333,7 @@ export default function (controller: botkit.Controller) {
   // Gives helpful info if a user types 'hours' with no question mark or date
   // respond
   // time.hoursHelp
-  controller.hears('\bhours$',
+  controller.hears('hours$',
     EVENTS.respond,
     buildOptions({ id: 'time.hoursHelp' }, controller),
     (bot, message) => {
@@ -355,8 +361,8 @@ export default function (controller: botkit.Controller) {
       const tz = user.timetable.timezone.name;
       const date = moment(message.match[1], 'MM/DD/YYYY');
       if (!date.isValid()) {
-        Console.info(`hours: ${message.match[1]} is an invalid date`);
-        user.directMessage(`${message.match[1]} is not a valid date`);
+        Console.info(`hours: \"${message.match[1]}\" is an invalid date`);
+        user.directMessage(`\"${message.match[1]}\" is not a valid date`);
         Slack.addReaction('x', message);
         return;
       }
@@ -524,7 +530,7 @@ export default function (controller: botkit.Controller) {
   // Returns the user's info as a slackAttachment
   // respond
   // time.status, userRequired: true
-  controller.hears('\b(status|info)$',
+  controller.hears('(status|info)$',
     EVENTS.respond,
     buildOptions({ id: 'time.status', userRequired: true }, controller),
     (bot, message: Message) => {
@@ -541,7 +547,7 @@ export default function (controller: botkit.Controller) {
   // Returns the user's time in their timezone, as well as Ibizan's default time
   // respond
   // time.time, userRequired: true
-  controller.hears('\btime$',
+  controller.hears('time$',
     EVENTS.respond,
     buildOptions({ id: 'time.time', userRequired: true }, controller),
     (bot, message: Message) => {
@@ -564,7 +570,7 @@ export default function (controller: botkit.Controller) {
   // Returns the user's timezone
   // respond
   // time.time, userRequired: true
-  controller.hears('\btimezone$',
+  controller.hears('timezone$',
     EVENTS.respond,
     buildOptions({ id: 'time.time', userRequired: true }, controller),
     (bot, message: Message) => {
@@ -654,7 +660,7 @@ export default function (controller: botkit.Controller) {
       if (scope !== 'unknown' && time !== 'notime') {
         const newTime = moment.tz(time, 'h:mm A', user.timetable.timezone.name);
         if (!newTime.isValid()) {
-          user.directMessage(`${time} is not a valid timers.`);
+          user.directMessage(`\"${time}\" is not a valid time.`);
           Slack.addReaction('x', message);
           return;
         }

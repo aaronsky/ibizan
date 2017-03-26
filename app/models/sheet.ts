@@ -142,7 +142,7 @@ export class Spreadsheet {
       if (index === 0) {
         return acc;
       }
-      const newRow = new ctor(row, Rows.Row.formatRowRange(title, index));
+      const newRow = new ctor(row, Rows.Row.formatRowRange(title, index + 1));
       newRow.bindGoogleApis(this.service, this.id, this.auth);
       return [...acc, newRow];
     }, []);
@@ -157,16 +157,9 @@ export class Spreadsheet {
 
     return new Promise<Punch>(async (resolve, reject) => {
       if (punch.mode === 'out' && user.punches && user.punches.length > 0) {
-        let last: Punch;
-        for (let len = user.punches.length, i = len - 1; i >= 0; --i) {
-          last = user.punches[i];
-          if (last.mode === 'in') {
-            break;
-          }
-          last = null;
-        }
+        let last = user.lastPunch('in');
         if (!last) {
-          reject('You haven\'t punched out yet.');
+          reject('You haven\'t punched in yet.');
           return;
         }
         last.out(punch, organization);
