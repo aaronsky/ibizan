@@ -11,16 +11,12 @@ import { Project } from './project';
 import { User, Settings } from './user';
 import { App } from '../app';
 
-interface GoogleAuth {
-    clientEmail?: string;
-    privateKey?: string;
-}
-
 export class Organization {
     readonly name: string = 'Unnamed organization';
     readonly config: TeamConfig;
     spreadsheet: Spreadsheet;
     initTime: moment.Moment;
+    initialized: boolean = false;
     users: User[];
     projects: Project[];
     calendar: Calendar;
@@ -38,21 +34,21 @@ export class Organization {
         this.spreadsheet = new Spreadsheet(config.google.sheetId);
 
         if (this.spreadsheet.id) {
-            this.sync({
-                clientEmail: App.config.google.clientEmail,
-                privateKey: App.config.google.privateKey
-            }).then(() => Console.info(`Options loaded for ${this.name}`)).catch(err => Console.error(`Failed to sync for ${this.name}`, err));
+            this.sync(App.config.googleCredentials).then(() => Console.info(`Options loaded for ${this.name}`)).catch(err => Console.error(`Failed to sync for ${this.name}`, err));
         } else {
             Console.warn(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
         }
     }
     ready() {
-        return this.spreadsheet.initialized;
+        return this.initialized;
     }
-    async sync(auth: GoogleAuth = {}) {
+    async sync(googleCredentialsPath?: string) {
         try {
-            if (auth && auth.clientEmail && auth.privateKey) {
-                await this.spreadsheet.authorize(auth.clientEmail, auth.privateKey);
+            if (!googleCredentialsPath && !this.spreadsheet.isAuthorized) {
+                throw new Error('Trying to sync while unauthorized, and without supplying a path to a credentials file.')
+            }
+            if (googleCredentialsPath) {
+                await this.spreadsheet.authorize(googleCredentialsPath);
             }
             let opts = await this.spreadsheet.loadOptions();
             if (!opts) {
@@ -76,6 +72,7 @@ export class Organization {
             this.houndFrequency = opts.houndFrequency;
             this.clockChannel = opts.clockChannel;
             this.exemptChannels = opts.exemptChannels;
+            this.initialized = true;
         } catch (err) {
             throw err;
         }

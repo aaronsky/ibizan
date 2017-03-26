@@ -73,25 +73,22 @@ export namespace SlackLogger {
         Console.error(err);
         return;
       }
-      for (let channel of data.channels) {
-        if (channel.name !== 'ibizan-diagnostics') {
-          continue;
+      let sent = false;
+      data.channels.forEach(channel => {
+        if (channel.name !== 'ibizan-diagnostics' || sent) {
+          return;
         }
         const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, channel.id);
-        bot.send(message, (err) => {
-          
-        });
-        return;
-      }
+        bot.send(message, err => {});
+        sent = true;
+      });
       bot.api.channels.join({ name: 'ibizan-diagnostics' }, (err, data) => {
         if (err) {
           Console.error(err);
           return;
         }
         const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, data.channel.id);
-        bot.send(message, (err) => {
-          
-        });
+        bot.send(message, err => {});
       });
     });
   }

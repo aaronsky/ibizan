@@ -1,6 +1,7 @@
 import * as moment from 'moment-timezone';
 
 import { TIMEZONE } from '../shared/constants';
+import { Mode } from '../shared/common';
 import { Rows } from '../shared/rows';
 import { holidayForMoment } from '../shared/moment-holiday';
 import { Console, Slack } from '../logger';
@@ -144,10 +145,9 @@ export class Settings {
     if (!opts || typeof opts !== 'object') {
       return;
     }
-    for (let setting in opts) {
-      const value = opts[setting];
-      this[setting] = value;
-    }
+    Object.keys(opts).forEach(setting => {
+      this[setting] = opts[setting];
+    });
   }
 }
 
@@ -237,7 +237,7 @@ export class User {
     }
     return true;
   }
-  lastPunch(modes?: string | string[]): Punch {
+  lastPunch(modes?: Mode | Mode[]): Punch {
     if (typeof modes === 'string') {
       modes = [modes]
     }
@@ -245,8 +245,7 @@ export class User {
       return this.punches.slice(-1)[0]
     }
     if (this.punches && this.punches.length > 0) {
-      const len = this.punches.length;
-      for (let i = len - 1; i >= 0; --i) {
+      for (let len = this.punches.length, i = len - 1; i >= 0; --i) {
         const last = this.punches[i];
         if (modes.indexOf('in') !== -1 && modes.indexOf('out') === -1 && last.mode === 'out') {
           return;
@@ -456,10 +455,9 @@ export class User {
     this.updateRow();
   }
   hexColor() {
-    let hash = 0;
-    for (let i = 0, len = this.slackName.length; i < len; i++) {
-      hash = this.slackName.charCodeAt(i) + ((hash << 3) - hash);
-    }
+    const hash = this.slackName.split('').reduce((acc, char, index) => {
+      return char.charCodeAt(0) + ((acc << 3) - acc);
+    }, 0);
     const color = Math.abs(hash).toString(16).substring(0, 6);
     const hexColor = "#" + '000000'.substring(0, 6 - color.length) + color;
     return hexColor;

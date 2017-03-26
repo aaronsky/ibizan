@@ -43,7 +43,6 @@ declare module botkit {
         constructor(configuration: Configuration);
         hears_regexp(tests: string[] | RegExp[], message: Message): boolean;
         changeEars(new_test: HearFunction): never;
-        spawn(team);
         hears(pattern: string | string[], modes: string | string[], callback: (bot: Bot, message: Message) => void);
         hears(pattern: string | string[], modes: string | string[], middleware: HearFunction, callback: (bot: Bot, message: Message) => void);
         on(event: string, callback: (bot: Bot, message: Message) => void);
@@ -51,7 +50,7 @@ declare module botkit {
         startConversation(bot: Bot, message: Message, cb: (err: Error, convo: Conversation) => void): never;
         createConversation(bot: Bot, message: Message, cb: (err: Error, convo: Conversation) => void): never;
         defineBot(unit: Function): never;
-        spawn(config: Conversation, cb: Function): Function;
+        spawn(config: any, cb?: Function): Bot;
         startTicking(): never;
         shutdown(): never;
         startTask(bot: Bot, message: Message, cb: (task: Task, convo: Conversation) => void): Task;
@@ -139,6 +138,12 @@ declare module botkit {
         createdBy: string;
         url: string;
         name: string;
+        bot?: {
+            token: string,
+            user_id: string,
+            createdBy: string,
+            app_token: string,
+        }
     }
     type LogLevel = 'debug' | 'info' | 'error';
     interface Storage {

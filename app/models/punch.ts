@@ -3,6 +3,7 @@ const weekend = require('moment-weekend');
 import * as uuid from 'node-uuid';
 
 import { MODES, REGEX, TIMEZONE } from '../shared/constants';
+import { Mode } from '../shared/common';
 import { holidayForMoment } from '../shared/moment-holiday';
 import { Console } from '../logger';
 import { Rows } from '../shared/rows';
@@ -217,7 +218,7 @@ function parseProjects(command: string, organization: Organization): [Project[],
 }
 
 export class Punch {
-  mode: string;
+  mode: Mode;
   times: PunchTime;
   projects: Project[];
   notes: string;
@@ -226,13 +227,13 @@ export class Punch {
   elapsed?: number;
   row: Rows.RawDataRow;
 
-  constructor(mode: string, times: PunchTime, projects: Project[], notes: string) {
+  constructor(mode: Mode, times: PunchTime, projects: Project[], notes: string) {
     this.mode = mode;
     this.times = times;
     this.projects = projects;
     this.notes = notes;
   }
-  static parse(organization: Organization, user: User, command: string, mode: string = 'none', timezone?: string) {
+  static parse(organization: Organization, user: User, command: string, mode: Mode = 'none', timezone?: string) {
     if (!user) {
       Console.error('No user passed', new Error(command));
       return;

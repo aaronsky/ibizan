@@ -89,16 +89,13 @@ export namespace Rows {
         fromGoogleValues(values: any[], range) {
             this.range = range;
             const headers = HEADERS[this.kind];
-            for (let i = 0; i < headers.length; i++) {
-                this[headers[i].field] = values[i] || '';
-            }
+            headers.forEach((header, index) => {
+                this[header.field] = values[index] || '';
+            });
         }
         toGoogleValues() {
-            const values = [];
             const headers = HEADERS[this.kind];
-            for (let i = 0; i < headers.length; i++) {
-                values.push(this[headers[i].field]);
-            }
+            const values = headers.map(header => this[header.field]);
             return {
                 range: this.range,
                 majorDimension: 'ROWS',

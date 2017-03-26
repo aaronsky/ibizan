@@ -27,44 +27,35 @@ export class Calendar {
     this.events.sort((a, b) => {
       return moment.utc(a.date).diff(moment.utc(b.date));
     });
-    const upcomingEvents = [];
-    for (let event of this.events) {
+    return this.events.reduce((acc, event) => {
       if (event.date.isAfter(date)) {
-        upcomingEvents.push(event);
+        return [...acc, event];
       }
-    }
-    return upcomingEvents;
+      return acc;
+    }, []);
   }
   hexColor() {
-    let hash = 0;
-    for (let i = 0, len = this.holidays.length; i < len; i++) {
-      hash = this.holidays[i].name.charCodeAt(i) + ((hash << 3) - hash);
-    }
+    const hash = this.holidays.reduce((acc, holiday, index) => {
+      return holiday.name.charCodeAt(index) + ((acc << 3) - acc);
+    }, 0);
     const color = Math.abs(hash).toString(16).substring(0, 6);
     const hexColor = "#" + '000000'.substring(0, 6 - color.length) + color;
     return hexColor;
   }
   slackAttachment() {
-    const fields = [];
-    for (let holiday of this.holidays) {
-      fields.push({
-        title: holiday.name,
-        value: holiday.date.format('MM/DD/YYYY'),
-        short: true
-      });
-    }
-    const attachment = {
+    return {
       color: this.hexColor(),
-      fields
+      fields: this.holidays.map(holiday => {
+        return {
+          title: holiday.name,
+          value: holiday.date.format('MM/DD/YYYY'),
+          short: true
+        }
+      })
     };
-    return attachment;
   }
   description() {
-    let str = "Organization calendar:\n"
-    for (let holiday of this.holidays) {
-      str += `This year's ${holiday.name} is on ${holiday.date.format('MM/DD/YYYY')}\n`;
-    }
-    return str;
+    return 'Organization calendar:\n' + this.holidays.reduce((acc, holiday) => acc + `This year's ${holiday.name} is on ${holiday.date.format('MM/DD/YYYY')}\n`, '');
   }
 }
 

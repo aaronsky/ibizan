@@ -73,9 +73,9 @@ export default function (controller: botkit.Controller) {
         } else {
           const match = thing.match(/:(.*?):/g);
           if (match) {
-            for (let el of match) {
-              Slack.addReaction(el.replace(/:/g, ''), message);
-            }
+            match.forEach(element => {
+              Slack.addReaction(element.replace(/:/g, ''), message);
+            });
           }
           const msg = {
             text: `_drops ${thing} at @${message.user_obj.name}'s feet${random(strings.fetchsuffix)}_`,

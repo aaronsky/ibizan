@@ -46,10 +46,7 @@ export default function (controller: botkit.Controller) {
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
     const response = 'All users:';
-    const attachments = [];
-    for (let user of organization.users) {
-      attachments.push(user.slackAttachment());
-    }
+    const attachments = organization.users.map(user => user.slackAttachment());
     user.directMessage(response, attachments);
     Slack.addReaction('dog2', message);
   });
@@ -135,10 +132,7 @@ export default function (controller: botkit.Controller) {
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
     const response = 'All projects:';
-    const attachments = [];
-    for (let project of organization.projects) {
-      attachments.push(project.slackAttachment());
-    }
+    const attachments = organization.projects.map(project => project.slackAttachment());
     user.directMessage(response, attachments);
     Slack.addReaction('dog2', message);
   });

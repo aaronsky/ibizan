@@ -12,10 +12,7 @@ export interface IbizanConfig {
         verificationToken: string;
         scopes: string[];
     },
-    google: {
-        clientEmail: string;
-        privateKey: string;
-    }
+    googleCredentials: string
 }
 
 export interface TeamConfig {
@@ -24,6 +21,9 @@ export interface TeamConfig {
     google: {
         sheetId: string;
     }
+    retry?: boolean | number,
+    token?: string;
+    incoming_webhook?: string;
 }
 
 export class ConfigFactory {
@@ -50,14 +50,11 @@ export class ConfigFactory {
                 verificationToken: null,
                 scopes: null
             },
-            google: {
-                clientEmail: null,
-                privateKey: null
-            }
+            googleCredentials: null
         };
-        for (let key in config) {
-            if ((key === 'slack' || key === 'google') && typeof config[key] === 'object') {
-                for (let subKey in config[key]) {
+        Object.keys(config).forEach(key => {
+            if (key === 'slack' && typeof config[key] === 'object') {
+                Object.keys(config[key]).forEach(subKey => {
                     config[key][subKey] = rcConfig && rcConfig[key] && (rcConfig[key][subKey] || '');
                     if (shouldCheckOpts && optsConfig[key] && optsConfig[key][subKey]) {
                         config[key][subKey] = optsConfig[key][subKey];
@@ -65,7 +62,7 @@ export class ConfigFactory {
                     if (shouldCheckArgs && argsConfig[key] && argsConfig[key][subKey]) {
                         config[key][subKey] = argsConfig[key][subKey];
                     }
-                }
+                });
             } else {
                 config[key] = rcConfig && (rcConfig[key] || null);
                 if (shouldCheckOpts && optsConfig[key]) {
@@ -75,7 +72,7 @@ export class ConfigFactory {
                     config[key] = argsConfig[key];
                 }
             }
-        }
+        });
         return config;
     }
     static toJSONString(config: IbizanConfig | TeamConfig): string {
@@ -101,12 +98,14 @@ export class ConfigFactory {
         const currentPath = path.resolve(currentDir, filename);
 
         let pathToLoad: string;
-        for (let path of [overridePath, currentPath, homePath]) {
+        [overridePath, currentPath, homePath].forEach(path => {
+            if (pathToLoad) {
+                return;
+            }
             if (path && fs.existsSync(path)) {
                 pathToLoad = path;
-                break;
             }
-        }
+        });
         if (!pathToLoad) {
             const warning = '.ibizanrc.json not found in any of the default locations' + (overridePath ? ', or in the override location.' : '.');
             Console.warn(warning);
@@ -163,10 +162,7 @@ export class ConfigFactory {
                 verificationToken: null,
                 scopes: null
             },
-            google: {
-                clientEmail: null,
-                privateKey: null
-            }
+            googleCredentials: null
         };
         if (args.port) {
             config.port = args.port || process.env.PORT || process.env.IBIZAN_PORT || process.env.NODE_PORT;
@@ -183,25 +179,10 @@ export class ConfigFactory {
         if (args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN) {
             config.slack.verificationToken = args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN;
         }
-        if (args.googleClientEmail || args.clientEmail || process.env.IBIZAN_GOOGLE_CLIENT_EMAIL) {
-            config.google.clientEmail = args.googleClientEmail || args.clientEmail || process.env.IBIZAN_GOOGLE_CLIENT_EMAIL;
-        }
-        if (args.googlePrivateKey || args.privateKey || process.env.IBIZAN_GOOGLE_PRIVATE_KEY) {
-            config.google.privateKey = ConfigFactory.processGooglePrivateKey(args.googlePrivateKey || args.privateKey || process.env.IBIZAN_GOOGLE_PRIVATE_KEY);
+        if (args.googleCredentials || args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS) {
+            config.googleCredentials = args.googleCredentials || args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS;
         }
         config.slack.scopes = ['bot'];
         return config;
-    }
-    private static processGooglePrivateKey(keyOrPath: string): string {
-        if (!keyOrPath) {
-            return '';
-        }
-        const pathStats = fs.statSync(keyOrPath);
-        if (pathStats && pathStats.isFile() && ['.p12', '.pem'].indexOf(path.extname(keyOrPath)) !== -1) {
-            const key = fs.readFileSync(path.resolve(keyOrPath), 'utf-8');
-            return key;
-        } else {
-            return keyOrPath;
-        }
     }
 };

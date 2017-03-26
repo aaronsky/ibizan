@@ -95,7 +95,7 @@ export const STRINGS = {
   },
 };
 
-export const MODES = ['in', 'out', 'vacation', 'unpaid', 'sick'];
+export const MODES = ['in', 'out', 'vacation', 'sick', 'unpaid'];
 
 export const TIMEZONE = 'America/Phoenix';
 

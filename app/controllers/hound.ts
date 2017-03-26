@@ -157,9 +157,7 @@ export default function (controller: botkit.Controller) {
         Console.warn('Don\'t autohound, Organization isn\'t ready yet');
         return;
       }
-      for (let user of organization.users) {
-        hound({ id: user.slackId, name: user.slackName }, { private: null, name: '' }, organization, true, true);
-      }
+      organization.users.forEach(user => hound({ id: user.slackId, name: user.slackName }, { private: null, name: '' }, organization, true, true));
     }]);
   });
 

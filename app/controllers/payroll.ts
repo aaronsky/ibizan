@@ -124,9 +124,7 @@ export default function (controller: botkit.Controller) {
         Console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
         return;
       }
-      for (let user of organization.users) {
-        user.directMessage('As a reminder, payroll will run on Monday. Unrecorded time will not be paid.\nYou can use `period?` to check your hours for this pay period.');
-      }
+      organization.users.forEach(user => user.directMessage('As a reminder, payroll will run on Monday. Unrecorded time will not be paid.\nYou can use `period?` to check your hours for this pay period.'));
     }]);
   });
 };

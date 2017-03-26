@@ -50,7 +50,7 @@ import * as moment from 'moment-timezone';
 
 import { REGEX, REGEX_STR, STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 const strings = STRINGS.time;
-import { Message, isDMChannel } from '../shared/common';
+import { Message, Mode, isDMChannel } from '../shared/common';
 import { Rows } from '../shared/rows';
 import { Console, Slack } from '../logger';
 import { Punch } from '../models/punch';
@@ -84,8 +84,8 @@ export default function (controller: botkit.Controller) {
   }
 
   // Parse a textual punch and produce a new Punch object
-  function parse(bot: botkit.Bot, message: Message, mode: string, organization: Organization) {
-    mode = mode.toLowerCase();
+  function parse(bot: botkit.Bot, message: Message, mode: Mode, organization: Organization) {
+    mode = mode.toLowerCase() as Mode;
     const channel = message.channel_obj;
     const user = organization.getUserBySlackName(message.user_obj.name);
     Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
@@ -135,7 +135,7 @@ export default function (controller: botkit.Controller) {
       if (enteredPunch.mode === 'in') {
         user.directMessage(punchEnglish);
       } else {
-        const attachments = [ enteredPunch.slackAttachment() ];
+        const attachments = [enteredPunch.slackAttachment()];
         user.directMessage(punchEnglish, attachments);
       }
       Slack.addReaction('dog2', message);
@@ -162,7 +162,7 @@ export default function (controller: botkit.Controller) {
         Console.error('No Organization was found for the team: ' + bot);
         return;
       }
-      parse(bot, message, message.match[1], organization);
+      parse(bot, message, message.match[1] as Mode, organization);
     });
 
   // Punch for a block of time
@@ -177,7 +177,7 @@ export default function (controller: botkit.Controller) {
         Console.error('No Organization was found for the team: ' + bot);
         return;
       }
-      parse(bot, message, message.match[1], organization);
+      parse(bot, message, message.match[1] as Mode, organization);
     });
 
   // Switch projects during an 'in' punch
@@ -310,10 +310,7 @@ export default function (controller: botkit.Controller) {
       let response = '';
       const upcomingEvents = organization.calendar.upcomingEvents();
       if (upcomingEvents.length > 0) {
-        response += 'Upcoming events:\n';
-        for (let calendarEvent of upcomingEvents) {
-          response += `*${calendarEvent.date.format('M/DD/YY')}* - ${calendarEvent.name}\n`;
-        }
+        response = 'Upcoming events:\n' + upcomingEvents.reduce((acc, event) => response + `*${event.date.format('M/DD/YY')}* - ${event.name}\n`, response);
       } else {
         response = strings.noevents;
       }
@@ -365,17 +362,15 @@ export default function (controller: botkit.Controller) {
       }
       const formattedDate = date.format('dddd, MMMM D, YYYY');
 
-      const attachments = [];
-
       const startOfDay = moment.tz(date, tz).startOf('day');
       const endOfDay = moment.tz(date, tz).endOf('day');
       const report = user.toRawPayroll(startOfDay, endOfDay);
-      for (let punch of user.punches) {
+      const attachments = user.punches.reduce((acc, punch) => {
         if (punch.date.isBefore(startOfDay) || punch.date.isAfter(endOfDay)) {
-          continue;
+          return acc;
         }
-        attachments.push(punch.slackAttachment());
-      }
+        return [...acc, punch.slackAttachment()];
+      }, []);
 
       let loggedAny = false;
       let msg;
@@ -388,25 +383,22 @@ export default function (controller: botkit.Controller) {
           msg = `You have *${toTimeStr(+report.logged)} of paid work time*`;
           loggedAny = true;
         }
-        for (let kind of ['vacation', 'sick', 'unpaid']) {
+        msg = ['vacation', 'sick', 'unpaid'].reduce((acc, kind) => {
           if (report[kind]) {
             const value = +report[kind];
             if (!loggedAny) {
-              msg += `, but you have *${toTimeStr(value)} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
+              acc += `, but you have *${toTimeStr(value)} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
               loggedAny = true;
             } else {
-              msg += ` and *${toTimeStr(value)} of ${kind} time*`;
+              acc += ` and *${toTimeStr(value)} of ${kind} time*`;
             }
           }
-        }
+          return acc;
+        }, msg);
         msg += ` recorded for ${formattedDate}`;
       }
       if (report.extra && report.extra.projects && report.extra.projects.length > 0) {
-        msg += ' (';
-        for (let project of report.extra.projects) {
-          msg += `#${project.name}`;
-        }
-        msg += ')';
+        msg += ' (' + report.extra.projects.reduce((acc, project) => acc + `#${project.name}`, msg) + ')';
       }
       Slack.addReaction('dog2', message);
       user.directMessage(msg, attachments);
@@ -425,83 +417,76 @@ export default function (controller: botkit.Controller) {
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
+
       const tz = user.timetable.timezone.name;
       const now = moment.tz(tz);
-      const attachments = [];
       const mode = message.match[1].toLowerCase();
+
+      let lowerBoundDate: moment.Moment;
+      let upperBoundDate: moment.Moment;
 
       let report: Rows.PayrollReportsRow;
       let dateArticle;
       if (mode === 'week') {
-        const sunday = moment({
+        lowerBoundDate = moment({
           hour: 0,
           minute: 0,
           second: 0
         }).day('Sunday');
-        report = user.toRawPayroll(sunday, now);
+        upperBoundDate = now;
+        report = user.toRawPayroll(lowerBoundDate, upperBoundDate);
         dateArticle = 'this week';
-
-        for (let punch of user.punches) {
-          if (punch.date.isBefore(sunday) || punch.date.isAfter(now)) {
-            continue;
-          } else if (!punch.elapsed && !punch.times.block) {
-            continue;
-          }
-          attachments.push(punch.slackAttachment());
-        }
       } else if (mode === 'month') {
-        const startOfMonth = moment.tz({
+        lowerBoundDate = moment.tz({
           hour: 0,
           minute: 0,
           second: 0
         }, tz).startOf('month');
-        report = user.toRawPayroll(startOfMonth, now);
+        upperBoundDate = now;
+        report = user.toRawPayroll(lowerBoundDate, upperBoundDate);
         dateArticle = 'this month';
       } else if (mode === 'year') {
-        const startOfYear = moment.tz({
+        lowerBoundDate = moment.tz({
           hour: 0,
           minute: 0,
           second: 0
         }, tz).startOf('year');
-        report = user.toRawPayroll(startOfYear, now);
+        upperBoundDate = now;
+        report = user.toRawPayroll(lowerBoundDate, upperBoundDate);
         dateArticle = 'this year';
       } else if (mode === 'period') {
-        let periodStart = moment({
+        lowerBoundDate = moment({
           hour: 0,
           minute: 0,
           second: 0
         }).day('Sunday');
         if (organization.calendar.isPayWeek()) {
-          periodStart = periodStart.subtract(1, 'weeks');
+          lowerBoundDate = lowerBoundDate.subtract(1, 'weeks');
         }
-        let periodEnd = periodStart.clone().add(2, 'weeks');
+        upperBoundDate = lowerBoundDate.clone().add(2, 'weeks');
         if (message.match[0].match(/(last|previous)/)) {
-          periodStart = periodStart.subtract(2, 'weeks');
-          periodEnd = periodEnd.subtract(2, 'weeks');
-          dateArticle = `last pay period (${periodStart.format('M/DD')} to ${periodEnd.format('M/DD')})`;
+          lowerBoundDate = lowerBoundDate.subtract(2, 'weeks');
+          upperBoundDate = upperBoundDate.subtract(2, 'weeks');
+          dateArticle = `last pay period (${lowerBoundDate.format('M/DD')} to ${upperBoundDate.format('M/DD')})`;
         } else {
-          dateArticle = `this pay period (${periodStart.format('M/DD')} to ${periodEnd.format('M/DD')})`;
+          dateArticle = `this pay period (${lowerBoundDate.format('M/DD')} to ${upperBoundDate.format('M/DD')})`;
         }
-        report = user.toRawPayroll(periodStart, periodEnd);
-        for (let punch of user.punches) {
-          if (punch.date.isBefore(periodStart) || punch.date.isAfter(periodEnd)) {
-            continue;
-          } else if (!punch.elapsed && !punch.times.block) {
-            continue;
-          }
-          attachments.push(punch.slackAttachment());
-        }
+        report = user.toRawPayroll(lowerBoundDate, upperBoundDate);
       } else {
-        const earlyToday = now.clone().hour(0).minute(0).second(0).subtract(1, 'minutes');
-        report = user.toRawPayroll(earlyToday, now);
+        lowerBoundDate = now.clone().hour(0).minute(0).second(0).subtract(1, 'minutes');
+        upperBoundDate = now;
+        report = user.toRawPayroll(lowerBoundDate, upperBoundDate);
         dateArticle = 'today';
-        for (let punch of user.punches) {
-          if (punch.date.isBefore(earlyToday) || punch.date.isAfter(now)) {
-            continue;
-          }
-          attachments.push(punch.slackAttachment());
-        }
       }
+
+      const attachments = user.punches.reduce((acc, punch) => {
+        if (punch.date.isBefore(lowerBoundDate) || punch.date.isAfter(upperBoundDate)) {
+          return acc;
+        } else if (!punch.elapsed && !punch.times.block) {
+          return acc;
+        }
+        return [...acc, punch.slackAttachment()];
+      }, []);
 
       let loggedAny = false
       let msg;
@@ -514,24 +499,21 @@ export default function (controller: botkit.Controller) {
           msg = `You have *${toTimeStr(+report.logged)} of paid work time*`;
           loggedAny = true
         }
-        for (let kind of ['vacation', 'sick', 'unpaid']) {
+        msg = ['vacation', 'sick', 'unpaid'].reduce((acc, kind) => {
           if (report[kind] && report[kind] > 0) {
             if (!loggedAny) {
-              msg += `, but you have *${toTimeStr(+report[kind])} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
+              acc += `, but you have *${toTimeStr(+report[kind])} of ${kind}${kind === 'unpaid' ? 'work' : ''} time*`;
               loggedAny = true;
             } else {
-              msg += ` and *${toTimeStr(+report[kind])} of ${kind} time*`;
+              acc += ` and *${toTimeStr(+report[kind])} of ${kind} time*`;
             }
           }
-        }
+          return acc;
+        }, msg);
         msg += ` recorded for ${dateArticle}.`;
       }
       if (report.extra && report.extra.projects && report.extra.projects.length > 0) {
-        msg += ' (';
-        for (let project of report.extra.projects) {
-          msg += `#${project.name} `;
-        }
-        msg += ')';
+        msg += ' (' + report.extra.projects.map(project => `#${project.name} `) + ')';
         msg = msg.replace(' )', ')');
       }
 

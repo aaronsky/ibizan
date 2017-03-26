@@ -12,6 +12,7 @@ describe('Organization', () => {
   beforeEach(async () => {
     this.organization = new Organization(MockConfig.team);
     this.organization.spreadsheet.service = MockSheet.Service;
+    this.organization.spreadsheet.isAuthorized = true;
     await this.organization.sync();
   });
   describe('#constructor(config?)', () => {

@@ -84,11 +84,11 @@ export class App {
         this.controller.saveTeam(team);
     }
     onIbizanEventPassOrganization(next: (organization: Organization) => void) {
-        for (let token in this.bots) {
+        Object.keys(this.bots).forEach(token => {
             const bot = this.bots[token];
             const organization = this.getOrganization(bot);
             next(organization);
-        }
+        });
     }
     trackBot(bot: botkit.Bot, team: Team) {
         this.bots[bot.config.token] = bot;
@@ -234,12 +234,13 @@ export class App {
             }
         }
     }
-    connectTeamsToSlack(err, teams: any[]) {
+    connectTeamsToSlack(err, teams: Team[]) {
         if (err) {
             throw new Error(err);
         }
         // connect all teams with bots up to slack!
-        for (let team of teams) {
+        teams.forEach(team => {
+            team.config.retry = true;
             if (team.bot) {
                 this.controller.spawn(team).startRTM((err, bot, res) => {
                     if (err) {
@@ -249,10 +250,10 @@ export class App {
                     }
                 });
             }
-        }
+        });
     }
     loadScripts() {
-        for (let key in scripts) {
+        Object.keys(scripts).forEach(key => {
             const script = scripts[key];
             Console.info(`Loading ${key} script`);
             if (script && typeof script === 'function') {
@@ -261,6 +262,6 @@ export class App {
                 Console.error(`Expected ${key} to be a function, instead was a ${typeof script}`);
                 throw new Error(`Couldn't load ${key} script`);
             }
-        }
+        });
     }
 };

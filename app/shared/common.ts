@@ -15,6 +15,8 @@ export function random<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+export type Mode = 'in' | 'out' | 'vacation' | 'sick' | 'unpaid' | 'none';
+
 export interface Team extends botkit.Team {
   config?: TeamConfig;
 }

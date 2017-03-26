@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import * as moment from 'moment';
 const google = require('googleapis');
 const googleAuth = require('google-auth-library');
@@ -11,12 +14,10 @@ import { Punch } from './punch';
 import { User } from './user';
 import { Organization } from './organization';
 
-const SCOPES = [];
-
 export class Spreadsheet {
   service: any;
   auth: any;
-  initialized: boolean;
+  isAuthorized: boolean;
   id: string;
   title: string;
 
@@ -29,29 +30,34 @@ export class Spreadsheet {
 
   constructor(sheetId: string) {
     this.service = google.sheets('v4');
-    this.initialized = false;
+    this.isAuthorized = false;
     if (sheetId && sheetId !== 'test') {
       this.id = sheetId;
     }
   }
-  async authorize(clientEmail: string, privateKey: string) {
+  async authorize(credentialsPath: string) {
     return new Promise((resolve, reject) => {
-      const auth = new googleAuth();
-      try {
-        const jwtClient = this.auth || new auth.JWT(clientEmail, null, privateKey, ['https://www.googleapis.com/auth/spreadsheets']);
-        Console.info('Waiting for authorization');
-        jwtClient.authorize((err: Error, tokens: any[]) => {
-          if (err) {
-            Console.error('Error while trying to retrieve access token', err);
-            reject(err);
-          }
-          this.auth = jwtClient;
-          Console.info('Authorized successfully');
-          resolve(tokens);
-        });
-      } catch (err) {
-        reject(err);
+      credentialsPath = credentialsPath.replace('~', path.resolve(process.env.HOME));
+      if (process.env['GOOGLE_APPLICATION_CREDENTIALS'] !== credentialsPath && fs.existsSync(credentialsPath) && path.extname(credentialsPath) === '.json') {
+        process.env['GOOGLE_APPLICATION_CREDENTIALS'] = credentialsPath;
       }
+      const auth = new googleAuth();
+      Console.info('Waiting for authorization');
+      auth.getApplicationDefault((err, authClient) => {
+        if (err) {
+          Console.error('Error while trying to retrieve access token', err);
+          reject(err);
+          return;
+        }
+        if (authClient.createScopedRequired && authClient.createScopedRequired()) {
+          const scopes = ['https://www.googleapis.com/auth/spreadsheets'];
+          authClient = authClient.createScoped(scopes);
+        }
+        this.auth = authClient;
+        this.isAuthorized = true;
+        Console.info('Authorized successfully');
+        resolve();
+      });
     });
   }
   async loadOptions() {
@@ -66,7 +72,6 @@ export class Spreadsheet {
     } catch (err) {
       throw err;
     }
-    this.initialized = true;
     return opts;
   }
   async saveRow(row: Rows.Row, sheet: Rows.SheetKind) {
@@ -127,21 +132,19 @@ export class Spreadsheet {
               reject(err);
             }
           }, 1000);
-        } else {
-          resolve(row);
         }
+        resolve(row);
       });
     });
   }
   rowsFromSheetData<T extends Rows.Row>(rawRows: any[], title: string, ctor: { new (raws: any[], range: string): T; }): T[] {
-    return rawRows.reduce((accumulator, row, index, arr) => {
+    return rawRows.reduce((acc, row, index) => {
       if (index === 0) {
-        return accumulator;
+        return acc;
       }
       const newRow = new ctor(row, Rows.Row.formatRowRange(title, index));
       newRow.bindGoogleApis(this.service, this.id, this.auth);
-      accumulator.push(newRow);
-      return accumulator;
+      return [...acc, newRow];
     }, []);
   }
   async enterPunch(punch: Punch, user: User, organization: Organization) {
@@ -151,51 +154,49 @@ export class Spreadsheet {
     } else if (valid = punch.isValid(user) && typeof valid === 'string') {
       throw valid;
     }
+
     return new Promise<Punch>(async (resolve, reject) => {
-      if (punch.mode === 'out') {
-        if (user.punches && user.punches.length > 0) {
-          const len = user.punches.length;
-          let last: Punch;
-          for (let i = len - 1; i >= 0; i--) {
-            last = user.punches[i];
-            if (last.mode === 'in') {
-              break;
-            } else if (last.mode === 'out') {
-              continue;
-            } else if (last.times.length === 2) {
-              continue;
+      if (punch.mode === 'out' && user.punches && user.punches.length > 0) {
+        let last: Punch;
+        for (let len = user.punches.length, i = len - 1; i >= 0; --i) {
+          last = user.punches[i];
+          if (last.mode === 'in') {
+            break;
+          }
+          last = null;
+        }
+        if (!last) {
+          reject('You haven\'t punched out yet.');
+          return;
+        }
+        last.out(punch, organization);
+        const row = last.toRawRow(user.realName);
+        row.bindGoogleApis(this.service, this.id, this.auth);
+        try {
+          await this.saveRow(row, 'rawData');
+          // add hours to project in projects
+          let elapsed;
+          if (last.times.block) {
+            elapsed = last.times.block;
+          } else {
+            elapsed = last.elapsed;
+          }
+          const logged = user.timetable.loggedTotal;
+          user.timetable.loggedTotal = logged + elapsed;
+          // calculate project times
+          for (let project of last.projects) {
+            project.total += elapsed;
+            try {
+              await project.updateRow();
+            } catch (err) {
+              reject(err);
+              return;
             }
           }
-          if (!last) {
-            reject('You haven\'t punched out yet.');
-          }
-          last.out(punch, organization);
-          const row = last.toRawRow(user.realName);
-          row.bindGoogleApis(this.service, this.id, this.auth);
-          try {
-            await this.saveRow(row, 'rawData');
-            // add hours to project in projects
-            let elapsed;
-            if (last.times.block) {
-              elapsed = last.times.block;
-            } else {
-              elapsed = last.elapsed;
-            }
-            const logged = user.timetable.loggedTotal;
-            user.timetable.loggedTotal = logged + elapsed;
-            // calculate project times
-            for (let project of last.projects) {
-              project.total += elapsed;
-              try {
-                await project.updateRow();
-              } catch (err) {
-                reject(err);
-              }
-            }
-            resolve(last);
-          } catch (err) {
-            reject(err);
-          }
+          resolve(last);
+        } catch (err) {
+          reject(err);
+          return;
         }
       } else {
         const row = punch.toRawRow(user.realName);
@@ -276,28 +277,28 @@ export class Spreadsheet {
       this.service.spreadsheets.get(request, (err, response) => {
         if (err) {
           reject(err);
-        } else {
-          const { properties, sheets } = response;
-          this.title = properties.title;
-          for (let sheet of sheets) {
-            let title = sheet.properties.title;
-            const words = title.split(' ');
-            title = words[0].toLowerCase();
-            for (let i = 1; title.length < 6 && i < words.length; i++) {
-              title = title.concat(words[i]);
-            }
-            if (title === 'employees') {
-              title = 'users';
-            }
-            this[title] = sheet;
-          }
-          if (!(this.rawData && this.payroll && this.variables && this.projects && this.users && this.events)) {
-            reject('Worksheets failed to be associated properly');
-          } else {
-            Console.silly('----------------------------------------');
-            resolve({} as SheetOptions);
-          }
+          return;
         }
+        const { properties, sheets } = response;
+        this.title = properties.title;
+        for (let sheet of sheets) {
+          let title = sheet.properties.title;
+          const words = title.split(' ');
+          title = words[0].toLowerCase();
+          for (let i = 1; title.length < 6 && i < words.length; i++) {
+            title = title.concat(words[i]);
+          }
+          if (title === 'employees') {
+            title = 'users';
+          }
+          this[title] = sheet;
+        }
+        if (!(this.rawData && this.payroll && this.variables && this.projects && this.users && this.events)) {
+          reject('Worksheets failed to be associated properly');
+          return;
+        }
+        Console.silly('----------------------------------------');
+        resolve({} as SheetOptions);
       });
     });
   }
@@ -314,51 +315,51 @@ export class Spreadsheet {
       this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
-        } else {
-          const rows = this.rowsFromSheetData<Rows.VariablesRow>(response.values, title, Rows.VariablesRow);
-          opts = {
-            vacation: 0,
-            sick: 0,
-            houndFrequency: 0,
-            payWeek: null,
-            holidays: [],
-            clockChannel: '',
-            exemptChannels: []
-          } as SheetOptions;
-          for (let row of rows) {
-            if (row.vacation && +row.vacation !== 0) {
-              opts.vacation = +row.vacation;
-            }
-            if (row.sick && +row.sick !== 0) {
-              opts.sick = +row.sick;
-            }
-            if (row.houndFrequency && +row.houndFrequency !== 0) {
-              opts.houndFrequency = +row.houndFrequency;
-            }
-            if (row.holidays) {
-              const name = row.holidays;
-              let date;
-              if (row.holidayOverride) {
-                date = moment(row.holidayOverride, 'MM/DD/YYYY');
-              } else {
-                date = momentForHoliday(row.holidays);
-              }
-              opts.holidays.push({ name, date });
-            }
-            if (row.payweek) {
-              opts.payWeek = moment(row.payweek, 'MM/DD/YYYY');
-            }
-            if (row.clockChannel) {
-              opts.clockChannel = row.clockChannel.replace('#', '');
-            }
-            if (row.exemptChannel) {
-              opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
-            }
-          }
-          Console.silly(`Loaded organization settings`);
-          Console.silly('----------------------------------------');
-          resolve(opts);
+          return;
         }
+        const rows = this.rowsFromSheetData<Rows.VariablesRow>(response.values, title, Rows.VariablesRow);
+        opts = {
+          vacation: 0,
+          sick: 0,
+          houndFrequency: 0,
+          payWeek: null,
+          holidays: [],
+          clockChannel: '',
+          exemptChannels: []
+        } as SheetOptions;
+        for (let row of rows) {
+          if (row.vacation && +row.vacation !== 0) {
+            opts.vacation = +row.vacation;
+          }
+          if (row.sick && +row.sick !== 0) {
+            opts.sick = +row.sick;
+          }
+          if (row.houndFrequency && +row.houndFrequency !== 0) {
+            opts.houndFrequency = +row.houndFrequency;
+          }
+          if (row.holidays) {
+            const name = row.holidays;
+            let date;
+            if (row.holidayOverride) {
+              date = moment(row.holidayOverride, 'MM/DD/YYYY');
+            } else {
+              date = momentForHoliday(row.holidays);
+            }
+            opts.holidays.push({ name, date });
+          }
+          if (row.payweek) {
+            opts.payWeek = moment(row.payweek, 'MM/DD/YYYY');
+          }
+          if (row.clockChannel) {
+            opts.clockChannel = row.clockChannel.replace('#', '');
+          }
+          if (row.exemptChannel) {
+            opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
+          }
+        }
+        Console.silly(`Loaded organization settings`);
+        Console.silly('----------------------------------------');
+        resolve(opts);
       });
     });
   }
@@ -375,20 +376,13 @@ export class Spreadsheet {
       this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
-        } else {
-          const rows = this.rowsFromSheetData<Rows.ProjectsRow>(response.values, title, Rows.ProjectsRow);
-          let projects: Project[] = [];
-          for (let row of rows) {
-            const project = Project.parse(row);
-            if (project) {
-              projects.push(project);
-            }
-          }
-          opts.projects = projects;
-          Console.silly(`Loaded ${projects.length} projects`);
-          Console.silly('----------------------------------------');
-          resolve(opts);
+          return;
         }
+        const rows = this.rowsFromSheetData<Rows.ProjectsRow>(response.values, title, Rows.ProjectsRow);
+        opts.projects = rows.reduce((acc, row) => [...acc, Project.parse(row)], []);
+        Console.silly(`Loaded ${opts.projects.length} projects`);
+        Console.silly('----------------------------------------');
+        resolve(opts);
       });
     });
   }
@@ -405,20 +399,13 @@ export class Spreadsheet {
       this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
-        } else {
-          const rows = this.rowsFromSheetData<Rows.UsersRow>(response.values, title, Rows.UsersRow);
-          let users: User[] = [];
-          for (let row of rows) {
-            const user = User.parse(row);
-            if (user) {
-              users.push(user);
-            }
-          }
-          opts.users = users;
-          Console.silly(`Loaded ${users.length} users`);
-          Console.silly('----------------------------------------');
-          resolve(opts);
+          return;
         }
+        const rows = this.rowsFromSheetData<Rows.UsersRow>(response.values, title, Rows.UsersRow);
+        opts.users = rows.reduce((acc, row) => [...acc, User.parse(row)], []);
+        Console.silly(`Loaded ${opts.users.length} users`);
+        Console.silly('----------------------------------------');
+        resolve(opts);
       });
     });
   }
@@ -435,20 +422,13 @@ export class Spreadsheet {
       this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
-        } else {
-          const rows = this.rowsFromSheetData<Rows.EventsRow>(response.values, title, Rows.EventsRow);
-          let events: CalendarEvent[] = [];
-          for (let row of rows) {
-            const calendarEvent = CalendarEvent.parse(row);
-            if (calendarEvent) {
-              events.push(calendarEvent);
-            }
-          }
-          opts.events = events;
-          Console.silly(`Loaded ${events.length} calendar events`);
-          Console.silly('----------------------------------------');
-          resolve(opts);
+          return;
         }
+        const rows = this.rowsFromSheetData<Rows.EventsRow>(response.values, title, Rows.EventsRow);
+        opts.events = rows.reduce((acc, row) => [...acc, CalendarEvent.parse(row)], []);
+        Console.silly(`Loaded ${opts.events.length} calendar events`);
+        Console.silly('----------------------------------------');
+        resolve(opts);
       })
     });
   }
@@ -465,19 +445,19 @@ export class Spreadsheet {
       this.service.spreadsheets.values.get(request, (err, response) => {
         if (err) {
           reject(err);
-        } else {
-          const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title, Rows.RawDataRow);
-          rows.forEach((row, index, arr) => {
-            const user: User = opts.users.filter((item, index, arr) => item.realName === row.name)[0];
-            const punch = Punch.parseRaw(user, row, this, opts.projects);
-            if (punch && user) {
-              user.punches.push(punch);
-            }
-          });
-          Console.silly(`Loaded ${rows.length} punches for ${opts.users.length} users`);
-          Console.silly('----------------------------------------');
-          resolve(opts);
+          return;
         }
+        const rows = this.rowsFromSheetData<Rows.RawDataRow>(response.values, title, Rows.RawDataRow);
+        rows.forEach((row, index, arr) => {
+          const user: User = opts.users.filter((item, index, arr) => item.realName === row.name)[0];
+          const punch = Punch.parseRaw(user, row, this, opts.projects);
+          if (punch && user) {
+            user.punches.push(punch);
+          }
+        });
+        Console.silly(`Loaded ${rows.length} punches for ${opts.users.length} users`);
+        Console.silly('----------------------------------------');
+        resolve(opts);
       });
     });
   }
