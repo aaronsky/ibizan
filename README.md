@@ -1,4 +1,4 @@
-# [![Ibizan](https://raw.githubusercontent.com/aaronsky/ibizan/master/docs/ibizan.svg)](http://skyaaron.com/ibizan)
+<a href="http://skyaaron.com/ibizan"><img src="https://raw.githubusercontent.com/aaronsky/ibizan/master/docs/ibizan.svg" alt="Ibizan logo" /></a>
 
 > 🐕-themed employee 🕑-tracking bot for Slack
 
