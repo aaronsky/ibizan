@@ -1,4 +1,4 @@
-<a href="http://skyaaron.com/ibizan"><img src="https://raw.githubusercontent.com/aaronsky/ibizan/master/docs/ibizan.png" alt="Ibizan logo" /></a>
+<a href="http://skyaaron.com/ibizan"><img src="https://raw.githubusercontent.com/aaronsky/ibizan/master/docs/ibizan.png" alt="Ibizan logo" width="35%" /></a>
 
 > 🐕-themed employee 🕑-tracking bot for Slack
 
