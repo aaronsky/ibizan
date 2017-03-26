@@ -1,0 +1,25 @@
+# OS X
+.DS_Store*
+
+# Node.js
+node_modules
+*.log
+
+# TS/Typings
+tsconfig.json
+typings/
+.vscode
+
+# Ibizan
+**/__specs__/*.spec.ts
+*.ibizanrc.json
+*.pem
+app
+docs
+test
+
+# CI
+.travis.yml
+.nyc_output
+coverage
+Dockerfile
