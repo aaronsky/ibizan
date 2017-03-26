@@ -1,8 +1,8 @@
-# [![Ibizan](docs/header.png)](https://ibizan.github.io/)
+# [![Ibizan](docs/ibizan.svg)](http://skyaaron.com/ibizan)
 
 > 🐕-themed employee 🕑-tracking bot for Slack
 
-[![Build Status](https://travis-ci.org/ibizan/ibizan.svg?branch=master)](https://travis-ci.org/ibizan/ibizan) [![Dependency Status] [![Coverage Status](https://coveralls.io/repos/github/ibizan/ibizan/badge.svg?branch=master)](https://coveralls.io/github/ibizan/ibizan?branch=master) [![Gratipay Team](https://img.shields.io/gratipay/team/shields.svg?maxAge=2592000)](https://gratipay.com/ibizan/)
+[![Build Status](https://travis-ci.org/aaronsky/ibizan.svg?branch=master)](https://travis-ci.org/ibizan/ibizan) [![Coverage Status](https://coveralls.io/repos/github/aaronsky/ibizan/badge.svg?branch=master)](https://coveralls.io/github/aaronsky/ibizan?branch=master) [![Gratipay Team](https://img.shields.io/gratipay/team/shields.svg?maxAge=2592000)](https://gratipay.com/ibizan/)
 
 Ibizan is a Slack bot built on the [Botkit](https://github.com/howdyai/botkit) framework, originally contracted by [Fangamer](http://fangamer.com/). Ibizan is designed to provide an intuitive and interactive interface to managing a timesheet.
 
