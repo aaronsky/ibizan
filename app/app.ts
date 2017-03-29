@@ -2,6 +2,7 @@ const Botkit = require('botkit');
 const FirebaseStorage = require('botkit-storage-firebase');
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
+import * as moment from 'moment';
 const request = require('request');
 
 import { EVENTS, REGEX, STRINGS } from './shared/constants';
@@ -92,18 +93,33 @@ export class App {
     }
     trackBot(bot: botkit.Bot, team: Team) {
         this.bots[bot.config.token] = bot;
-        if (!team.config) {
-            // HACK: THIS IS BAD
-            team.config = {
-                name: team.name,
-                admins: [],
-                google: {
-                    sheetId: '1owlFh2wlnerIPDSLziDUl4jECZC4pYJ0gk3IQ71OLRI'
-                }
-            };
-            this.controller.saveTeam(team);
-        }
+        team = this.validateConfig(team);
+        this.controller.saveTeam(team);
         this.orgs[bot.config.token] = new Organization(team.config);
+    }
+    validateConfig(team: Team) {
+        // if no team config or team config incomplete
+            // onboard
+
+        // if (!team.config) {
+        //     onboard(team);
+        // } else if (team.config) {
+            
+        // }
+        // if (!team.config || this.teamConfigIsIncomplete(team.config)) {
+        //     // HACK: THIS IS BAD
+        //     team.config = {
+        //         name: team.name,
+        //         google: {
+        //             sheetId: '1owlFh2wlnerIPDSLziDUl4jECZC4pYJ0gk3IQ71OLRI'
+        //         },
+        //         payroll: {
+        //             referenceDate: moment(),
+        //             period: 2
+        //         }
+        //     };
+        // }
+        return team;
     }
     private getOrganization(bot: botkit.Bot) {
         const token = bot.config.token;
@@ -127,13 +143,12 @@ export class App {
         const { user_obj, options } = message;
         const { id, userRequired, adminOnly } = options;
 
+        // Ignore unknown commands or catch-alls
         if (!id) {
-            // Ignore unknown commands or catch-alls
             return true;
         }
-
+        // Ignore me, the bot named Ibizan
         if (user_obj && user_obj.name === 'ibizan') {
-            // Ignore self
             return false;
         }
 
@@ -154,8 +169,8 @@ export class App {
             orgUser.slackId = message.user;
         }
 
+        // Admin command, but the calling user isn't an admin on Slack
         if (adminOnly && !user_obj.is_admin) {
-            // Admin command, but user isn't in whitelist
             const msg = {
                 text: strings.adminonly,
                 channel: message.channel
@@ -164,8 +179,8 @@ export class App {
             Slack.addReaction('x', message);
             return false;
         } else if (userRequired) {
+            // Slack user does not exist in Employee sheet, but user is required
             if (!orgUser) {
-                // Slack user does not exist in Employee sheet, but user is required
                 const msg = {
                     text: strings.notanemployee,
                     channel: message.channel
@@ -189,7 +204,7 @@ export class App {
         } else {
             const responseUrl = body.response_url || null;
             if (responseUrl) {
-                Console.log(`POSTing to ${responseUrl}`);
+                Console.info(`POSTing to ${responseUrl}`);
             }
             res.status(200);
             res.json({
@@ -198,7 +213,7 @@ export class App {
             try {
                 const status = await organization.sync();
                 const message = 'Resynced with spreadsheet';
-                Console.log(message);
+                Console.debug(message);
                 if (responseUrl) {
                     request({
                         url: responseUrl,
@@ -215,7 +230,7 @@ export class App {
                             Console.error('Request didn\'t come back HTTP 200 :(');
                             return;
                         }
-                        Console.log(body);
+                        Console.debug(body);
                     });
                 }
             } catch (err) {

@@ -2,26 +2,28 @@
 import * as moment from 'moment';
 
 import { TIMEZONE } from '../shared/constants';
+import { PayrollConfig } from '../config';
 import { Rows } from '../shared/rows';
+
+interface Holiday {
+    name: string;
+    date: moment.Moment;
+}
 
 export class Calendar {
   vacation: number;
   sick: number;
-  holidays: {
-    name: string;
-    date: moment.Moment;
-  }[];
-  referencePayWeek: moment.Moment;
+  holidays: Holiday[];
+  payroll: PayrollConfig;
   events: CalendarEvent[];
-  constructor(vacation: number, sick: number, holidays: { name: string, date: moment.Moment }[], referencePayWeek: moment.Moment, events: CalendarEvent[]) {
+  constructor(vacation: number, sick: number, holidays: Holiday[], events: CalendarEvent[]) {
     this.vacation = vacation;
     this.sick = sick;
     this.holidays = holidays;
-    this.referencePayWeek = referencePayWeek;
     this.events = events;
   }
   isPayWeek() {
-    return (moment().diff(this.referencePayWeek, 'weeks') % 2) == 0;
+    return (moment().diff(this.payroll.referenceDate, 'weeks') % this.payroll.period) == 0;
   }
   upcomingEvents(date = moment()) {
     this.events.sort((a, b) => {

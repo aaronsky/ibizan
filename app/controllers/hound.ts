@@ -127,26 +127,12 @@ export default function (controller: botkit.Controller) {
   }
 
   controller.on('user_typing', (bot, message: Message) => {
-    controller.storage.channels.get(message.channel, (err, channel) => {
-      if (err || !channel) {
-        Console.error('No channel found for this user typing action', err);
-        return;
-      }
-      if (!channel.name) {
-        channel = {
-          private: true,
-          name: 'DM'
-        };
-      }
-      //hound(message.user_obj, channel, organization, false);
-    });
+      hound(message.user_obj, message.channel_obj, message.organization, false);
   });
 
   controller.on('presence_change', (bot, message: any) => {
     if (message.presence === 'active') {
-      controller.storage.users.get(message.user_obj.id, (err, user) => {
-        //hound(user, { private: null, name: '' }, organization, false, true);
-      });
+      hound(message.user_obj, { private: null, name: '' }, message.organization, false, true);
     }
   });
 

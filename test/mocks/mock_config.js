@@ -1,4 +1,5 @@
 
+const moment = require('moment');
 const { ConfigFactory } = require('../../app/config');
 
 const mockIbizanConfig = {
@@ -10,11 +11,12 @@ const mockIbizanConfig = {
 };
 const mockTeamConfig = {
     name: 'test team',
-    admins: ['aaronsky', 'briancoia'],
     google: {
         sheetId: 'test',
-        clientEmail: 'bad@email.com',
-        privateKey: 'BAD KEY'
+    },
+    payroll: {
+        referenceDate: moment(),
+        period: 2
     }
 }
 

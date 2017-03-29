@@ -1,6 +1,9 @@
 import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
+
+import * as moment from 'moment';
+
 import { Console } from '../logger';
 
 export interface IbizanConfig {
@@ -17,13 +20,19 @@ export interface IbizanConfig {
 
 export interface TeamConfig {
     name: string;
-    admins: string[];
+    retry?: boolean | number;
     google: {
         sheetId: string;
     }
-    retry?: boolean | number,
-    token?: string;
-    incoming_webhook?: string;
+    payroll: {
+        referenceDate: moment.Moment;
+        period: number;
+    }
+}
+
+export interface PayrollConfig {
+    referenceDate: moment.Moment;
+    period: number;
 }
 
 export class ConfigFactory {
@@ -31,11 +40,8 @@ export class ConfigFactory {
 
     }
     static loadConfiguration(rcPathOverride?: string, optsPath?: string, args?: any): IbizanConfig {
-        // load rc
         const rcConfig = ConfigFactory.loadIbizanRc(rcPathOverride);
-        // load opts
         const optsConfig = ConfigFactory.loadOpts(optsPath);
-        // load args
         const argsConfig = ConfigFactory.loadArgs(args);
 
         const shouldCheckOpts = !!optsConfig;

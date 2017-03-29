@@ -68,7 +68,7 @@ export class Organization {
                 }
             }
             this.projects = opts.projects as Project[];
-            this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.payWeek, opts.events);
+            this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.events);
             this.houndFrequency = opts.houndFrequency;
             this.clockChannel = opts.clockChannel;
             this.exemptChannels = opts.exemptChannels;
