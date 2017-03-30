@@ -114,7 +114,7 @@ export class ConfigFactory {
         });
         if (!pathToLoad) {
             const warning = '.ibizanrc.json not found in any of the default locations' + (overridePath ? ', or in the override location.' : '.');
-            Console.warn(warning);
+            Console.warning(warning);
             return;
         }
         Console.info('Loading .ibizanrc.json from ' + pathToLoad);

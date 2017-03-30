@@ -36,7 +36,7 @@ export class Organization {
         if (this.spreadsheet.id) {
             this.sync(App.config.googleCredentials).then(() => Console.info(`Options loaded for ${this.name}`)).catch(err => Console.error(`Failed to sync for ${this.name}`, err));
         } else {
-            Console.warn(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
+            Console.warning(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
         }
     }
     ready() {

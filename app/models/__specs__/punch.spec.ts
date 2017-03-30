@@ -412,7 +412,7 @@ describe('Punch', () => {
     });
     it('should assign a row if a row is passed in', () => {
       const punch = Punch.parse(org, this.user, 'in', 'in');
-      punch.assignRow(new Rows.RawDataRow([], ''));
+      punch.assignRow(Rows.RawDataRow.create({ values: [], range: '' }));
       expect(punch.row).to.exist;
     });
   });

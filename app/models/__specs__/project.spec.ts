@@ -4,8 +4,14 @@ const { expect } = require('chai');
 import { Rows } from '../../shared/rows';
 import { Project } from '../project';
 
-const TEST_ROW = new Rows.ProjectsRow(['#production', '1/1/2014', '100'], '');
-const BAD_ROW = new Rows.ProjectsRow(['#production', '1/1/2014', 'jeff'], '');
+const TEST_ROW = Rows.ProjectsRow.create({
+  values: ['#production', '1/1/2014', '100'], 
+  range: ''
+});
+const BAD_ROW = Rows.ProjectsRow.create({
+  values: ['#production', '1/1/2014', 'jeff'], 
+  range: ''
+});
 
 describe('Project', () => {
   describe('.parse(row)', () => {

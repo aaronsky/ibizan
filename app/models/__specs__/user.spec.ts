@@ -133,7 +133,7 @@ describe('User', () => {
   });
   describe('.parse(row)', () => {
     it('should return a new User when given a row', () => {
-      const row = new Rows.UsersRow(TEST_ROW, '');
+      const row = Rows.UsersRow.create({ values: TEST_ROW, range: '' });
       row.bindGoogleApis(MockSheet.service, '', MockSheet.auth);
       const user = User.parse(row);
       expect(user).to.exist;

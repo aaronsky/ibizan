@@ -213,5 +213,6 @@ const mockAuth = {
 
 module.exports = {
     Service: mockService,
-    Auth: mockAuth
+    Auth: mockAuth,
+    getSheet: mockSpreadsheet.getSheet
 };

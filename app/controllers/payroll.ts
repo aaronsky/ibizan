@@ -22,7 +22,7 @@ export default function (controller: botkit.Controller) {
   const generateDailyReportJob = schedule.scheduleJob('0 9 * * *', () => {
     controller.trigger(EVENTS.dailyReport, [async (organization: Organization) => {
       if (!organization.ready()) {
-        Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+        Console.warning(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
         return;
       }
       const yesterday = moment.tz({
@@ -55,10 +55,10 @@ export default function (controller: botkit.Controller) {
   const generatePayrollReportJob = schedule.scheduleJob('0 20 * * 0', () => {
     controller.trigger(EVENTS.payrollReport, [async (organization: Organization) => {
       if (!organization.ready()) {
-        Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+        Console.warning(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
         return;
       } else if (!organization.calendar.isPayWeek()) {
-        Console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
+        Console.warning('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
         return;
       }
       const twoWeeksAgo = moment().subtract(2, 'weeks');
@@ -118,10 +118,10 @@ export default function (controller: botkit.Controller) {
   const reminderJob = schedule.scheduleJob('0 13 * * 5', () => {
     controller.trigger(EVENTS.payrollWarning, [(organization: Organization) => {
       if (!organization.ready()) {
-        Console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+        Console.warning(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
         return;
       } else if (!organization.calendar.isPayWeek()) {
-        Console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
+        Console.warning('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
         return;
       }
       organization.users.forEach(user => user.directMessage('As a reminder, payroll will run on Monday. Unrecorded time will not be paid.\nYou can use `period?` to check your hours for this pay period.'));

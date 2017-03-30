@@ -16,7 +16,7 @@ describe('Logger', () => {
     });
     describe('#warn', () => {
       it('should run without issue', () => {
-        Console.warn('This is test output');
+        Console.warning('This is test output');
       });
     });
     describe('#error', () => {

@@ -140,7 +140,7 @@ export default function (controller: botkit.Controller) {
   const autoHoundJob = schedule.scheduleJob('*/5 * * * *', () => {
     controller.trigger(EVENTS.shouldHound, [(organization: Organization) => {
       if (!organization.ready()) {
-        Console.warn('Don\'t autohound, Organization isn\'t ready yet');
+        Console.warning('Don\'t autohound, Organization isn\'t ready yet');
         return;
       }
       organization.users.forEach(user => hound({ id: user.slackId, name: user.slackName }, { private: null, name: '' }, organization, true, true));
@@ -151,7 +151,7 @@ export default function (controller: botkit.Controller) {
   const resetHoundJob = schedule.scheduleJob('0 9 * * 1-5', () => {
     controller.trigger(EVENTS.resetHound, [(organization: Organization) => {
       if (!organization.ready()) {
-        Console.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
+        Console.warning('Don\'t run scheduled reset, Organization isn\'t ready yet');
         return;
       }
       const count = organization.resetHounding();
