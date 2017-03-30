@@ -13,6 +13,7 @@ import * as moment from 'moment';
 import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
 import { Console, Slack } from '../logger';
+import { TeamConfig } from '../config';
 import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
 
@@ -21,3 +22,23 @@ export default function (controller: botkit.Controller) {
         Console.info(message);
     });
 };
+
+function onboard(config: TeamConfig): TeamConfig {
+    return config;
+}
+
+function onboardConfirmTeamName() {
+
+}
+
+function onboardSheet() {
+
+}
+
+function onboardPayroll() {
+
+}
+
+function onboardUser() {
+
+}

@@ -129,7 +129,7 @@ export default function (controller: botkit.Controller) {
       return;
     }
     try {
-      const enteredPunch = await organization.spreadsheet.enterPunch(punch, user, organization);
+      const enteredPunch = await organization.spreadsheet.rawData.enterPunch(punch, user, organization);
       Console.info(`@${user.slackName}'s punch was successfully entered into the spreadsheet.`);
       const punchEnglish = `Punched you *${enteredPunch.description(user)}*.`;
       if (enteredPunch.mode === 'in') {
@@ -223,7 +223,7 @@ export default function (controller: botkit.Controller) {
         }
         const row = punch.toRawRow(user.realName);
         try {
-          await organization.spreadsheet.saveRow(row, 'rawData');
+          await organization.spreadsheet.rawData.saveRow(row);
           user.directMessage(`Added ${operator} ${results}`);
           Slack.addReaction('dog2', message);
         } catch (err) {

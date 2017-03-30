@@ -6,7 +6,7 @@ import { Rows } from '../shared/rows';
 import { Console } from '../logger';
 import { TeamConfig } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
-import { Spreadsheet } from './sheet';
+import { Worksheet } from './sheet';
 import { Project } from './project';
 import { User, Settings } from './user';
 import { App } from '../app';
@@ -14,7 +14,7 @@ import { App } from '../app';
 export class Organization {
     readonly name: string = 'Unnamed organization';
     readonly config: TeamConfig;
-    spreadsheet: Spreadsheet;
+    spreadsheet: Worksheet;
     initTime: moment.Moment;
     initialized: boolean = false;
     users: User[];
@@ -31,7 +31,7 @@ export class Organization {
         this.name = config.name;
         Console.silly(`Welcome to ${this.name}!`);
         this.initTime = moment();
-        this.spreadsheet = new Spreadsheet(config.google.sheetId);
+        this.spreadsheet = new Worksheet(config.google.sheetId);
 
         if (this.spreadsheet.id) {
             this.sync(App.config.googleCredentials).then(() => Console.info(`Options loaded for ${this.name}`)).catch(err => Console.error(`Failed to sync for ${this.name}`, err));
@@ -139,7 +139,7 @@ export class Organization {
         const calendarEvent = new CalendarEvent(dateObject, name);
         const calendar = this.calendar;
         try {
-            await this.spreadsheet.newRow(calendarEvent.toEventRow(), 'events');
+            await this.spreadsheet.events.appendNewRow(calendarEvent.toEventRow());
         } catch (err) {
             throw `Could not add event row: ${err}`;
         }
@@ -172,7 +172,7 @@ export class Organization {
         });
         if (shouldPublish) {
             try {
-                const numberDone = await this.spreadsheet.generateReport(reports);
+                const numberDone = await this.spreadsheet.payroll.generateReport(reports);
                 if (numberDone === reports.length) {
                     return reports;
                 } else {

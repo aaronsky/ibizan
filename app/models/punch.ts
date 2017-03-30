@@ -9,6 +9,7 @@ import { Console } from '../logger';
 import { Rows } from '../shared/rows';
 import { Project } from './project';
 import { User } from './user';
+import { Sheets } from './sheet';
 import { Organization } from './organization';
 
 interface PunchTime extends Array<moment.Moment> {
@@ -316,14 +317,14 @@ export class Punch {
     }
     return punch;
   }
-  static parseRaw(user: User, row: Rows.RawDataRow, spreadsheet: { saveRow: (row: Rows.Row, sheet: Rows.SheetKind) => Promise<void> }, projects: Project[] = []) {
+  static parseRaw(user: User, row: Rows.RawDataRow, sheet: Sheets.RawDataSheet, projects: Project[] = []) {
     const date = moment.tz(row.today, 'MM/DD/YYYY', TIMEZONE);
 
     // UUID sanity check
     if (row.id.length != 36) {
       Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
       row.id = uuid.v1();
-      spreadsheet.saveRow(row, 'rawData');
+      sheet.saveRow(row);
     }
 
     let mode;
@@ -387,7 +388,7 @@ export class Punch {
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
         row.totalTime = `${hours}:${minute_str}:00.000`;
-        spreadsheet.saveRow(row, 'rawData').catch((err) => Console.error('Unable to save row', new Error(err)));
+        sheet.saveRow(row).catch((err) => Console.error('Unable to save row', new Error(err)));
       }
     }
 
@@ -479,7 +480,10 @@ export class Punch {
   }
   toRawRow(name: string) {
     const today = moment.tz(TIMEZONE);
-    const row = this.row || new Rows.RawDataRow([], '');
+    const row = this.row || Rows.RawDataRow.create({
+      values: [],
+      range: ''
+    });
     row.id = row.id || uuid.v1();
     row.today = row.today || this.date.format('MM/DD/YYYY');
     row.name = row.name || name;
@@ -657,12 +661,12 @@ export class Punch {
   }
   description(user: User, full: boolean = false) {
     let modeQualifier = '',
-        timeQualifier = '',
-        blockTimeQualifier = '',
-        elapsedQualifier = '',
-        projectsQualifier = '',
-        notesQualifier = '',
-        warningQualifier = '';
+      timeQualifier = '',
+      blockTimeQualifier = '',
+      elapsedQualifier = '',
+      projectsQualifier = '',
+      notesQualifier = '',
+      warningQualifier = '';
     let time = this.times.slice(-1)[0];
 
     let timeStr;

@@ -74,7 +74,7 @@ export namespace Rows {
         kind: SheetKind;
         range: string;
 
-        constructor(values: any[], range: string, kind: SheetKind) {
+        protected constructor(values: any[], range: string, kind: SheetKind) {
             this.kind = kind;
             this.fromGoogleValues(values, range);
         }
@@ -85,6 +85,7 @@ export namespace Rows {
         bindGoogleApis(service, sheetId, auth) {
             this.save = this.save.bind(this, service, sheetId, auth);
             this.del = this.del.bind(this, service, sheetId, auth);
+            return this;
         }
         fromGoogleValues(values: any[], range) {
             this.range = range;
@@ -149,16 +150,34 @@ export namespace Rows {
         exemptChannel: string;
         holidays: string;
         holidayOverride: string;
-        constructor(values: any[], range: string) {
+
+        protected constructor(values: any[], range: string) {
             super(values, range, 'variables');
+        }
+        static create<VariablesRow>({ values, range, service, sheetId, authClient }:
+            { values: any[], range: string, service?: any, sheetId?: string, authClient?: any }) {
+            const row = new VariablesRow(values, range);
+            if (service && sheetId && authClient) {
+                row.bindGoogleApis(service, sheetId, authClient);
+            }
+            return row;
         }
     };
     export class ProjectsRow extends Row {
         name: string;
         start: string;
         total: string;
-        constructor(values: any[], range: string) {
+
+        protected constructor(values: any[], range: string) {
             super(values, range, 'projects');
+        }
+        static create<ProjectsRow>({ values, range, service, sheetId, authClient }:
+            { values: any[], range: string, service?: any, sheetId?: string, authClient?: any }) {
+            const row = new ProjectsRow(values, range);
+            if (service && sheetId && authClient) {
+                row.bindGoogleApis(service, sheetId, authClient);
+            }
+            return row;
         }
     };
     export class UsersRow extends Row {
@@ -179,8 +198,17 @@ export namespace Rows {
         totalLogged: string;
         averageLogged: string;
         lastPing: string;
-        constructor(values: any[], range: string) {
+
+        protected constructor(values: any[], range: string) {
             super(values, range, 'users');
+        }
+        static create<UsersRow>({ values, range, service, sheetId, authClient }:
+            { values: any[], range: string, service?: any, sheetId?: string, authClient?: any }) {
+            const row = new UsersRow(values, range);
+            if (service && sheetId && authClient) {
+                row.bindGoogleApis(service, sheetId, authClient);
+            }
+            return row;
         }
     };
     export class RawDataRow extends Row {
@@ -198,8 +226,17 @@ export namespace Rows {
         project4: string;
         project5: string;
         project6: string;
-        constructor(values: any[], range: string) {
+
+        protected constructor(values: any[], range: string) {
             super(values, range, 'rawData');
+        }
+        static create<RawDataRow>({ values, range, service, sheetId, authClient }:
+            { values: any[], range: string, service?: any, sheetId?: string, authClient?: any }) {
+            const row = new RawDataRow(values, range);
+            if (service && sheetId && authClient) {
+                row.bindGoogleApis(service, sheetId, authClient);
+            }
+            return row;
         }
     };
     export class PayrollReportsRow extends Row {
@@ -213,15 +250,33 @@ export namespace Rows {
         overtime: string;
         holiday: string;
         extra: any;
-        constructor(values: any[], range: string) {
+
+        protected constructor(values: any[], range: string) {
             super(values, range, 'payroll');
+        }
+        static create<PayrollRow>({ values, range, service, sheetId, authClient }:
+            { values: any[], range: string, service?: any, sheetId?: string, authClient?: any }) {
+            const row = new PayrollReportsRow(values, range);
+            if (service && sheetId && authClient) {
+                row.bindGoogleApis(service, sheetId, authClient);
+            }
+            return row;
         }
     };
     export class EventsRow extends Row {
         date: string;
         name: string;
-        constructor(values: any[], range: string) {
+
+        protected constructor(values: any[], range: string) {
             super(values, range, 'events');
+        }
+        static create<EventsRow>({ values, range, service, sheetId, authClient }:
+            { values: any[], range: string, service?: any, sheetId?: string, authClient?: any }) {
+            const row = new EventsRow(values, range);
+            if (service && sheetId && authClient) {
+                row.bindGoogleApis(service, sheetId, authClient);
+            }
+            return row;
         }
     };
 }

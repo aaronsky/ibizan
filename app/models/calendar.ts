@@ -88,7 +88,10 @@ export class CalendarEvent {
     return this.date.diff(moment(), 'days');
   }
   toEventRow() {
-    const row = this.row || new Rows.EventsRow([], '');
+    const row = this.row || Rows.EventsRow.create({
+      values: [],
+      range: ''
+    });
     row.date = row.date || this.date.format('MM/DD/YYYY');
     row.name = row.name || this.name;
     return row;

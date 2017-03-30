@@ -135,7 +135,7 @@ export class Settings {
     this.lastMessage = null;
     this.lastPing = null;
   }
-  
+
   static fromSettings(settings?: Object) {
     const newSetting = new Settings();
     newSetting.fromSettings(settings);
@@ -333,7 +333,10 @@ export class User {
     }
   }
   toRawPayroll(start, end) {
-    let row = new Rows.PayrollReportsRow([], '');
+    let row = Rows.PayrollReportsRow.create({
+      values: [],
+      range: ''
+    });
 
     row.date = moment.tz(TIMEZONE).format('M/DD/YYYY');
     row.name = this.realName;
