@@ -132,15 +132,14 @@ function parseRange(range) {
 }
 
 function createDataSheet(name, file) {
-    const model = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'mocked', 'mocked_' + file + '.json'), 'utf-8'));
-    model.name = name;
-    model.getValues = (minCell, maxCell) => {
+    const data = JSON.parse(fs.readFileSync(path.resolve(__dirname, 'mocked', 'mocked_' + file + '.json'), 'utf-8'));
+    const getValues = (minCell, maxCell) => {
         let minCol, minRow, maxCol, maxRow;
         if (!minCell && !maxCell) {
             minRow = 0;
             minCol = 0;
-            maxRow = model.length;
-            maxCol = model[0].length;
+            maxRow = data.length;
+            maxCol = data[0].length;
         } else {
             const columnRegex = /[A-Za-z]+/;
             let match = minCell.match(columnRegex);
@@ -155,25 +154,33 @@ function createDataSheet(name, file) {
             if (match && match[0]) {
                 match = match[0].toUpperCase();
                 maxCol = match.charCodeAt(0) - 65;
-                maxRow = ((+maxCell.replace(maxCell, '') - 1) || model[0].length);
+                maxRow = ((+maxCell.replace(maxCell, '') - 1) || data[0].length);
             } else {
-                maxRow = +maxCell || model.length;
+                maxRow = +maxCell || data.length;
             }
         }
         const values = [];
         for (let y = minRow; y < maxRow; y++) {
-            if (!model[y]) {
+            if (!data[y]) {
                 break;
             }
             const segment = [];
             for (let x = minCol; x < maxCol; x++) {
-                segment.push(model[y][x] || "");
+                segment.push(data[y][x] || "");
             }
             values.push(segment);
         }
         return values;
     };
-    return model;
+
+    const sheet = {
+        properties: {
+            title: name
+        },
+        data,
+        getValues
+    };
+    return sheet;
 }
 
 const variablesSheet = createDataSheet('Variables', 'variables');
