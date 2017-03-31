@@ -5,14 +5,14 @@ import * as moment from 'moment';
 const google = require('googleapis');
 const googleAuth = require('google-auth-library');
 
-import { Rows } from '../shared/rows';
 import { momentForHoliday } from '../shared/moment-holiday';
 import { Console } from '../logger';
 import { CalendarEvent } from './calendar';
+import { Organization } from './organization';
 import { Project } from './project';
 import { Punch } from './punch';
+import { Rows } from './rows';
 import { User } from './user';
-import { Organization } from './organization';
 
 interface SheetOptions {
   vacation: number;

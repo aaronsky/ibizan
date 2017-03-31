@@ -3,7 +3,7 @@ import * as moment from 'moment';
 
 import { TIMEZONE } from '../shared/constants';
 import { PayrollConfig } from '../config';
-import { Rows } from '../shared/rows';
+import { Rows } from '../models/rows';
 
 interface Holiday {
     name: string;

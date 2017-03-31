@@ -1,6 +1,6 @@
 import * as moment from 'moment';
 
-import { Rows } from '../shared/rows';
+import { Rows } from './rows';
 
 export class Project {
   readonly name: string;

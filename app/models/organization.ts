@@ -2,12 +2,12 @@
 import * as moment from 'moment';
 
 import { isDMChannel } from '../shared/common';
-import { Rows } from '../shared/rows';
 import { Console } from '../logger';
 import { TeamConfig } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
-import { Worksheet } from './sheet';
 import { Project } from './project';
+import { Rows } from './rows';
+import { Worksheet } from './sheet';
 import { User, Settings } from './user';
 import { App } from '../app';
 

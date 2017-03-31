@@ -2,9 +2,9 @@ import * as moment from 'moment-timezone';
 
 import { MODES, TIMEZONE } from '../shared/constants';
 import { Mode } from '../shared/common';
-import { Rows } from '../shared/rows';
 import { holidayForMoment } from '../shared/moment-holiday';
 import { Console, Slack } from '../logger';
+import { Rows } from './rows';
 import { Punch } from './punch';
 
 function getPositiveNumber(input?: number | any, current: number = 0) {
