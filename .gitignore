@@ -12,6 +12,7 @@ typings/
 bin
 .ibizanrc.json
 *.pem
+*.js.map
 
 # CI
 .nyc_output

@@ -6,6 +6,7 @@
     "allowSyntheticDefaultImports": true,
     "listEmittedFiles": true,
     "pretty": true,
+    "sourceMap": true,
     "outDir": "bin"
   },
   "include": [
