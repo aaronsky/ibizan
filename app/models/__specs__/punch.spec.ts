@@ -5,7 +5,7 @@ import * as moment from 'moment';
 
 const { MockConfig, MockSheet } = require('../../../test/mocks');
 
-import { Rows } from '../../shared/rows';
+import { Rows } from '../rows';
 import { Organization } from '../organization';
 import { Project } from '../project';
 import { User, Timetable } from '../user';

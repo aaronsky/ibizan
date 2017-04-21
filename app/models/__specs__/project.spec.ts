@@ -1,7 +1,7 @@
 import 'mocha';
 const { expect } = require('chai');
 
-import { Rows } from '../../shared/rows';
+import { Rows } from '../rows';
 import { Project } from '../project';
 
 const TEST_ROW = Rows.ProjectsRow.create({

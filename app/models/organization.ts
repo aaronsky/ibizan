@@ -33,8 +33,10 @@ export class Organization {
         this.initTime = moment();
         this.spreadsheet = new Worksheet(config.google.sheetId);
 
-        if (this.spreadsheet.id) {
-            this.sync(App.config.googleCredentials).then(() => Console.info(`Options loaded for ${this.name}`)).catch(err => Console.error(`Failed to sync for ${this.name}`, err));
+        if (this.spreadsheet.id && this.spreadsheet.id !== 'test') {
+            this.sync(App.config.googleCredentials)
+                .then(() => Console.info(`Options loaded for ${this.name}`))
+                .catch(err => Console.error(`Failed to sync for ${this.name}`, err));
         } else {
             Console.warning(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
         }

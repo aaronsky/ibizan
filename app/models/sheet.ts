@@ -449,10 +449,10 @@ export class Worksheet {
   users: Sheets.UsersSheet;
   variables: Sheets.VariablesSheet;
 
-  constructor(sheetId: string) {
+  constructor(sheetId?: string) {
     this.service = google.sheets('v4');
     this.isAuthorized = false;
-    if (sheetId && sheetId !== 'test') {
+    if (sheetId) {
       this.id = sheetId;
     }
   }

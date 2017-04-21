@@ -6,7 +6,7 @@ import * as moment from 'moment-timezone';
 const { MockSheet } = require('../../../test/mocks');
 const TEST_ROW = require('../../../test/mocks/mocked/mocked_users')[0];
 
-import { Rows } from '../../shared/rows';
+import { Rows } from '../rows';
 import { User, Timetable } from '../user';
 
 describe('Timetable', () => {

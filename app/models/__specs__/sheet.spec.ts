@@ -5,7 +5,7 @@ import * as moment from 'moment';
 
 const { MockSheet, MockConfig } = require('../../../test/mocks');
 
-import { Rows } from '../../shared/rows';
+import { Rows } from '../rows';
 import { Organization } from '../organization';
 import { Worksheet, Sheets } from '../sheet';
 import { Punch } from '../punch';
@@ -15,8 +15,7 @@ let org = new Organization(MockConfig.team);
 
 describe('Sheet', () => {
     beforeEach(() => {
-        const sheetId = 'test';
-        this.sheet = new Worksheet(sheetId);
+        this.sheet = new Worksheet('test');
         this.sheet.service = MockSheet.Service;
         this.sheet.auth = MockSheet.Auth;
     });
