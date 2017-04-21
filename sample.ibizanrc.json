@@ -4,6 +4,5 @@
     "storageUri": "<url to a firebase instance for database>",
     "slackClientId": "<slack app client id>",
     "slackClientSecret": "<slack app client secret key>",
-    "googleClientEmail": "<client_email from your Google Service Auth JSON>",
-    "googlePrivateKey": "<private_key from your Google Service Auth JSON, or a file path to that private key (.pem or .p12)>"
+    "googleCredentials": "<A file path to your Google Service Auth JSON>"
 }

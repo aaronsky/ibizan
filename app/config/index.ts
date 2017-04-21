@@ -188,7 +188,7 @@ export class ConfigFactory {
         if (args.googleCredentials || args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS) {
             config.googleCredentials = args.googleCredentials || args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS;
         }
-        config.slack.scopes = ['bot'];
+        config.slack.scopes = ['bot', 'im:read'];
         return config;
     }
 };

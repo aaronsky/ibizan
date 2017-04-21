@@ -42,8 +42,7 @@ IBIZAN_STORAGE_URI = <url to a firebase instance for database>
 IBIZAN_SLACK_CLIENT_ID = <slack app client id>
 IBIZAN_SLACK_CLIENT_SECRET = <slack app client secret key>
 IBIZAN_SLACK_VERIFICATION_TOKEN = <slack app verificiation token>
-IBIZAN_GOOGLE_CLIENT_EMAIL = <client_email from your Google Service Auth JSON>
-IBIZAN_GOOGLE_PRIVATE_KEY = <private_key from your Google Service Auth JSON>
+IBIZAN_GOOGLE_CREDENTIALS = <file path to your Google Service Auth JSON>
 ```
 
 If Ibizan doesn't automatically start after you finish setting all the environment variables, use the Heroku Toolbelt to run `heroku restart --app={YOUR APP NAME}` in the terminal.
