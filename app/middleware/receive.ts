@@ -26,6 +26,32 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         }
     }
 
+    function onReceiveFormatMessage(bot: botkit.Bot, message: Message, next: () => void) {
+        if (message && message.text) {
+            const channelLinkHeadPattern = '<(#)?([^>|]+)(?:\\|';
+            const channelLinkHead = new RegExp(channelLinkHeadPattern + ')', 'g');
+            const channelLinkTailPattern = '([^>]+))?>';
+            const channelLinkTail = new RegExp('(?:' + channelLinkTailPattern, 'g');
+            const channelLinkPattern = channelLinkHeadPattern + channelLinkTailPattern;
+            const channelLink = new RegExp(channelLinkPattern, 'g');
+            const matches = message.text.match(channelLink);
+            if (!matches) {
+                next();
+                return;
+            }
+
+            let newMessage = message.text;
+            matches.forEach(match => {
+                const submatch = '#' + match.replace(channelLinkHead, '')
+                    .trim()
+                    .slice(0, -1);
+                newMessage = newMessage.replace(match, submatch).trim();
+            });
+            message.text = newMessage;
+        }
+        next();
+    }
+
     function onReceiveSetUser(bot: botkit.Bot, message: Message, next: () => void) {
         if (!message.user) {
             next();
@@ -46,7 +72,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         if (!message.channel) {
             next();
             return;
-        } 
+        }
         if (isDMChannel(message.channel)) {
             bot.api.im.list({}, (err, data) => {
                 if (!data.ok) {
@@ -90,5 +116,6 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
     controller.middleware.receive.use(onReceiveSwallowBlacklistedMessageTypes)
         .use(onReceiveUpdateSlackLogger)
         .use(onReceiveSetUser)
-        .use(onReceiveSetChannel);
+        .use(onReceiveSetChannel)
+        .use(onReceiveFormatMessage);
 }
