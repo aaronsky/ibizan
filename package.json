@@ -1,6 +1,6 @@
 {
   "name": "ibizan",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Dog-themed Employee Time Tracking Slack Bot",
   "main": "./bin/index.js",
   "bin": {
