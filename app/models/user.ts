@@ -438,7 +438,7 @@ export class User {
         throw err;
       }
     } else {
-      throw 'Row is null';
+      throw new Error('Row is null');
     }
   }
   directMessage(msg: string, attachment?: any) {

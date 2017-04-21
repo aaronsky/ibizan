@@ -23,7 +23,6 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
     function onReceiveSwallowBlacklistedMessageTypes(bot: botkit.Bot, message: Message, next: () => void) {
         if (BLACKLISTED_SLACK_MESSAGE_TYPES.indexOf(message.type) === -1) {
             next();
-            return;
         }
     }
 
@@ -47,7 +46,8 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         if (!message.channel) {
             next();
             return;
-        } else if (isDMChannel(message.channel)) {
+        } 
+        if (isDMChannel(message.channel)) {
             bot.api.im.list({}, (err, data) => {
                 if (!data.ok) {
                     next();

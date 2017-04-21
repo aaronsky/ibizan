@@ -472,7 +472,7 @@ describe('Punch', () => {
     });
     it('should return true for a valid punch', () => {
       const punch = Punch.parse(org, this.user, 'in', 'in');
-      expect(punch.isValid(this.user)).to.be.true;
+      expect(punch.isValid(this.user)).to.equal('ok');
     });
   });
   describe('#slackAttachment()', () => {

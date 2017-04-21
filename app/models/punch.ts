@@ -526,7 +526,7 @@ export class Punch {
   assignRow(row: Rows.RawDataRow) {
     this.row = row;
   }
-  isValid(user: User): string | boolean {
+  isValid(user: User): string {
     // fail cases
     let elapsed, date;
     if (this.times.block) {
@@ -558,14 +558,16 @@ export class Punch {
       }
     } else if (this.mode === 'out') {
       let lastIn;
-      if (lastIn = user.lastPunch('in')) {
+      if (lastIn = user.lastPunch(['in', 'vacation', 'unpaid', 'sick'])) {
         if (!lastIn.notes && lastIn.projects.length === 0 && !this.notes && this.projects.length === 0) {
           return 'You must add either a project or some notes to your punch. You can do this along with your out-punch using this format:\n`ibizan out [either notes or #projects]`';
+        } else if (lastIn.times.block) {
+          return `You cannot punch out before punching in. Your last out-punch was a *${lastIn.times.block} hour* block punch.`;
         } else {
-          return true;
+          return 'ok';
         }
       }
-      const last = user.lastPunch(['out', 'vacation', 'unpaid', 'sick']);
+      const last = user.lastPunch('out');
       const time = last.times[1].tz(user.timetable.timezone.name) || last.times[0].tz(user.timetable.timezone.name);
       return `You cannot punch out before punching in. Your last out-punch was at *${time.format('h:mma')} on ${time.format('dddd, MMMM Do')}*.`;
     } else if (this.mode === 'unpaid' && !user.salary) {
@@ -599,7 +601,7 @@ export class Punch {
       // if date is more than 7 days from today
       return 'You cannot punch for a date older than 7 days. If you want to enter a punch this old, you\'re going to have to enter it manually on the Ibizan spreadsheet and run `/sync`.';
     }
-    return true;
+    return 'ok';
   }
   slackAttachment() {
     const fields = [];

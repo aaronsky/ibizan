@@ -59,8 +59,8 @@ import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
-  function canPunchHere(channel: string, organization: Organization) {
-    return isDMChannel(channel) || organization.matchesClockChannel(channel) || organization.matchesProject(channel);
+  function canPunchHere(channel: { id: string, name: string}, organization: Organization) {
+    return isDMChannel(channel.id) || organization.matchesClockChannel(channel.name) || organization.matchesProject(channel.name);
   }
 
   function toTimeStr(duration: number) {
@@ -89,7 +89,7 @@ export default function (controller: botkit.Controller) {
     const channel = message.channel_obj;
     const user = organization.getUserBySlackName(message.user_obj.name);
     Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
-    const isAllowed = canPunchHere(channel.id, organization);
+    const isAllowed = canPunchHere(channel, organization);
     if (!isAllowed) {
       Slack.addReaction('x', message);
       user.directMessage(`You cannot punch in #${channel.name}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`);
@@ -141,10 +141,9 @@ export default function (controller: botkit.Controller) {
       Slack.addReaction('dog2', message);
       Slack.removeReaction('clock4', message);
     } catch (err) {
-      const errorMsg = Console.clean(err);
-      Console.error(errorMsg);
-      Slack.error(`"${errorMsg}" was returned for ${user.slackName}. Punch:\n`, message.match.input);
-      user.directMessage(`\n${errorMsg}`);
+      Console.error(err);
+      Slack.error(`"${err.message}" was returned for ${user.slackName}. Punch:\n`, message.match.input);
+      user.directMessage(`\n${err.message}`);
       Slack.addReaction('x', message);
       Slack.removeReaction('clock4', message);
     }
@@ -228,7 +227,7 @@ export default function (controller: botkit.Controller) {
           Slack.addReaction('dog2', message);
         } catch (err) {
           user.directMessage(err);
-          Console.error('Unable to append row', new Error(err));
+          Console.error('Unable to append row', err);
         }
       } else if (operator === 'event' || operator === 'calendar' || operator === 'upcoming') {
         Slack.addReaction('clock4', message);

@@ -48,9 +48,16 @@ export namespace Sheets {
         { values: any[], range: string, service?: any, sheetId?: string, authClient?: any }): T;
     }): T[] {
       return rawRows.slice(1).map((row, index) => {
+        /*
+         * We have to offset the row's index by 2 because Google Sheets are 1-indexed, 
+         * and we're shaving off the first row. Therefore, the first row we iterate on will 
+         * be row 2 in the sheet, but row 0 in this list because we omit the header row.
+         * In order to retain the proper sheet range, we add 2 to our current index.
+         */
+        const newIndex = index + 2;
         return rowKind.create({
           values: row,
-          range: Rows.Row.formatRowRange(title, index + 1),
+          range: Rows.Row.formatRowRange(title, newIndex),
           service: this.parent.service,
           sheetId: this.parent.id,
           authClient: this.parent.auth
@@ -213,11 +220,12 @@ export namespace Sheets {
     }
 
     async enterPunch(punch: Punch, user: User, organization: Organization) {
-      let valid;
       if (!punch || !user) {
-        throw 'Invalid parameters passed: Punch or user is undefined';
-      } else if (valid = punch.isValid(user) && typeof valid === 'string') {
-        throw valid;
+        throw new Error('Invalid parameters passed: Punch or user is undefined');
+      }
+      const valid = punch.isValid(user);
+      if (valid && valid !== 'ok') {
+        throw new Error(valid);
       }
 
       return new Promise<Punch>(async (resolve, reject) => {

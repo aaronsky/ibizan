@@ -45,7 +45,7 @@ export class Project {
       }
       return;
     } else {
-      throw 'Row is null';
+      throw new Error('Row is null');
     }
   }
   hexColor() {

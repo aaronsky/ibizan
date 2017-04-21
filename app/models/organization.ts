@@ -134,25 +134,25 @@ export class Organization {
             dateObject = date;
         }
         if (!dateObject.isValid()) {
-            throw 'Invalid date given to addEvent';
+            throw new Error('Invalid date given to addEvent');
         } else if (!name || name.length === 0) {
-            throw 'Invalid name given to addEvent';
+            throw new Error('Invalid name given to addEvent');
         }
         const calendarEvent = new CalendarEvent(dateObject, name);
         const calendar = this.calendar;
         try {
             await this.spreadsheet.events.appendNewRow(calendarEvent.toEventRow());
         } catch (err) {
-            throw `Could not add event row: ${err}`;
+            throw new Error(`Could not add event row: ${err.message}`);
         }
         calendar.events.push(calendarEvent);
         return calendarEvent;
     }
     async generateReport(start: moment.Moment, end: moment.Moment, shouldPublish: boolean = false): Promise<number | Rows.PayrollReportsRow[]> {
         if (!this.spreadsheet) {
-            throw 'No spreadsheet is loaded, report cannot be generated';
+            throw new Error('No spreadsheet is loaded, report cannot be generated');
         } else if (!start || !end) {
-            throw 'No start or end date were passed as arguments';
+            throw new Error('No start or end date were passed as arguments');
         }
         Console.info(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
 

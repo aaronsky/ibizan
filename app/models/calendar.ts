@@ -107,7 +107,7 @@ export class CalendarEvent {
         throw err;
       }
     } else {
-      throw 'Row is null';
+      throw new Error('Row is null');
     }
   }
   description() {
