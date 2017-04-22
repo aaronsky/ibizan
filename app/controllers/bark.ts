@@ -8,20 +8,21 @@
 
 import * as moment from 'moment';
 
-import { REGEX, EVENTS, STRINGS } from '../shared/constants';
-const strings = STRINGS.bark;
+import { REGEX, EVENTS } from '../shared/constants';
 import { Message, random } from '../shared/common';
+import Copy from '../i18n';
 import { Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
+  const copy = Copy.forLocale();
   // bark.bark
   controller.hears('bark', 
                    EVENTS.hear, 
                    buildOptions({ id: 'bark.bark' }, controller), 
                    (bot, message) => {
     bot.startTyping(message);
-    bot.reply(message, random(strings.bark));
+    bot.reply(message, random(copy.bark.bark));
   });
 
   //bark.story
@@ -30,7 +31,7 @@ export default function (controller: botkit.Controller) {
                     buildOptions({ id: 'bark.story' }, controller), 
                     (bot, message) => {
     bot.startTyping(message);
-    bot.reply(message, random(strings.story));
+    bot.reply(message, random(copy.bark.story));
   });
 
   // bark.goodboy
@@ -39,7 +40,7 @@ export default function (controller: botkit.Controller) {
                     buildOptions({ id: 'bark.goodboy' }, controller), 
                     (bot, message) => {
     const msg = {
-      text: strings.goodboy,
+      text: copy.bark.goodboy,
       channel: message.channel
     } as Message;
     bot.say(msg);
@@ -66,7 +67,7 @@ export default function (controller: botkit.Controller) {
       setTimeout(() => {
         if ((Math.floor(Math.random() * 10) + 1) === 1) {
           const msg = {
-            text: `_returns to @${message.user_obj.name}, unable to find ${thing}${random(strings.fetchsuffix)}_`,
+            text: `_returns to @${message.user_obj.name}, unable to find ${thing}${random(copy.bark.fetch)}_`,
             channel: message.channel
           } as Message;
           bot.say(msg);
@@ -78,7 +79,7 @@ export default function (controller: botkit.Controller) {
             });
           }
           const msg = {
-            text: `_drops ${thing} at @${message.user_obj.name}'s feet${random(strings.fetchsuffix)}_`,
+            text: `_drops ${thing} at @${message.user_obj.name}'s feet${random(copy.bark.fetch)}_`,
             channel: message.channel
           } as Message;
           bot.say(msg);

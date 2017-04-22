@@ -10,14 +10,15 @@
 
 import * as moment from 'moment';
 
-import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
-const strings = STRINGS.diagnostics;
+import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
+import Copy from '../i18n';
 import { Console, Slack } from '../logger';
 import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
 
 export default function (controller: botkit.Controller) {
+  const copy = Copy.forLocale();
   // respond
   // diagnostics.uptime, 
   controller.hears('uptime', 
@@ -57,7 +58,7 @@ export default function (controller: botkit.Controller) {
                    EVENTS.respond, 
                    buildOptions({ id: 'diagnostics.userHelp', adminOnly: true }, controller), 
                    (bot, message) => {
-    bot.reply(message, strings.userhelp);
+    bot.reply(message, copy.diagnostics.userHelp);
     Slack.addReaction('dog2', message);
   });
 
@@ -190,7 +191,7 @@ export default function (controller: botkit.Controller) {
       return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
-    user.directMessage(strings.help);
+    user.directMessage(copy.diagnostics.help);
     Slack.addReaction('dog2', message);
   });
 };

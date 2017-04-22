@@ -48,15 +48,17 @@
 
 import * as moment from 'moment-timezone';
 
-import { REGEX, REGEX_STR, STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
-const strings = STRINGS.time;
+import { EVENTS, REGEX, REGEX_STR, TIMEZONE } from '../shared/constants';
 import { Message, Mode, isDMChannel } from '../shared/common';
+import Copy from '../i18n';
 import { Console, Slack } from '../logger';
 import { Punch } from '../models/punch';
 import { Rows } from '../models/rows';
 import { User } from '../models/user';
 import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
+
+const copy = Copy.forLocale();
 
 export default function (controller: botkit.Controller) {
   function canPunchHere(channel: { id: string, name: string}, organization: Organization) {
@@ -204,7 +206,7 @@ export default function (controller: botkit.Controller) {
       if (operator === 'project' || operator === 'projects' || operator === 'note' || operator === 'notes') {
         const punch = user.lastPunch('in');
         if (!punch) {
-          user.directMessage(strings.notpunchedin);
+          user.directMessage(copy.time.notPunchedIn);
           return;
         }
         if (operator === 'project' || operator === 'projects') {
@@ -259,7 +261,7 @@ export default function (controller: botkit.Controller) {
           bot.reply(message, 'Something went wrong when adding your event.');
         }
       } else {
-        user.directMessage(strings.addfail);
+        user.directMessage(copy.time.addFail);
       }
     });
 
@@ -297,7 +299,7 @@ export default function (controller: botkit.Controller) {
           user.directMessage('Something went horribly wrong while undoing your punch.');
         }
       } else {
-        user.directMessage(strings.undofail);
+        user.directMessage(copy.time.undoFail);
       }
     });
 
@@ -317,7 +319,7 @@ export default function (controller: botkit.Controller) {
       if (upcomingEvents.length > 0) {
         response = 'Upcoming events:\n' + upcomingEvents.reduce((acc, event) => response + `*${event.date.format('M/DD/YY')}* - ${event.name}\n`, response);
       } else {
-        response = strings.noevents;
+        response = copy.time.noEvents;
       }
       const msg = {
         text: response,
@@ -337,7 +339,7 @@ export default function (controller: botkit.Controller) {
     buildOptions({ id: 'time.hoursHelp' }, controller),
     (bot, message) => {
       const msg = {
-        text: strings.hourshelp,
+        text: copy.time.hoursHelp,
         channel: message.channel
       } as Message;
       bot.say(msg);
@@ -644,7 +646,7 @@ export default function (controller: botkit.Controller) {
 
       if (!command) {
         const msg = {
-          text: strings.activehelp,
+          text: copy.time.activeHelp,
           channel: message.channel
         } as Message;
         bot.say(msg);
@@ -681,7 +683,7 @@ export default function (controller: botkit.Controller) {
         user.directMessage(`Your active *${scope}* time is now *${newTime.format('h:mm A')}*.`);
         Slack.addReaction('dog2', message);
       } else {
-        user.directMessage(strings.activefail);
+        user.directMessage(copy.time.activeFail);
         Slack.addReaction('x', message);
       }
     });

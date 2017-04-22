@@ -12,7 +12,7 @@
 import * as moment from 'moment';
 const schedule = require('node-schedule');
 
-import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
+import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
 import { Console, Slack } from '../logger';
 import { buildOptions } from '../middleware/access';

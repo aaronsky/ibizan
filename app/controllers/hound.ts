@@ -17,24 +17,25 @@
 import * as moment from 'moment';
 const schedule = require('node-schedule');
 
-import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
-const strings = STRINGS.hound;
+import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
+import Copy from '../i18n';
 import { Console, Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 import { Organization } from '../models/organization';
 
 export default function (controller: botkit.Controller) {
+  const copy = Copy.forLocale();
   // Generates a random [in/out] hound message
   function houndMessage(mode: 'in' | 'out') {
     let message;
     if (message === 'in') {
-      message = strings.punchin[Math.floor(Math.random() * strings.punchin.length)];
+      message = copy.hound.punchIn[Math.floor(Math.random() * copy.hound.punchIn.length)];
     } else if (message === 'out') {
-      message = strings.punchout[Math.floor(Math.random() * strings.punchout.length)]
+      message = copy.hound.punchOut[Math.floor(Math.random() * copy.hound.punchOut.length)]
     }
     if ((Math.floor(Math.random() * 6) + 1) === 1) {
-      message += strings.annoying;
+      message += copy.hound.annoying;
     }
     return message;
   }
@@ -127,7 +128,7 @@ export default function (controller: botkit.Controller) {
   }
 
   controller.on('user_typing', (bot, message: Message) => {
-      hound(message.user_obj, message.channel_obj, message.organization, false);
+    hound(message.user_obj, message.channel_obj, message.organization, false);
   });
 
   controller.on('presence_change', (bot, message: any) => {
@@ -177,7 +178,7 @@ export default function (controller: botkit.Controller) {
 
       const command = message.match[1]
       if (!command) {
-        bot.reply(message, strings.houndhelp);
+        bot.reply(message, copy.hound.houndHelp);
         Slack.addReaction('dog2', message);
         return;
       }

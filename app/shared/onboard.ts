@@ -10,7 +10,7 @@
 
 import * as moment from 'moment';
 
-import { STRINGS, EVENTS, TIMEZONE } from '../shared/constants';
+import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
 import { Console, Slack } from '../logger';
 import { TeamConfig } from '../config';

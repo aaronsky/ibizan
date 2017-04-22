@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigFactory } from './config';
+import Copy from './i18n';
 import { Console } from './logger';
 import { App } from './app';
 
@@ -68,5 +69,6 @@ try {
     process.exit(1);
 }
 
+Copy.setDefaultLocale('en');
 const ibizan = new App(config);
 ibizan.start();
