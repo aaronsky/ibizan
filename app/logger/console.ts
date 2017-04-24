@@ -32,15 +32,13 @@ const logger = new winston.Logger({
   colors: customLevels.colors
 });
 
-if (!process.env.TEST) {
-  const level = process.env.IBIZAN ? 'debug' : 'info';
-  logger.add(winston.transports.Console, {
-    level: level,
-    prettyPrint: true,
-    colorize: true,
-    timestamp: true
-  });
-}
+const level = process.env.IBIZAN ? 'debug' : 'info';
+logger.add(winston.transports.Console, {
+  level: level,
+  prettyPrint: true,
+  colorize: true,
+  timestamp: true
+});
 
 function formatArgs(args) {
   return [util.format.apply(util.format, Array.prototype.slice.call(args))];
@@ -64,7 +62,7 @@ console.info = function (...args) {
   logger.info.apply(logger, formatArgs(args));
 };
 console.warn = function (...args) {
-  logger.warn.apply(logger, formatArgs(args));
+  logger.warning.apply(logger, formatArgs(args));
 };
 console.error = function (...args) {
   logger.error.apply(logger, formatArgs(args));

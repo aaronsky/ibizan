@@ -1,6 +1,6 @@
 
 const moment = require('moment');
-const { ConfigFactory } = require('../../app/config');
+const { createIbizanConfig } = require('../../app/config');
 
 const mockIbizanConfig = {
     port: "8080",
@@ -21,6 +21,6 @@ const mockTeamConfig = {
 }
 
 module.exports = {
-    ibizan: ConfigFactory.loadConfiguration(null, null, mockIbizanConfig),
+    ibizan: createIbizanConfig(null, null, mockIbizanConfig),
     team: mockTeamConfig
 };

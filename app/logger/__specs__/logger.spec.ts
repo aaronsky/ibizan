@@ -1,4 +1,3 @@
-
 import 'mocha';
 import '../console';
 import { Slack } from '../';
