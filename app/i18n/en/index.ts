@@ -1,11 +1,11 @@
 import Localization from '../localization';
 
-import accessCopy from './access';
-import barkCopy from './bark';
-import diagnosticsCopy from './diagnostics';
-import houndCopy from './hound';
-import loggerCopy from './logger';
-import timeCopy from './time';
+import * as accessCopy from './access';
+import * as barkCopy from './bark';
+import * as diagnosticsCopy from './diagnostics';
+import * as houndCopy from './hound';
+import * as loggerCopy from './logger';
+import * as timeCopy from './time';
 
 const copy: Localization.LocalizedCopy = {
     status: 'approved',

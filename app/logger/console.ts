@@ -1,4 +1,5 @@
-const winston = require('winston');
+import * as util from 'util';
+import * as winston from 'winston';
 
 const customLevels = {
   levels: {
@@ -32,13 +33,42 @@ const logger = new winston.Logger({
 });
 
 if (!process.env.TEST) {
+  const level = process.env.IBIZAN ? 'debug' : 'info';
   logger.add(winston.transports.Console, {
+    level: level,
     prettyPrint: true,
     colorize: true,
     timestamp: true
   });
 }
 
-export {
-  logger as ConsoleLogger
+function formatArgs(args) {
+  return [util.format.apply(util.format, Array.prototype.slice.call(args))];
+}
+
+declare global {
+  interface Console {
+    winston: winston.LoggerInstance;
+    silly: (...args) => void;
+  }
+}
+
+console.winston = logger;
+console.silly = function (...args) {
+  logger.silly.apply(logger, formatArgs(args));
+};
+console.log = function (...args) {
+  logger.info.apply(logger, formatArgs(args));
+};
+console.info = function (...args) {
+  logger.info.apply(logger, formatArgs(args));
+};
+console.warn = function (...args) {
+  logger.warn.apply(logger, formatArgs(args));
+};
+console.error = function (...args) {
+  logger.error.apply(logger, formatArgs(args));
+};
+console.debug = function (...args) {
+  logger.debug.apply(logger, formatArgs(args));
 };

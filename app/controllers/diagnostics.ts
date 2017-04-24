@@ -13,7 +13,7 @@ import * as moment from 'moment';
 import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
 import Copy from '../i18n';
-import { Console, Slack } from '../logger';
+import { Slack } from '../logger';
 import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
 
@@ -27,7 +27,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       bot.reply(message, copy.diagnostics.uptime(organization.name, organization.initTime.toDate(), +moment().diff(organization.initTime, 'minutes', true).toFixed(2)));
@@ -42,7 +42,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -69,7 +69,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const requestingUser = organization.getUserBySlackName(message.user_obj.name);
@@ -92,7 +92,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const yesterday = moment.tz({
@@ -125,7 +125,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -143,7 +143,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -160,7 +160,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       Slack.addReaction('clock4', message);
@@ -184,7 +184,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);

@@ -1,4 +1,3 @@
-import { ConsoleLogger as Console } from './console';
 import { Message, typeIsArray } from '../shared/common';
 import Copy from '../i18n';
 
@@ -36,10 +35,10 @@ export namespace SlackLogger {
 
   export function log(text: string, channel: string, attachment?: string | { text: string, fallback: string }[]) {
     if (!text) {
-      Console.error('No text passed to log function');
+      console.error('No text passed to log function');
       return
     } else if (!bot) {
-      Console.error(`No robot available to send message: ${text}`);
+      console.error(`No robot available to send message: ${text}`);
       return;
     }
     const message = composeMessage(text, channel, attachment);
@@ -52,7 +51,7 @@ export namespace SlackLogger {
     if (bot && text && id) {
       bot.api.im.open({ user: id }, (err, data) => {
         if (err) {
-          Console.error(err);
+          console.error(err);
           return;
         }
         const message = composeMessage(text, data.channel.id, attachment);
@@ -65,12 +64,12 @@ export namespace SlackLogger {
 
   export function error(text: string, error?: any) {
     if (!text) {
-      Console.error('SlackLogger#error called with no message');
+      console.error('SlackLogger#error called with no message');
       return;
     }
     bot.api.channels.list({}, (err, data) => {
       if (err) {
-        Console.error(err);
+        console.error(err);
         return;
       }
       let sent = false;
@@ -84,7 +83,7 @@ export namespace SlackLogger {
       });
       bot.api.channels.join({ name: 'ibizan-diagnostics' }, (err, data) => {
         if (err) {
-          Console.error(err);
+          console.error(err);
           return;
         }
         const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, data.channel.id);
@@ -95,10 +94,10 @@ export namespace SlackLogger {
 
   export function addReaction(reaction: string, message: Message, attempt: number = 0) {
     if (attempt > 0 && attempt <= 2) {
-      Console.debug(`Retrying adding ${reaction}, attempt ${attempt}...`);
+      console.debug(`Retrying adding ${reaction}, attempt ${attempt}...`);
     }
     if (attempt >= 3) {
-      Console.error(`Failed to add ${reaction} to ${message} after ${attempt} attempts`);
+      console.error(`Failed to add ${reaction} to ${message} after ${attempt} attempts`);
       log(copy.logger.failedReaction, message.user_obj.name);
     } else if (bot && reaction && message) {
       setTimeout(() => {
@@ -112,22 +111,22 @@ export namespace SlackLogger {
             addReaction(reaction, message, attempt);
           } else {
             if (attempt >= 1) {
-              Console.debug(`Added ${reaction} to ${message} after ${attempt} attempts`);
+              console.debug(`Added ${reaction} to ${message} after ${attempt} attempts`);
             }
           }
         });
       }, 1000 * attempt);
     } else {
-      Console.error('Slack web client unavailable');
+      console.error('Slack web client unavailable');
     }
   }
 
   export function removeReaction(reaction: string, message: Message, attempt: number = 0) {
     if (attempt > 0 && attempt <= 2) {
-      Console.debug(`Retrying removal of ${reaction}, attempt ${attempt}...`);
+      console.debug(`Retrying removal of ${reaction}, attempt ${attempt}...`);
     }
     if (attempt >= 3) {
-      Console.error(`Failed to remove ${reaction} from ${message} after ${attempt} attempts`);
+      console.error(`Failed to remove ${reaction} from ${message} after ${attempt} attempts`);
       log(copy.logger.failedReaction, message.user_obj.name);
     } else if (bot && reaction && message) {
       setTimeout(() => {
@@ -141,13 +140,13 @@ export namespace SlackLogger {
             removeReaction(reaction, message, attempt);
           } else {
             if (attempt >= 1) {
-              Console.debug(`Removed ${reaction} from ${message} after ${attempt} attempts`);
+              console.debug(`Removed ${reaction} from ${message} after ${attempt} attempts`);
             }
           }
         });
       }, 1000 * attempt);
     } else {
-      Console.error('Slack web client unavailable');
+      console.error('Slack web client unavailable');
     }
   }
 }

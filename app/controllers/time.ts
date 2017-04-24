@@ -51,7 +51,7 @@ import * as moment from 'moment-timezone';
 import { EVENTS, REGEX, REGEX_STR, TIMEZONE } from '../shared/constants';
 import { Message, Mode, isDMChannel } from '../shared/common';
 import Copy from '../i18n';
-import { Console, Slack } from '../logger';
+import { Slack } from '../logger';
 import { Punch } from '../models/punch';
 import { Rows } from '../models/rows';
 import { User } from '../models/user';
@@ -90,7 +90,7 @@ export default function (controller: botkit.Controller) {
     mode = mode.toLowerCase() as Mode;
     const channel = message.channel_obj;
     const user = organization.getUserBySlackName(message.user_obj.name);
-    Console.info(`Parsing '${message.text}' for @${user.slackName}.`);
+    console.log(`Parsing '${message.text}' for @${user.slackName}.`);
     const isAllowed = canPunchHere(channel, organization);
     if (!isAllowed) {
       Slack.addReaction('x', message);
@@ -119,7 +119,7 @@ export default function (controller: botkit.Controller) {
     } else {
       article = 'an';
     }
-    Console.info(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slackName}: ${punch.description(user)}`);
+    console.log(`Successfully generated ${article} ${modeQualifier}-punch for @${user.slackName}: ${punch.description(user)}`);
     sendPunch(punch, user, message, organization);
   }
 
@@ -132,7 +132,7 @@ export default function (controller: botkit.Controller) {
     }
     try {
       const enteredPunch = await organization.spreadsheet.rawData.enterPunch(punch, user, organization);
-      Console.info(`@${user.slackName}'s punch was successfully entered into the spreadsheet.`);
+      console.log(`@${user.slackName}'s punch was successfully entered into the spreadsheet.`);
       const punchEnglish = `Punched you *${enteredPunch.description(user)}*.`;
       if (enteredPunch.mode === 'in') {
         user.directMessage(punchEnglish);
@@ -143,7 +143,7 @@ export default function (controller: botkit.Controller) {
       Slack.addReaction('dog2', message);
       Slack.removeReaction('clock4', message);
     } catch (err) {
-      Console.error(err);
+      console.error(err);
       Slack.error(`"${err.message}" was returned for ${user.slackName}. Punch:\n`, message.match.input);
       user.directMessage(`\n${err.message}`);
       Slack.addReaction('x', message);
@@ -160,7 +160,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       parse(bot, message, message.match[1] as Mode, organization);
@@ -175,7 +175,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       parse(bot, message, message.match[1] as Mode, organization);
@@ -191,7 +191,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const channelName = message.channel_obj.name;
@@ -229,7 +229,7 @@ export default function (controller: botkit.Controller) {
           Slack.addReaction('dog2', message);
         } catch (err) {
           user.directMessage(err);
-          Console.error('Unable to append row', err);
+          console.error('Unable to append row', err);
         }
       } else if (operator === 'event' || operator === 'calendar' || operator === 'upcoming') {
         Slack.addReaction('clock4', message);
@@ -248,14 +248,14 @@ export default function (controller: botkit.Controller) {
           bot.reply(message, 'Your event needs a name. Make sure you\'re using the proper syntax, encode.g. `ibizan add event 3/21 Dog Time`');
           return;
         }
-        Console.debug(`Adding event on ${date} named ${name}`);
+        console.debug(`Adding event on ${date} named ${name}`);
         try {
           const calendarEvent = await organization.addEvent(date, name);
           Slack.addReaction('dog2', message);
           Slack.removeReaction('clock4', message);
           bot.reply(message, `Added new event: *${calendarEvent.name}* on *${calendarEvent.date.format('M/DD/YYYY')}*`);
         } catch (err) {
-          Console.error(err);
+          console.error(err);
           Slack.addReaction('x', message);
           Slack.removeReaction('clock4', message);
           bot.reply(message, 'Something went wrong when adding your event.');
@@ -273,7 +273,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -306,7 +306,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       let response = '';
@@ -350,14 +350,14 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
       const tz = user.timetable.timezone.name;
       const date = moment(message.match[1], 'MM/DD/YYYY');
       if (!date.isValid()) {
-        Console.info(`hours: \"${message.match[1]}\" is an invalid date`);
+        console.log(`hours: \"${message.match[1]}\" is an invalid date`);
         user.directMessage(`\"${message.match[1]}\" is not a valid date`);
         Slack.addReaction('x', message);
         return;
@@ -415,7 +415,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -532,7 +532,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -549,7 +549,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -572,7 +572,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -590,7 +590,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -633,7 +633,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);

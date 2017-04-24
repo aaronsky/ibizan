@@ -14,7 +14,7 @@ const schedule = require('node-schedule');
 
 import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
-import { Console, Slack } from '../logger';
+import { Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 import { Organization } from '../models/organization';
 
@@ -22,7 +22,7 @@ export default function (controller: botkit.Controller) {
   const generateDailyReportJob = schedule.scheduleJob('0 9 * * *', () => {
     controller.trigger(EVENTS.dailyReport, [async (organization: Organization) => {
       if (!organization.ready()) {
-        Console.warning(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+        console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
         return;
       }
       const yesterday = moment.tz({
@@ -55,10 +55,10 @@ export default function (controller: botkit.Controller) {
   const generatePayrollReportJob = schedule.scheduleJob('0 20 * * 0', () => {
     controller.trigger(EVENTS.payrollReport, [async (organization: Organization) => {
       if (!organization.ready()) {
-        Console.warning(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+        console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
         return;
       } else if (!organization.calendar.isPayWeek()) {
-        Console.warning('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
+        console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
         return;
       }
       const twoWeeksAgo = moment().subtract(2, 'weeks');
@@ -83,7 +83,7 @@ export default function (controller: botkit.Controller) {
     async (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -102,11 +102,11 @@ export default function (controller: botkit.Controller) {
           const numberDone = reports.length;
           const response = `Payroll has been generated for ${numberDone} employees from ${start.format('dddd, MMMM D, YYYY')} to ${end.format('dddd, MMMM D, YYYY')}`;
           user.directMessage(response);
-          Console.info(response);
+          console.log(response);
         } catch (err) {
           const response = `Failed to produce a salary report: ${err}`;
           user.directMessage(response);
-          Console.error(response);
+          console.error(response);
         }
         Slack.addReaction('dog2', message);
       }
@@ -118,10 +118,10 @@ export default function (controller: botkit.Controller) {
   const reminderJob = schedule.scheduleJob('0 13 * * 5', () => {
     controller.trigger(EVENTS.payrollWarning, [(organization: Organization) => {
       if (!organization.ready()) {
-        Console.warning(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
+        console.warn(`Don\'t make scheduled daily report, the ${organization.name} organization isn\'t ready yet.`);
         return;
       } else if (!organization.calendar.isPayWeek()) {
-        Console.warning('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
+        console.warn('Don\'t run scheduled payroll reminder, it isn\'t a pay-week.');
         return;
       }
       organization.users.forEach(user => user.directMessage('As a reminder, payroll will run on Monday. Unrecorded time will not be paid.\nYou can use `period?` to check your hours for this pay period.'));

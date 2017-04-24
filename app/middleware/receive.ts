@@ -1,7 +1,7 @@
 import { BLACKLISTED_SLACK_MESSAGE_TYPES, REGEX } from '../shared/constants';
 import { isDMChannel, Message, random } from '../shared/common';
 import Copy from '../i18n';
-import { Console, Slack } from '../logger';
+import { Slack } from '../logger';
 
 const copy = Copy.forLocale();
 

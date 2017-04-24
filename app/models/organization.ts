@@ -2,7 +2,6 @@
 import * as moment from 'moment';
 
 import { isDMChannel } from '../shared/common';
-import { Console } from '../logger';
 import { TeamConfig } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
 import { Project } from './project';
@@ -29,16 +28,16 @@ export class Organization {
     constructor(config: TeamConfig) {
         this.config = config;
         this.name = config.name;
-        Console.silly(`Welcome to ${this.name}!`);
+        console.silly(`Welcome to ${this.name}!`);
         this.initTime = moment();
         this.spreadsheet = new Worksheet(config.google.sheetId);
 
         if (this.spreadsheet.id && this.spreadsheet.id !== 'test') {
             this.sync(App.config.googleCredentials)
-                .then(() => Console.info(`Options loaded for ${this.name}`))
-                .catch(err => Console.error(`Failed to sync for ${this.name}`, err));
+                .then(() => console.log(`Options loaded for ${this.name}`))
+                .catch(err => console.error(`Failed to sync for ${this.name}`, err));
         } else {
-            Console.warning(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
+            console.warn(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
         }
     }
     ready() {
@@ -91,7 +90,7 @@ export class Organization {
                 }
             }
         }
-        Console.debug(`User ${name} could not be found`);
+        console.debug(`User ${name} could not be found`);
     }
     getUserByRealName(name: string, users?: User[]) {
         if (!users) {
@@ -104,7 +103,7 @@ export class Organization {
                 }
             }
         }
-        Console.debug(`Person ${name} could not be found`);
+        console.debug(`Person ${name} could not be found`);
     }
     getProjectByName(name: string, projects?: Project[]) {
         if (!projects) {
@@ -118,7 +117,7 @@ export class Organization {
                 }
             }
         }
-        Console.debug(`Project ${name} could not be found`);
+        console.debug(`Project ${name} could not be found`);
     }
     matchesClockChannel(name: string): boolean {
         return name === this.clockChannel;
@@ -154,7 +153,7 @@ export class Organization {
         } else if (!start || !end) {
             throw new Error('No start or end date were passed as arguments');
         }
-        Console.info(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
+        console.log(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
 
         const reports: Rows.PayrollReportsRow[] = [];
 

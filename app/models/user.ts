@@ -3,7 +3,7 @@ import * as moment from 'moment-timezone';
 import { MODES, TIMEZONE } from '../shared/constants';
 import { Mode } from '../shared/common';
 import { holidayForMoment } from '../shared/moment-holiday';
-import { Console, Slack } from '../logger';
+import { Slack } from '../logger';
 import { Rows } from './rows';
 import { Punch } from './punch';
 
@@ -281,7 +281,7 @@ export class User {
   }
   async undoPunch() {
     const lastPunch = this.lastPunch();
-    Console.info(`Undoing ${this.slackName}'s punch: ${lastPunch.description(this)}'`);
+    console.log(`Undoing ${this.slackName}'s punch: ${lastPunch.description(this)}'`);
     let elapsed;
     if (lastPunch.times.block) {
       elapsed = lastPunch.times.block;
@@ -451,7 +451,7 @@ export class User {
       msg = `You have been on the clock for ${this.settings.houndFrequency} hours.\n` + msg;
     }
     setTimeout(() => this.directMessage(msg), 1000 * (Math.floor(Math.random() * 3) + 1));
-    Console.info(`Hounded ${this.slackName} with '${msg}'`);
+    console.log(`Hounded ${this.slackName} with '${msg}'`);
     this.updateRow();
   }
   hexColor() {

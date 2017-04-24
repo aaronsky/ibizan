@@ -1,21 +1,21 @@
 const Botkit = require('botkit');
-const FirebaseStorage = require('botkit-storage-firebase');
+const createFirebaseStorage = require('botkit-storage-firebase');
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as moment from 'moment';
 const request = require('request');
 
-import { EVENTS, REGEX } from './shared/constants';
-import { Team, Message } from './shared/common';
-import Copy from './i18n';
-import { Console, Slack } from './logger';
 import { IbizanConfig, TeamConfig } from './config';
-import { applyRoutes } from './routes';
+import Copy from './i18n';
+import { Slack } from './logger';
 import { Organization } from './models/organization';
+import { applyRoutes } from './routes';
+import { Team, Message } from './shared/common';
+import { EVENTS, REGEX } from './shared/constants';
 
+import * as scripts from './controllers';
 import { setAccessHandler } from './middleware/access';
 import { applyReceiveMiddleware } from './middleware/receive';
-import * as scripts from './controllers';
 
 const copy = Copy.forLocale();
 
@@ -24,17 +24,15 @@ export class App {
     controller: botkit.Controller;
     bots: { [token: string]: botkit.Bot };
     orgs: { [token: string]: Organization };
-    helpEntries: string[];
     webserver: express.Application;
 
     constructor(config: IbizanConfig) {
         App.config = config;
         this.bots = {};
         this.orgs = {};
-        const storage = FirebaseStorage({ firebase_uri: App.config.storageUri });
         this.controller = Botkit.slackbot({
-            storage,
-            logger: Console,
+            storage: createFirebaseStorage({ firebase_uri: App.config.storageUri }),
+            logger: console.winston,
             stats_optout: true
         }).configureSlackApp({
             clientId: App.config.slack.clientId,
@@ -75,7 +73,7 @@ export class App {
             const message = { user: team.createdBy } as Message;
             bot.startPrivateConversation(message, (err, convo) => {
                 if (err) {
-                    Console.error(err.message, err);
+                    console.error(err.message, err);
                 } else {
                     convo.say('I am a bot that has just joined your team');
                     convo.say('You must now /invite me to a channel so that I can be of use!');
@@ -101,12 +99,12 @@ export class App {
     }
     validateConfig(team: Team) {
         // if no team config or team config incomplete
-            // onboard
+        // onboard
 
         // if (!team.config) {
         //     onboard(team);
         // } else if (team.config) {
-            
+
         // }
         // if (!team.config || this.teamConfigIsIncomplete(team.config)) {
         //     // HACK: THIS IS BAD
@@ -165,7 +163,7 @@ export class App {
             return false;
         }
 
-        Console.info(`Responding to '${message.text}' (${id}) from ${user_obj.name} in ${organization.name}`);
+        console.log(`Responding to '${message.text}' (${id}) from ${user_obj.name} in ${organization.name}`);
         const orgUser = organization.getUserBySlackName(user_obj.name);
         if (orgUser) {
             orgUser.slackId = message.user;
@@ -206,7 +204,7 @@ export class App {
         } else {
             const responseUrl = body.response_url || null;
             if (responseUrl) {
-                Console.info(`POSTing to ${responseUrl}`);
+                console.log(`POSTing to ${responseUrl}`);
             }
             res.status(200);
             res.json({
@@ -215,7 +213,7 @@ export class App {
             try {
                 const status = await organization.sync();
                 const message = 'Resynced with spreadsheet';
-                Console.debug(message);
+                console.debug(message);
                 if (responseUrl) {
                     request({
                         url: responseUrl,
@@ -226,13 +224,13 @@ export class App {
                         }
                     }, (err: Error, response: any, body: any) => {
                         if (err) {
-                            Console.error('Encountered an error :(', err);
+                            console.error('Encountered an error :(', err);
                             return;
                         } else if (res.statusCode !== 200) {
-                            Console.error('Request didn\'t come back HTTP 200 :(');
+                            console.error('Request didn\'t come back HTTP 200 :(');
                             return;
                         }
-                        Console.debug(body);
+                        console.debug(body);
                     });
                 }
             } catch (err) {
@@ -261,7 +259,7 @@ export class App {
             if (team.bot) {
                 this.controller.spawn(team).startRTM((err, bot, res) => {
                     if (err) {
-                        Console.error('Error connecting bot to Slack:', err);
+                        console.error('Error connecting bot to Slack:', err);
                     } else {
                         this.trackBot(bot, team);
                     }
@@ -272,11 +270,11 @@ export class App {
     loadScripts() {
         Object.keys(scripts).forEach(key => {
             const script = scripts[key];
-            Console.info(`Loading ${key} script`);
+            console.log(`Loading ${key} script`);
             if (script && typeof script === 'function') {
                 script.call(null, this.controller);
             } else {
-                Console.error(`Expected ${key} to be a function, instead was a ${typeof script}`);
+                console.error(`Expected ${key} to be a function, instead was a ${typeof script}`);
                 throw new Error(`Couldn't load ${key} script`);
             }
         });

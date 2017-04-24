@@ -1,5 +1,4 @@
 import Localization from './localization';
-import { Console } from '../logger';
 
 namespace Copy {
     type LocalizedCopyStore = { [language: string]: Localization.LocalizedCopy };
@@ -11,7 +10,7 @@ namespace Copy {
     export function setDefaultLocale(locale: string) {
         if (acceptableLanguages.indexOf(locale) !== -1) {
             defaultLocale = locale;
-            Console.info(`Set the default locale to ${locale}`);
+            console.log(`Set the default locale to ${locale}`);
         }
     }
 

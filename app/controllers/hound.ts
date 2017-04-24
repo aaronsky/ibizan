@@ -20,7 +20,7 @@ const schedule = require('node-schedule');
 import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
 import Copy from '../i18n';
-import { Console, Slack } from '../logger';
+import { Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 import { Organization } from '../models/organization';
 
@@ -30,15 +30,15 @@ export default function (controller: botkit.Controller) {
   function hound(slackuser: { id: string; name: string }, channel: { private?: boolean; is_im?: boolean; is_group?: boolean; name: string }, organization: Organization, forceHound: boolean = false, passive: boolean = false) {
     // HACK: CONSTANT
     if (slackuser.name === 'ibizan') {
-      Console.debug('Caught myself, don\'t hound the hound.');
+      console.debug('Caught myself, don\'t hound the hound.');
       return;
     } else if (!organization.ready()) {
-      Console.debug('Don\'t hound, Organization isn\'t ready yet');
+      console.debug('Don\'t hound, Organization isn\'t ready yet');
       return;
     }
     const user = organization.getUserBySlackName(slackuser.name);
     if (!user) {
-      Console.debug(`${slackuser.name} couldn't be found while attempting to hound`);
+      console.debug(`${slackuser.name} couldn't be found while attempting to hound`);
       return;
     }
     if (user.settings.shouldHound && user.settings.houndFrequency > 0) {
@@ -46,7 +46,7 @@ export default function (controller: botkit.Controller) {
         channel.private = !!channel.is_im || !!channel.is_group;
       }
       if (channel.private || organization.exemptChannels.indexOf(channel.name) !== -1) {
-        Console.debug(`#${channel.name} is not an appropriate hounding channel`);
+        console.debug(`#${channel.name} is not an appropriate hounding channel`);
         return;
       }
       const now = moment.tz(user.timetable.timezone.name);
@@ -70,28 +70,28 @@ export default function (controller: botkit.Controller) {
       const timeSinceLastMessage = user.settings.lastMessage.time.diff(last.time, 'hours', true) || 0;
       const timeSinceLastPing = +Math.abs(now.diff(lastPing, 'hours', true)) || 0;
 
-      Console.debug(`${user.slackName} - ${user.salary}, now: ${now.format('h:mm A, z')}, isInactive: ${user.isInactive()}, start: ${start.format('h:mm A')}, end: ${end.format('h:mm A')}, timeSinceLastPunch: ${timeSinceLastPunch}, timeSinceLastMessage: ${timeSinceLastMessage}, timeSinceStart: ${timeSinceStart}, timeSinceEnd: ${timeSinceEnd}, timeSinceLastPing: ${timeSinceLastPing}, houndFrequency: ${user.settings.houndFrequency}`);
+      console.debug(`${user.slackName} - ${user.salary}, now: ${now.format('h:mm A, z')}, isInactive: ${user.isInactive()}, start: ${start.format('h:mm A')}, end: ${end.format('h:mm A')}, timeSinceLastPunch: ${timeSinceLastPunch}, timeSinceLastMessage: ${timeSinceLastMessage}, timeSinceStart: ${timeSinceStart}, timeSinceEnd: ${timeSinceEnd}, timeSinceLastPing: ${timeSinceLastPing}, houndFrequency: ${user.settings.houndFrequency}`);
 
       if (user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
         if (!lastPunch && !user.isInactive() && !passive) {
-          Console.debug(`Considering hounding ${user.slackName} because of missing lastPunch during active period`);
+          console.debug(`Considering hounding ${user.slackName} because of missing lastPunch during active period`);
           if (now.isAfter(start) && timeSinceStart >= 0.5) {
             user.hound(copy.hound.punch('in'));
           } else if (now.isAfter(end) && timeSinceEnd >= 0.5) {
             user.hound(copy.hound.punch('out'));
           }
         } else if (lastPunch.mode === 'in' && user.isInactive()) {
-          Console.debug(`Considering hounding ${user.slackName} because lastPunch is in and it's outside of their active period`);
+          console.debug(`Considering hounding ${user.slackName} because lastPunch is in and it's outside of their active period`);
           if (now.isAfter(end) && timeSinceEnd >= 0.5) {
             user.hound(copy.hound.punch('out'));
           }
         } else if (lastPunch.mode === 'out' && !passive) {
-          Console.debug(`Considering hounding ${user.slackName} because lastPunch is out during active period`);
+          console.debug(`Considering hounding ${user.slackName} because lastPunch is out during active period`);
           if (!user.isInactive() && timeSinceStart >= 0.5) {
             user.hound(copy.hound.punch('in'));
           }
         } else if (lastPunch.mode === 'vacation' || lastPunch.mode === 'sick' || lastPunch.mode === 'unpaid') {
-          Console.debug(`Considering hounding ${user.slackName} because lastPunch is special`);
+          console.debug(`Considering hounding ${user.slackName} because lastPunch is special`);
           if (lastPunch.times.length > 0 && !now.isBetween(lastPunch.times[0], lastPunch.times[1]) && !passive) {
             user.hound(copy.hound.punch('in'));
           } else if (lastPunch.times.block && !passive) {
@@ -101,14 +101,14 @@ export default function (controller: botkit.Controller) {
             }
           }
         } else if (user.salary && timeSinceLastPunch <= 0.25) {
-          Console.debug(`${user.slackName} is safe from hounding because they punched ${timeSinceLastPunch.toFixed(2)} hours ago`);
+          console.debug(`${user.slackName} is safe from hounding because they punched ${timeSinceLastPunch.toFixed(2)} hours ago`);
         } else if (!user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
           // Ping part-timers when their shift is longer than their houndFrequency
           if (lastPunch && lastPunch.mode === 'in' && timeSinceLastPunch > user.settings.houndFrequency) {
             user.hound(copy.hound.punch('out'));
           }
         } else {
-          Console.debug(`${user.slackName} is safe from hounding for another ${user.settings.houndFrequency - +timeSinceLastPing.toFixed(2)} hours`);
+          console.debug(`${user.slackName} is safe from hounding for another ${user.settings.houndFrequency - +timeSinceLastPing.toFixed(2)} hours`);
         }
       }
     }
@@ -128,7 +128,7 @@ export default function (controller: botkit.Controller) {
   const autoHoundJob = schedule.scheduleJob('*/5 * * * *', () => {
     controller.trigger(EVENTS.shouldHound, [(organization: Organization) => {
       if (!organization.ready()) {
-        Console.warning('Don\'t autohound, Organization isn\'t ready yet');
+        console.warn('Don\'t autohound, Organization isn\'t ready yet');
         return;
       }
       organization.users.forEach(user => hound({ id: user.slackId, name: user.slackName }, { private: null, name: '' }, organization, true, true));
@@ -139,7 +139,7 @@ export default function (controller: botkit.Controller) {
   const resetHoundJob = schedule.scheduleJob('0 9 * * 1-5', () => {
     controller.trigger(EVENTS.resetHound, [(organization: Organization) => {
       if (!organization.ready()) {
-        Console.warning('Don\'t run scheduled reset, Organization isn\'t ready yet');
+        console.warn('Don\'t run scheduled reset, Organization isn\'t ready yet');
         return;
       }
       const count = organization.resetHounding();
@@ -158,7 +158,7 @@ export default function (controller: botkit.Controller) {
     (bot, message: Message) => {
       const organization: Organization = message.organization;
       if (!organization) {
-        Console.error('No Organization was found for the team: ' + bot);
+        console.error('No Organization was found for the team: ' + bot);
         return;
       }
       const user = organization.getUserBySlackName(message.user_obj.name);
@@ -300,7 +300,7 @@ export default function (controller: botkit.Controller) {
             Slack.addReaction('x', message);
           }
         } else {
-          Console.debug(`Hound could not parse ${command}`);
+          console.debug(`Hound could not parse ${command}`);
           user.directMessage('I couldn\'t understand you. Try something like `hound (self/org) (on/off/pause/reset/status/X hours)`');
           Slack.addReaction('x', message);
         }

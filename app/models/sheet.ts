@@ -6,7 +6,6 @@ const google = require('googleapis');
 const googleAuth = require('google-auth-library');
 
 import { momentForHoliday } from '../shared/moment-holiday';
-import { Console } from '../logger';
 import { CalendarEvent } from './calendar';
 import { Organization } from './organization';
 import { Project } from './project';
@@ -74,10 +73,10 @@ export namespace Sheets {
           let retry = 1;
           const timeout = setTimeout(async () => {
             if (retry <= 3) {
-              Console.debug(`Retrying save of row in ${this.sheet.properties.title}, attempt ${retry}...`);
+              console.debug(`Retrying save of row in ${this.sheet.properties.title}, attempt ${retry}...`);
               try {
                 await row.save();
-                Console.debug(`Row was successfully saved to ${this.sheet.properties.title} after ${retry} attempts.`);
+                console.debug(`Row was successfully saved to ${this.sheet.properties.title} after ${retry} attempts.`);
                 clearInterval(timeout);
                 resolve();
                 return;
@@ -86,7 +85,7 @@ export namespace Sheets {
               }
               retry += 1;
             } else {
-              Console.error(`Unable to save row to ${this.sheet.properties.title}`, new Error(err.toString()));
+              console.error(`Unable to save row to ${this.sheet.properties.title}`, new Error(err.toString()));
               clearInterval(timeout);
               reject(err);
             }
@@ -110,10 +109,10 @@ export namespace Sheets {
             let retry = 1;
             const timeout = setTimeout(() => {
               if (retry <= 3) {
-                Console.debug(`Retrying adding row to ${this.sheet.properties.title}, attempt ${retry}...`);
+                console.debug(`Retrying adding row to ${this.sheet.properties.title}, attempt ${retry}...`);
                 this.parent.service.spreadsheets.values.append(request, (err, response) => {
                   if (!err) {
-                    Console.debug(`Row was successfully saved to ${this.sheet.properties.title} after ${retry} attempts.`);
+                    console.debug(`Row was successfully saved to ${this.sheet.properties.title} after ${retry} attempts.`);
                     clearInterval(timeout);
                     resolve(row);
                     return;
@@ -121,7 +120,7 @@ export namespace Sheets {
                 });
                 retry += 1;
               } else {
-                Console.error(`Unable to add row to ${this.sheet.properties.title}`, new Error(err));
+                console.error(`Unable to add row to ${this.sheet.properties.title}`, new Error(err));
                 clearInterval(timeout);
                 reject(err);
               }
@@ -178,8 +177,8 @@ export namespace Sheets {
           }
           const rows = this.rowsFromSheetData<Rows.ProjectsRow>(response.values, ProjectsSheet.title, Rows.ProjectsRow);
           opts.projects = rows.reduce((acc, row) => [...acc, Project.parse(row)], []);
-          Console.silly(`Loaded ${opts.projects.length} projects`);
-          Console.silly('----------------------------------------');
+          console.silly(`Loaded ${opts.projects.length} projects`);
+          console.silly('----------------------------------------');
           resolve(opts);
         });
       });
@@ -212,8 +211,8 @@ export namespace Sheets {
               user.punches.push(punch);
             }
           });
-          Console.silly(`Loaded ${rows.length} punches for ${opts.users.length} users`);
-          Console.silly('----------------------------------------');
+          console.silly(`Loaded ${rows.length} punches for ${opts.users.length} users`);
+          console.silly('----------------------------------------');
           resolve(opts);
         });
       });
@@ -340,8 +339,8 @@ export namespace Sheets {
           }
           const rows = this.rowsFromSheetData<Rows.EventsRow>(response.values, EventsSheet.title, Rows.EventsRow);
           opts.events = rows.map(row => CalendarEvent.parse(row));
-          Console.silly(`Loaded ${opts.events.length} calendar events`);
-          Console.silly('----------------------------------------');
+          console.silly(`Loaded ${opts.events.length} calendar events`);
+          console.silly('----------------------------------------');
           resolve(opts);
         })
       });
@@ -368,8 +367,8 @@ export namespace Sheets {
           }
           const rows = this.rowsFromSheetData<Rows.UsersRow>(response.values, UsersSheet.title, Rows.UsersRow);
           opts.users = rows.reduce((acc, row) => [...acc, User.parse(row)], []);
-          Console.silly(`Loaded ${opts.users.length} users`);
-          Console.silly('----------------------------------------');
+          console.silly(`Loaded ${opts.users.length} users`);
+          console.silly('----------------------------------------');
           resolve(opts);
         });
       });
@@ -434,8 +433,8 @@ export namespace Sheets {
               opts.exemptChannels.push(row.exemptChannel.replace('#', ''));
             }
           }
-          Console.silly(`Loaded organization settings`);
-          Console.silly('----------------------------------------');
+          console.silly(`Loaded organization settings`);
+          console.silly('----------------------------------------');
           resolve(opts);
         });
       });
@@ -472,10 +471,10 @@ export class Worksheet {
         process.env['GOOGLE_APPLICATION_CREDENTIALS'] = credentialsPath;
       }
       const auth = new googleAuth();
-      Console.info('Waiting for authorization');
+      console.log('Waiting for authorization');
       auth.getApplicationDefault((err, authClient) => {
         if (err) {
-          Console.error('Error while trying to retrieve access token', err);
+          console.error('Error while trying to retrieve access token', err);
           reject(err);
           return;
         }
@@ -485,7 +484,7 @@ export class Worksheet {
         }
         this.auth = authClient;
         this.isAuthorized = true;
-        Console.info('Authorized successfully');
+        console.log('Authorized successfully');
         resolve();
       });
     });
@@ -537,7 +536,7 @@ export class Worksheet {
           } else if (title === Sheets.VariablesSheet.title) {
             this.variables = new Sheets.VariablesSheet(this, sheet);
           } else {
-            Console.error('Error loading worksheet ' + title + ' due to that sheet title being unknown/unavailable in Ibizan\'s configuration');
+            console.error('Error loading worksheet ' + title + ' due to that sheet title being unknown/unavailable in Ibizan\'s configuration');
             problem = true;
           }
         });
@@ -548,7 +547,7 @@ export class Worksheet {
           reject('Worksheets failed to be associated properly');
           return;
         }
-        Console.silly('----------------------------------------');
+        console.silly('----------------------------------------');
         resolve({} as SheetOptions);
       });
     });

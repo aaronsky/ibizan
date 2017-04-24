@@ -5,7 +5,6 @@ import * as uuid from 'node-uuid';
 import { Mode } from '../shared/common';
 import { MODES, REGEX, TIMEZONE } from '../shared/constants';
 import { holidayForMoment } from '../shared/moment-holiday';
-import { Console } from '../logger';
 import { Organization } from './organization';
 import { Project } from './project';
 import { Rows } from './rows';
@@ -236,10 +235,10 @@ export class Punch {
   }
   static parse(organization: Organization, user: User, command: string, mode: Mode = 'none', timezone?: string) {
     if (!user) {
-      Console.error('No user passed', new Error(command));
+      console.error('No user passed', new Error(command));
       return;
     } else if (!command) {
-      Console.error('No command passed', new Error(user.toString()));
+      console.error('No command passed', new Error(user.toString()));
       return;
     }
     if (mode && mode !== 'none') {
@@ -293,7 +292,7 @@ export class Punch {
       }
     } else if (datetimes.length === 2) {
       if (mode === 'out') {
-        Console.error('An out-punch cannot be a range', new Error(original));
+        console.error('An out-punch cannot be a range', new Error(original));
         return;
       }
       if (datetimes[1].isBefore(datetimes[0])) {
@@ -322,7 +321,7 @@ export class Punch {
 
     // UUID sanity check
     if (row.id.length != 36) {
-      Console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
+      console.debug(`${row.id} is not a valid UUID, changing to valid UUID`);
       row.id = uuid.v1();
       sheet.saveRow(row);
     }
@@ -380,15 +379,15 @@ export class Punch {
       }
       elapsed = calculateElapsed(datetimes[0], datetimes[1], mode, user)
       if (elapsed < 0) {
-        Console.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes.toString()));
+        console.error('Invalid punch row: elapsed time is less than 0', new Error(datetimes.toString()));
         return;
       } else if (elapsed !== rawElapsed && (rawElapsed == null || Math.abs(elapsed - rawElapsed) > 0.02)) {
-        Console.debug(`${row.id} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
+        console.debug(`${row.id} - Updating totalTime because ${elapsed} is not ${rawElapsed} - ${Math.abs(elapsed - rawElapsed)}`);
         const hours = Math.floor(elapsed);
         const minutes = Math.round((elapsed - hours) * 60);
         const minute_str = minutes < 10 ? `0${minutes}` : minutes;
         row.totalTime = `${hours}:${minute_str}:00.000`;
-        sheet.saveRow(row).catch((err) => Console.error('Unable to save row', new Error(err)));
+        sheet.saveRow(row).catch((err) => console.error('Unable to save row', new Error(err)));
       }
     }
 
