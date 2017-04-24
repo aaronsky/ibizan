@@ -54,20 +54,20 @@ export default function (controller: botkit.Controller) {
     const thing = message.match[1];
     if (!thing) {
       const msg = {
-        text: `_perks up and fidgets impatiently, waiting for @${message.user_obj.name} to \`fetch [thing]\`_`,
+        text: copy.bark.fetch(0, message.user_obj.name),
         channel: message.channel
       } as Message;
       bot.say(msg);
     } else {
       const msg = {
-        text: `_runs to fetch ${thing}!_`,
+        text: copy.bark.fetch(2, message.user_obj.name, thing),
         channel: message.channel
       } as Message;
       bot.say(msg);
       setTimeout(() => {
         if ((Math.floor(Math.random() * 10) + 1) === 1) {
           const msg = {
-            text: `_returns to @${message.user_obj.name}, unable to find ${thing}${random(copy.bark.fetch)}_`,
+            text: copy.bark.fetch(2, message.user_obj.name, thing),
             channel: message.channel
           } as Message;
           bot.say(msg);
@@ -79,7 +79,7 @@ export default function (controller: botkit.Controller) {
             });
           }
           const msg = {
-            text: `_drops ${thing} at @${message.user_obj.name}'s feet${random(copy.bark.fetch)}_`,
+            text: copy.bark.fetch(3, message.user_obj.name, thing),
             channel: message.channel
           } as Message;
           bot.say(msg);

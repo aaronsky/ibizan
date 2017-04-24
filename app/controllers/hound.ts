@@ -26,19 +26,6 @@ import { Organization } from '../models/organization';
 
 export default function (controller: botkit.Controller) {
   const copy = Copy.forLocale();
-  // Generates a random [in/out] hound message
-  function houndMessage(mode: 'in' | 'out') {
-    let message;
-    if (message === 'in') {
-      message = copy.hound.punchIn[Math.floor(Math.random() * copy.hound.punchIn.length)];
-    } else if (message === 'out') {
-      message = copy.hound.punchOut[Math.floor(Math.random() * copy.hound.punchOut.length)]
-    }
-    if ((Math.floor(Math.random() * 6) + 1) === 1) {
-      message += copy.hound.annoying;
-    }
-    return message;
-  }
 
   function hound(slackuser: { id: string; name: string }, channel: { private?: boolean; is_im?: boolean; is_group?: boolean; name: string }, organization: Organization, forceHound: boolean = false, passive: boolean = false) {
     // HACK: CONSTANT
@@ -89,28 +76,28 @@ export default function (controller: botkit.Controller) {
         if (!lastPunch && !user.isInactive() && !passive) {
           Console.debug(`Considering hounding ${user.slackName} because of missing lastPunch during active period`);
           if (now.isAfter(start) && timeSinceStart >= 0.5) {
-            user.hound(houndMessage('in'));
+            user.hound(copy.hound.punch('in'));
           } else if (now.isAfter(end) && timeSinceEnd >= 0.5) {
-            user.hound(houndMessage('out'));
+            user.hound(copy.hound.punch('out'));
           }
         } else if (lastPunch.mode === 'in' && user.isInactive()) {
           Console.debug(`Considering hounding ${user.slackName} because lastPunch is in and it's outside of their active period`);
           if (now.isAfter(end) && timeSinceEnd >= 0.5) {
-            user.hound(houndMessage('out'));
+            user.hound(copy.hound.punch('out'));
           }
         } else if (lastPunch.mode === 'out' && !passive) {
           Console.debug(`Considering hounding ${user.slackName} because lastPunch is out during active period`);
           if (!user.isInactive() && timeSinceStart >= 0.5) {
-            user.hound(houndMessage('in'));
+            user.hound(copy.hound.punch('in'));
           }
         } else if (lastPunch.mode === 'vacation' || lastPunch.mode === 'sick' || lastPunch.mode === 'unpaid') {
           Console.debug(`Considering hounding ${user.slackName} because lastPunch is special`);
           if (lastPunch.times.length > 0 && !now.isBetween(lastPunch.times[0], lastPunch.times[1]) && !passive) {
-            user.hound(houndMessage('in'));
+            user.hound(copy.hound.punch('in'));
           } else if (lastPunch.times.block && !passive) {
             const endOfBlock = moment(lastPunch.date).add(lastPunch.times.block, 'hours');
             if (!now.isBetween(lastPunch.date, endOfBlock)) {
-              user.hound(houndMessage('in'));
+              user.hound(copy.hound.punch('in'));
             }
           }
         } else if (user.salary && timeSinceLastPunch <= 0.25) {
@@ -118,7 +105,7 @@ export default function (controller: botkit.Controller) {
         } else if (!user.salary && (timeSinceLastPing === 0 || timeSinceLastPing >= user.settings.houndFrequency) && timeSinceLastPunch > 0.25) {
           // Ping part-timers when their shift is longer than their houndFrequency
           if (lastPunch && lastPunch.mode === 'in' && timeSinceLastPunch > user.settings.houndFrequency) {
-            user.hound(houndMessage('out'));
+            user.hound(copy.hound.punch('out'));
           }
         } else {
           Console.debug(`${user.slackName} is safe from hounding for another ${user.settings.houndFrequency - +timeSinceLastPing.toFixed(2)} hours`);

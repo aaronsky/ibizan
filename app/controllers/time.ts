@@ -94,7 +94,7 @@ export default function (controller: botkit.Controller) {
     const isAllowed = canPunchHere(channel, organization);
     if (!isAllowed) {
       Slack.addReaction('x', message);
-      user.directMessage(`You cannot punch in #${channel.name}. Try punching in #${organization.clockChannel}, a designated project channel, or here.`);
+      user.directMessage(copy.time.forbiddenChannel(channel.name, organization.clockChannel));
       return;
     }
     Slack.addReaction('clock4', message);
@@ -286,17 +286,12 @@ export default function (controller: botkit.Controller) {
           await user.updateRow();
           Slack.addReaction('dog2', message);
           Slack.removeReaction('clock4', message);
-          let msg = `Undid your last punch, which was: *${lastPunchDescription}*\n\n`;
           lastPunch = user.lastPunch();
-          if (lastPunch) {
-            msg += `Your most current punch is now: *${lastPunch.description(user)}*`;
-          } else {
-            msg += `That was your last punch on record.`;
-          }
+          const msg = copy.time.undoSuccess(lastPunchDescription, lastPunch && lastPunch.description(user));
           user.directMessage(msg);
         } catch (err) {
           Slack.error(`"${err}" was returned for an undo operation by ${user.slackName}`);
-          user.directMessage('Something went horribly wrong while undoing your punch.');
+          user.directMessage(copy.time.undoError);
         }
       } else {
         user.directMessage(copy.time.undoFail);

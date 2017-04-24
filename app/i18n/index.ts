@@ -16,7 +16,7 @@ namespace Copy {
     }
 
     export function forLocale(locale: string = defaultLocale): Localization.LocalizedCopy {
-        const copy = Localization.Locales.localeMap[locale];
+        const copy = Localization.Locales.allLocales[locale];
         return copy;
     }
 }

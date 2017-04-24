@@ -12,7 +12,7 @@ namespace Localization {
         logger: LoggerLocalizedCopy;
         time: TimeLocalizedCopy;
     }
-    interface AccessLocalizedCopy {
+    export interface AccessLocalizedCopy {
         adminOnly: string;
         askForHelp: string[];
         badToken: string;
@@ -20,57 +20,63 @@ namespace Localization {
         orgNotReady: string;
         unknownCommand: string[];
     }
-    interface BarkLocalizedCopy {
+    export interface BarkLocalizedCopy {
         bark: string[];
-        fetch: string[];
+        fetch: (phase: 0 | 1 | 2 | 3, username: string, thing?: string) => string;
         goodboy: string;
         story: string[];
     }
-    interface DiagnosticsLocalizedCopy {
+    export interface DiagnosticsLocalizedCopy {
+        uptime: (orgName: string, initDate: Date, minutes: number) => string;
+        users: string;
+        user: (name: string, found: boolean) => string;
+        projects: string;
+        calendar: string;
+        syncSuccess: string;
+        syncFailed: string;
         help: string;
         userHelp: string;
     }
-    interface HoundLocalizedCopy {
+    export interface HoundLocalizedCopy {
         annoying: string;
         houndHelp: string;
+        punch: (mode: 'in' | 'out') => string;
         punchIn: string[];
         punchOut: string[];
     }
-    interface LoggerLocalizedCopy {
+    export interface LoggerLocalizedCopy {
         failedReaction: string;
         googleError: string;
     }
-    interface TimeLocalizedCopy {
+    export interface TimeLocalizedCopy {
+        forbiddenChannel: (channel: string, clockChannel: string) => string;
         activeFail: string;
         activeHelp: string;
         addFail: string;
         hoursHelp: string;
         noEvents: string;
         notPunchedIn: string;
+        undoSuccess: (undoneDescription: string, lastDescription?: string) => string;
+        undoError: string;
         undoFail: string;
     }
- 
+
     type LocaleMap = { [locale: string]: LocalizedCopy }
-    export class Locales {
-        static localeMap: LocaleMap;
-        static init() {
-            const dirs = fs.readdirSync(__dirname).filter(file => path.extname(file) === '');
-            this.localeMap = dirs.reduce((acc, dir) => {
+    export namespace Locales {
+        export const allLocales: LocaleMap = fs.readdirSync(__dirname)
+            .filter(file => path.extname(file) === '')
+            .reduce((acc, dir) => {
                 return {
                     ...acc,
                     [dir]: require(`./${dir}`)
                 };
             }, {} as LocaleMap);
-        }
-        static get approved(): string[] {
-            return Object.keys(this.localeMap).reduce((acc, locale) => {
-                if (this.localeMap[locale].status === 'approved') {
-                    acc = [...acc, locale];
-                }
-                return acc;
-            }, [])
-        }
+        export const approved = Object.keys(allLocales).reduce((acc, locale) => {
+            if (allLocales[locale].status === 'approved') {
+                acc = [...acc, locale];
+            }
+            return acc;
+        }, []);
     }
-    Locales.init();
 }
 export default Localization;
