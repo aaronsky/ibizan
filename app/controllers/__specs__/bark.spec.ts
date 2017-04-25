@@ -1,23 +1,23 @@
-
 import * as http from 'http';
+
 import 'mocha';
-const { expect } = require('chai');
+import { expect } from 'chai';
 
 class Room {
-  readonly name: string = 'ibizan';
-  messages: string[][] = [];
-  say(userName, message) {
-    this.messages.push([userName, message]);
-    this.messages.push([userName, message]);
-  }
-  destroy() {
-    this.messages = [];
-  }
+    readonly name: string = 'ibizan';
+    messages: string[][] = [];
+    say(userName, message) {
+        this.messages.push([userName, message]);
+        this.messages.push([userName, message]);
+    }
+    destroy() {
+        this.messages = [];
+    }
 }
 class Helper {
-  static createRoom() {
-    return new Room();
-  }
+    static createRoom() {
+        return new Room();
+    }
 }
 
 /*

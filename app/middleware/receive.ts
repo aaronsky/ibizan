@@ -1,7 +1,9 @@
-import { REGEX, STRINGS, BLACKLISTED_SLACK_MESSAGE_TYPES } from '../shared/constants';
-const strings = STRINGS.access;
+import { BLACKLISTED_SLACK_MESSAGE_TYPES, REGEX } from '../shared/constants';
 import { isDMChannel, Message, random } from '../shared/common';
-import { Console, Slack } from '../logger';
+import Copy from '../i18n';
+import { Slack } from '../logger';
+
+const copy = Copy.forLocale();
 
 export function applyReceiveMiddleware(controller: botkit.Controller) {
     function onReceiveMessage(bot: botkit.Bot, message: Message) {
@@ -9,7 +11,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
             message.text &&
             message.text.length < 30 &&
             (message.text.match(REGEX.ibizan) || message.channel && message.channel.substring(0, 1) === 'D')) {
-            bot.reply(message, `_${random(strings.unknowncommand)} ${random(strings.askforhelp)}_`);
+            bot.reply(message, `_${random(copy.access.unknownCommand)} ${random(copy.access.askForHelp)}_`);
             Slack.addReaction('question', message);
             return;
         }
@@ -58,7 +60,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
             return;
         }
         bot.api.users.info({ user: message.user }, (err, data) => {
-            if (!data.ok) {
+            if (err || (data && !data.ok)) {
                 next();
                 return;
             }
@@ -75,7 +77,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         }
         if (isDMChannel(message.channel)) {
             bot.api.im.list({}, (err, data) => {
-                if (!data.ok) {
+                if (err || (data && !data.ok)) {
                     next();
                     return;
                 }
@@ -86,7 +88,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
                 }
                 const matchingIm = ims[0];
                 bot.api.users.info({ user: matchingIm.user }, (err, data) => {
-                    if (!data.ok) {
+                    if (err || (data && !data.ok)) {
                         next();
                         return;
                     }
@@ -100,7 +102,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
             });
         } else {
             bot.api.channels.info({ channel: message.channel }, (err, data) => {
-                if (!data.ok) {
+                if (err || (data && !data.ok)) {
                     next();
                     return;
                 }

@@ -2,7 +2,6 @@
 import * as moment from 'moment';
 
 import { isDMChannel } from '../shared/common';
-import { Console } from '../logger';
 import { TeamConfig } from '../config';
 import { Calendar, CalendarEvent } from './calendar';
 import { Project } from './project';
@@ -29,21 +28,23 @@ export class Organization {
     constructor(config: TeamConfig) {
         this.config = config;
         this.name = config.name;
-        Console.silly(`Welcome to ${this.name}!`);
+        console.silly(`Welcome to ${this.name}!`);
         this.initTime = moment();
         this.spreadsheet = new Worksheet(config.google.sheetId);
 
         if (this.spreadsheet.id && this.spreadsheet.id !== 'test') {
             this.sync(App.config.googleCredentials)
-                .then(() => Console.info(`Options loaded for ${this.name}`))
-                .catch(err => Console.error(`Failed to sync for ${this.name}`, err));
+                .then(() => console.log(`Options loaded for ${this.name}`))
+                .catch(err => console.error(`Failed to sync for ${this.name}`, err));
         } else {
-            Console.warning(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
+            console.warn(`Sheet not initialized for ${this.name}, no spreadsheet ID was provided`);
         }
     }
+
     ready() {
         return this.initialized;
     }
+
     async sync(googleCredentialsPath?: string) {
         try {
             if (!googleCredentialsPath && !this.spreadsheet.isAuthorized) {
@@ -52,24 +53,21 @@ export class Organization {
             if (googleCredentialsPath) {
                 await this.spreadsheet.authorize(googleCredentialsPath);
             }
-            let opts = await this.spreadsheet.loadOptions();
+            const opts = await this.spreadsheet.loadOptions();
             if (!opts) {
-                throw new Error('loaded data was null');
+                throw new Error('Data could not be loaded for this organization.');
             }
-            let old;
-            if (this.users) {
-                old = this.users.slice(0);
-            }
+            const old = this.users && this.users.slice();
             this.users = opts.users;
             if (old) {
-                for (let user of old) {
-                    let newUser;
-                    if (newUser = this.getUserBySlackName(user.slackName)) {
+                old.forEach(user => {
+                    const newUser = this.getUserBySlackName(user.slackName);
+                    if (newUser) {
                         newUser.settings = Settings.fromSettings(user.settings);
                     }
-                }
+                });
             }
-            this.projects = opts.projects as Project[];
+            this.projects = opts.projects;
             this.calendar = new Calendar(opts.vacation, opts.sick, opts.holidays, opts.events);
             this.houndFrequency = opts.houndFrequency;
             this.clockChannel = opts.clockChannel;
@@ -80,52 +78,43 @@ export class Organization {
         }
         return true;
     }
-    getUserBySlackName(name: string, users?: User[]) {
-        if (!users) {
-            users = this.users;
+
+    getUserBySlackName(name: string) {
+        const matches = this.users.filter(user => user.slackName === name);
+        if (matches.length === 0 || !matches[0]) {
+            console.debug(`A user by the slack name of ${name} could not be found`);
+            return null;
         }
-        if (users) {
-            for (let user of users) {
-                if (name === user.slackName) {
-                    return user;
-                }
-            }
-        }
-        Console.debug(`User ${name} could not be found`);
+        return matches[0];
     }
-    getUserByRealName(name: string, users?: User[]) {
-        if (!users) {
-            users = this.users;
+
+    getUserByRealName(name: string) {
+        const matches = this.users.filter(user => user.realName === name);
+        if (matches.length === 0 || !matches[0]) {
+            console.debug(`A user by the real name ${name} could not be found`);
+            return null;
         }
-        if (users) {
-            for (let user of users) {
-                if (name === user.realName) {
-                    return user;
-                }
-            }
-        }
-        Console.debug(`Person ${name} could not be found`);
+        return matches[0];
     }
-    getProjectByName(name: string, projects?: Project[]) {
-        if (!projects) {
-            projects = this.projects;
-        }
+
+    getProjectByName(name: string) {
         name = name.replace('#', '');
-        if (projects) {
-            for (let project of projects) {
-                if (name === project.name) {
-                    return project;
-                }
-            }
+        const matches = this.projects.filter(project => project.name === name);
+        if (matches.length === 0 || !matches[0]) {
+            console.debug(`A project named #${name} could not be found`);
+            return null;
         }
-        Console.debug(`Project ${name} could not be found`);
+        return matches[0];
     }
+
     matchesClockChannel(name: string): boolean {
         return name === this.clockChannel;
     }
+
     matchesProject(channel: string): boolean {
         return !this.matchesClockChannel(channel) && !isDMChannel(channel) && !!this.getProjectByName(channel);
     }
+
     async addEvent(date: string | moment.Moment, name: string) {
         let dateObject;
         if (typeof date === 'string') {
@@ -148,45 +137,50 @@ export class Organization {
         calendar.events.push(calendarEvent);
         return calendarEvent;
     }
+
     async generateReport(start: moment.Moment, end: moment.Moment, shouldPublish: boolean = false): Promise<number | Rows.PayrollReportsRow[]> {
         if (!this.spreadsheet) {
             throw new Error('No spreadsheet is loaded, report cannot be generated');
         } else if (!start || !end) {
             throw new Error('No start or end date were passed as arguments');
         }
-        Console.info(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
+        console.log(`Generating payroll from ${start.format('MMM Do, YYYY')} to ${end.format('MMM Do, YYYY')}`);
 
-        const reports: Rows.PayrollReportsRow[] = [];
-
-        for (let user of this.users) {
+        const reports = this.users.reduce((acc, user) => {
             const row = user.toRawPayroll(start, end);
             if (row) {
-                reports.push(row);
+                return [...acc, row];
             }
-        }
-        reports.sort((left: Rows.PayrollReportsRow, right: Rows.PayrollReportsRow) => {
-            if (+left.logged < +right.logged || +left.vacation < +right.vacation || +left.sick < +right.sick || +left.unpaid < +right.unpaid) {
-                return -1;
-            } else if (+left.logged > +right.logged || +left.vacation > +right.vacation || +left.sick > +right.sick || +left.unpaid > +right.unpaid) {
-                return 1;
-            }
-            return 0;
-        });
+            return acc;
+        }, [] as Rows.PayrollReportsRow[])
+            .sort((left, right) => {
+                if (+left.logged < +right.logged ||
+                    +left.vacation < +right.vacation ||
+                    +left.sick < +right.sick ||
+                    +left.unpaid < +right.unpaid) {
+                    return -1;
+                } else if (+left.logged > +right.logged ||
+                    +left.vacation > +right.vacation ||
+                    +left.sick > +right.sick ||
+                    +left.unpaid > +right.unpaid) {
+                    return 1;
+                }
+                return 0;
+            });
         if (shouldPublish) {
             try {
                 const numberDone = await this.spreadsheet.payroll.generateReport(reports);
                 if (numberDone === reports.length) {
                     return reports;
-                } else {
-                    return numberDone;
                 }
+                return numberDone;
             } catch (err) {
                 throw err;
             }
-        } else {
-            return reports;
         }
+        return reports;
     }
+
     dailyReport(reports: Rows.PayrollReportsRow[], today: moment.Moment, yesterday: moment.Moment) {
         let response = `DAILY WORK LOG: *${yesterday.format('dddd MMMM D YYYY').toUpperCase()}*\n`;
         let logBuffer = '';
@@ -263,6 +257,7 @@ export class Organization {
         }
         return response;
     }
+
     resetHounding() {
         let i = 0;
         for (let user of this.users) {
@@ -275,6 +270,7 @@ export class Organization {
         }
         return i;
     }
+
     setHoundFrequency(frequency: number) {
         let i = 0;
         for (let user of this.users) {
@@ -285,6 +281,7 @@ export class Organization {
         }
         return i;
     }
+
     setShouldHound(should: boolean) {
         let i = 0;
         for (let user of this.users) {
