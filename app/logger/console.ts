@@ -1,6 +1,13 @@
 import * as util from 'util';
 import * as winston from 'winston';
 
+declare global {
+    interface Console {
+        winston: winston.LoggerInstance;
+        silly: (...args) => void;
+    }
+}
+
 const customLevels = {
     levels: {
         emerg: 0,
@@ -32,41 +39,38 @@ const logger = new winston.Logger({
     colors: customLevels.colors
 });
 
-const level = process.env.IBIZAN ? 'debug' : 'info';
-logger.add(winston.transports.Console, {
-    level: level,
-    prettyPrint: true,
-    colorize: true,
-    timestamp: true
-});
+if (!process.env.TEST) {
+    const level = process.env.IBIZAN ? 'debug' : 'info';
+    logger.add(winston.transports.Console, {
+        level: level,
+        prettyPrint: true,
+        colorize: true,
+        timestamp: true
+    });
 
-function formatArgs(args) {
-    return [util.format.apply(util.format, Array.prototype.slice.call(args))];
-}
-
-declare global {
-    interface Console {
-        winston: winston.LoggerInstance;
-        silly: (...args) => void;
+    function formatArgs(args) {
+        return [util.format.apply(util.format, Array.prototype.slice.call(args))];
     }
+    console.winston = logger;
+    console.silly = function (...args) {
+        logger.silly.apply(logger, formatArgs(args));
+    };
+    console.log = function (...args) {
+        logger.info.apply(logger, formatArgs(args));
+    };
+    console.info = function (...args) {
+        logger.info.apply(logger, formatArgs(args));
+    };
+    console.warn = function (...args) {
+        logger.warning.apply(logger, formatArgs(args));
+    };
+    console.error = function (...args) {
+        logger.error.apply(logger, formatArgs(args));
+    };
+    console.debug = function (...args) {
+        logger.debug.apply(logger, formatArgs(args));
+    };
+} else {
+    console.debug = function (...args) {};
+    console.silly = function (...args) {};
 }
-
-console.winston = logger;
-console.silly = function (...args) {
-    logger.silly.apply(logger, formatArgs(args));
-};
-console.log = function (...args) {
-    logger.info.apply(logger, formatArgs(args));
-};
-console.info = function (...args) {
-    logger.info.apply(logger, formatArgs(args));
-};
-console.warn = function (...args) {
-    logger.warning.apply(logger, formatArgs(args));
-};
-console.error = function (...args) {
-    logger.error.apply(logger, formatArgs(args));
-};
-console.debug = function (...args) {
-    logger.debug.apply(logger, formatArgs(args));
-};

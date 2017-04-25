@@ -101,7 +101,7 @@ export class Organization {
         name = name.replace('#', '');
         const matches = this.projects.filter(project => project.name === name);
         if (matches.length === 0 || !matches[0]) {
-            console.debug(`Project #${name} could not be found`);
+            console.debug(`A project named #${name} could not be found`);
             return null;
         }
         return matches[0];

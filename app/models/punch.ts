@@ -199,21 +199,20 @@ function calculateElapsed(start: moment.Moment, end: moment.Moment, mode: string
     return +elapsed.toFixed(2);
 }
 function parseProjects(command: string, organization: Organization): [Project[], string] {
-    const projects: Project[] = [];
     command = command.replace(/^\s+/, '') || '';
     if (command.indexOf('in') === 0) {
         command = command.replace('in', '');
         command = command.replace(/^\s+/, '');
     }
-    const commandCopy = command.split(' ').slice();
-    for (let word of commandCopy) {
-        let project;
-        if (project = organization.getProjectByName(word)) {
-            projects.push(project);
+    const projects = command.split(' ').reduce((acc, word) => {
+        const project = organization.getProjectByName(word);
+        if (project !== null) {
+            acc.push(project);
             const pattern = new RegExp(word + ' ?', 'i');
             command = command.replace(pattern, '');
         }
-    }
+        return acc;
+    }, [] as Project[]);
     return [projects, command];
 }
 
