@@ -20,6 +20,7 @@ function fetch(phase: 0 | 1 | 2 | 3, username: string, thing?: string): string {
     } else if (phase === 3) {
         return `_drops ${thing} at @${username}'s feet${random(suffixes)}_`
     }
+    return '';
 };
 
 const barkCopy: Localization.BarkLocalizedCopy = {

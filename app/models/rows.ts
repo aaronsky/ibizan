@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-export const HEADERS = {
+const HEADERS = {
     variables: [
         { field: 'vacation', header: 'Vacation Hours (for Salaried Employees)' },
         { field: 'sick', header: 'Sick Hours (for Salaried Employees)' },

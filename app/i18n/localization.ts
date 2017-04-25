@@ -1,5 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as moment from 'moment';
+import { Holiday } from '../models/calendar';
 
 namespace Localization {
     type QAStatus = 'approved' | 'in-review' | 'development';
@@ -7,6 +9,7 @@ namespace Localization {
         status: QAStatus;
         access: AccessLocalizedCopy;
         bark: BarkLocalizedCopy;
+        calendar: CalendarLocalizedCopy;
         diagnostics: DiagnosticsLocalizedCopy;
         hound: HoundLocalizedCopy;
         logger: LoggerLocalizedCopy;
@@ -25,6 +28,10 @@ namespace Localization {
         fetch: (phase: 0 | 1 | 2 | 3, username: string, thing?: string) => string;
         goodboy: string;
         story: string[];
+    }
+    export interface CalendarLocalizedCopy {
+        description: (holidays: Holiday[]) => string;
+        eventDescription: (name: string, date: moment.Moment) => string;
     }
     export interface DiagnosticsLocalizedCopy {
         uptime: (orgName: string, initDate: Date, minutes: number) => string;

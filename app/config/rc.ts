@@ -70,24 +70,24 @@ function loadIbizanRc(overridePath?: string) {
     [overridePath, currentPath, homePath].forEach(path => {
         if (pathToLoad) {
             return;
-        }
-        if (path && fs.existsSync(path)) {
+        } else if (path && fs.existsSync(path)) {
             pathToLoad = path;
         }
     });
     if (!pathToLoad) {
         const warning = '.ibizanrc.json not found in any of the default locations' + (overridePath ? ', or in the override location.' : '.');
         console.warn(warning);
-        return;
+        return null;
     }
     console.log('Loading .ibizanrc.json from ' + pathToLoad);
     try {
         return loadJSON(pathToLoad) as IbizanConfig;
     } catch (err) {
         console.error('Invalid .ibizanrc.json file', err);
+        throw err;
     }
-    return;
 }
+
 function loadOpts(optsPath?: string) {
     if (fs.existsSync(optsPath)) {
         try {
@@ -116,11 +116,11 @@ function loadOpts(optsPath?: string) {
             throw err;
         }
     }
-    return;
+    return null;
 }
 function loadArgs(args?: any) {
     if (!args) {
-        return;
+        return null;
     }
     let config: IbizanConfig = {
         port: null,

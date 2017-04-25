@@ -60,7 +60,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
             return;
         }
         bot.api.users.info({ user: message.user }, (err, data) => {
-            if (!data.ok) {
+            if (err || (data && !data.ok)) {
                 next();
                 return;
             }
@@ -77,7 +77,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         }
         if (isDMChannel(message.channel)) {
             bot.api.im.list({}, (err, data) => {
-                if (!data.ok) {
+                if (err || (data && !data.ok)) {
                     next();
                     return;
                 }
@@ -88,7 +88,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
                 }
                 const matchingIm = ims[0];
                 bot.api.users.info({ user: matchingIm.user }, (err, data) => {
-                    if (!data.ok) {
+                    if (err || (data && !data.ok)) {
                         next();
                         return;
                     }
@@ -102,7 +102,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
             });
         } else {
             bot.api.channels.info({ channel: message.channel }, (err, data) => {
-                if (!data.ok) {
+                if (err || (data && !data.ok)) {
                     next();
                     return;
                 }

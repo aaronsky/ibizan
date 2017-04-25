@@ -1,6 +1,6 @@
 
 import 'mocha';
-const { expect, assert } = require('chai');
+import { expect, assert } from 'chai';
 import * as moment from 'moment';
 
 const { MockSheet, MockConfig } = require('../../../test/mocks');

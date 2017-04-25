@@ -8,6 +8,7 @@ function punch(mode: 'in' | 'out'): string {
     } else if (mode === 'out') {
         return `${random(houndCopy.punchOut)}${shouldBeAnnoying ? houndCopy.annoying : ''}`;
     }
+    return '';
 }
 
 const houndCopy: Localization.HoundLocalizedCopy = {

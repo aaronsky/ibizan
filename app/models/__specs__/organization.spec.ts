@@ -1,7 +1,7 @@
 
 import 'mocha';
 import * as moment from 'moment';
-const { expect, assert } = require('chai');
+import { expect, assert } from 'chai';
 
 const { MockSheet, MockConfig } = require('../../../test/mocks');
 
@@ -9,79 +9,79 @@ import { App } from '../../app';
 import { Organization } from '../organization';
 
 describe('Organization', () => {
-  beforeEach(async () => {
-    this.organization = new Organization(MockConfig.team);
-    this.organization.spreadsheet.service = MockSheet.Service;
-    this.organization.spreadsheet.isAuthorized = true;
-    await this.organization.sync();
-  });
-  describe('#constructor(config?)', () => {
-
-  });
-  describe('#ready()', () => {
-
-  });
-  describe('#sync(auth?)', () => {
-    it('should sync all options appropriately', () => {
-      expect(this.organization).to.have.deep.property('users');
-      expect(this.organization).to.have.deep.property('projects');
-      expect(this.organization).to.have.deep.property('calendar');
-      expect(this.organization).to.have.deep.property('clockChannel');
-      expect(this.organization).to.have.deep.property('exemptChannels');
+    beforeEach(async () => {
+        this.organization = new Organization(MockConfig.team);
+        this.organization.spreadsheet.service = MockSheet.Service;
+        this.organization.spreadsheet.isAuthorized = true;
+        await this.organization.sync();
     });
-  });
-  describe('#getUserBySlackName(name, users?)', () => {
-    it('should return a User when provided a Slack username', () => {
-      const user = this.organization.getUserBySlackName('aaronsky');
-      expect(user).to.exist;
-      expect(user).to.have.deep.property('slackName', 'aaronsky');
-    });
-  });
-  describe('#getUserByRealName(name, users?)', () => {
-    it('should return a User when provided a real name', () => {
-      const user = this.organization.getUserByRealName('Aaron Sky');
-      expect(user).to.exist;
-      expect(user).to.have.deep.property('realName', 'Aaron Sky');
-    });
-  });
-  describe('#getProjectByName(name, projects?)', () => {
-    it('should return a Project when provided a project name', () => {
-      const project = this.organization.getProjectByName('production');
-      expect(project).to.exist;
-      expect(project).to.have.deep.property('name', 'production');
-    });
-  });
-  describe('#addEvent(date, name)', () => {
+    describe('#constructor(config?)', () => {
 
-  });
-  describe('#generateReport(start, end, send)', () => {
-    it('should generate payroll reports between the start and end times for each of the users passed', async () => {
-      const userCount = this.organization.users.length;
-      const end = moment();
-      const start = end.subtract(2, 'weeks');
-      try {
-        const reports = await this.organization.generateReport(start, end);
-        const numberDone = reports.length;
-        expect(numberDone).to.equal(userCount);
-      } catch (err) {
-        assert.fail('success', err);
-      }
     });
-  });
-  describe('#dailyReport(reports, today, yesterday)', () => {
+    describe('#ready()', () => {
 
-  });
-  describe('#resetHounding()', () => {
-    it('should reset hounding for all loaded users', () => {
-      const userCount = this.organization.users.length;
-      const resetCount = this.organization.resetHounding();
-      expect(resetCount).to.equal(userCount);
     });
-  });
-  describe('#setHoundFrequency(frequency)', () => {
+    describe('#sync(auth?)', () => {
+        it('should sync all options appropriately', () => {
+            expect(this.organization).to.have.deep.property('users');
+            expect(this.organization).to.have.deep.property('projects');
+            expect(this.organization).to.have.deep.property('calendar');
+            expect(this.organization).to.have.deep.property('clockChannel');
+            expect(this.organization).to.have.deep.property('exemptChannels');
+        });
+    });
+    describe('#getUserBySlackName(name, users?)', () => {
+        it('should return a User when provided a Slack username', () => {
+            const user = this.organization.getUserBySlackName('aaronsky');
+            expect(user).to.exist;
+            expect(user).to.have.deep.property('slackName', 'aaronsky');
+        });
+    });
+    describe('#getUserByRealName(name, users?)', () => {
+        it('should return a User when provided a real name', () => {
+            const user = this.organization.getUserByRealName('Aaron Sky');
+            expect(user).to.exist;
+            expect(user).to.have.deep.property('realName', 'Aaron Sky');
+        });
+    });
+    describe('#getProjectByName(name, projects?)', () => {
+        it('should return a Project when provided a project name', () => {
+            const project = this.organization.getProjectByName('production');
+            expect(project).to.exist;
+            expect(project).to.have.deep.property('name', 'production');
+        });
+    });
+    describe('#addEvent(date, name)', () => {
 
-  });
-  describe('#setShouldHound(should)', () => {
+    });
+    describe('#generateReport(start, end, send)', () => {
+        it('should generate payroll reports between the start and end times for each of the users passed', async () => {
+            const userCount = this.organization.users.length;
+            const end = moment();
+            const start = end.subtract(2, 'weeks');
+            try {
+                const reports = await this.organization.generateReport(start, end);
+                const numberDone = reports.length;
+                expect(numberDone).to.equal(userCount);
+            } catch (err) {
+                assert.fail('success', err);
+            }
+        });
+    });
+    describe('#dailyReport(reports, today, yesterday)', () => {
 
-  });
+    });
+    describe('#resetHounding()', () => {
+        it('should reset hounding for all loaded users', () => {
+            const userCount = this.organization.users.length;
+            const resetCount = this.organization.resetHounding();
+            expect(resetCount).to.equal(userCount);
+        });
+    });
+    describe('#setHoundFrequency(frequency)', () => {
+
+    });
+    describe('#setShouldHound(should)', () => {
+
+    });
 });
