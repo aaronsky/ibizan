@@ -1,5 +1,5 @@
-import * as os from 'os';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 
 import { IbizanConfig } from './types';
@@ -148,9 +148,46 @@ function loadArgs(args?: any) {
     if (args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN) {
         config.slack.verificationToken = args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN;
     }
-    if (args.googleCredentials || args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS) {
-        config.googleCredentials = args.googleCredentials || args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS;
-    }
     config.slack.scopes = ['bot', 'im:read'];
+    if (args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS) {
+        config.googleCredentials = loadGoogleCredentials(args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS);
+    }
     return config;
+}
+
+function loadGoogleCredentials(credentials: string): string {
+    if (typeof credentials !== 'string') {
+        return credentials;
+    } else if (credentials.length === 0) {
+        return credentials;
+    }
+    const pathRe = /[‘“!#$%&+^<=>`]/;
+    const isPath = !pathRe.test(credentials);
+
+    if (isPath) {
+        try {
+            const home = os.homedir();
+            const credentialsPath = path.resolve(home ? credentials.replace(/^~($|\/|\\)/, `${home}$1`) : credentials);
+            const stats = fs.lstatSync(credentialsPath);
+            if (stats && stats.isFile()) {
+                return credentials;
+            }
+        } catch (error) {
+            console.warn('An invalid file path was passed for the Google Credentials file. Checking if JSON was passed...');
+        }
+    }
+    let credentialsPath;
+    try {
+        const credentialsJson = JSON.parse(credentials);
+        const ibizanTmpPath = path.resolve(process.cwd(), '.ibizan');
+        credentialsPath = path.resolve(ibizanTmpPath, 'google-credentials.json');
+        if (!fs.existsSync(ibizanTmpPath)) {
+            fs.mkdirSync(ibizanTmpPath);
+        }
+        fs.writeFileSync(credentialsPath, JSON.stringify(credentialsJson, null, '\t'));
+    } catch (error) {
+        console.warn('The passed Google Credentials file data was not valid JSON either. Check your configuration as this will cause breakage.');
+        return credentials;
+    }
+    return credentialsPath;
 }
