@@ -64,8 +64,6 @@
     "clean": "n-clean bin",
     "build": "npm run clean && npm run compile",
     "compile": "tsc",
-    "heroku-prebuild": "npm i --only=dev",
-    "heroku-postbuild": "npm run build",
     "start": "npm run build && node ./bin/index.js -- --verbose",
     "prepublish": "npm run build",
     "test": "TEST=true mocha",
