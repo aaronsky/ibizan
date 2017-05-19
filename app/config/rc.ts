@@ -4,62 +4,44 @@ import * as path from 'path';
 
 import { IbizanConfig } from './types';
 
+const REQUIRED_SCOPES = ['bot', 'im:read'];
+
 export function createIbizanConfig(rcPathOverride?: string, optsPath?: string, args?: any): IbizanConfig {
     const rcConfig = loadIbizanRc(rcPathOverride);
     const optsConfig = loadOpts(optsPath);
     const argsConfig = loadArgs(args);
+    const envConfig = loadEnv();
 
-    const shouldCheckOpts = !!optsConfig;
-    const shouldCheckArgs = !!argsConfig;
+    const config: IbizanConfig = {
+        port: envConfig.port || argsConfig.port || optsConfig.port || rcConfig.port || null,
+        storageUri: envConfig.storageUri || argsConfig.storageUri || optsConfig.storageUri || rcConfig.storageUri || null,
+        slack: {
+            clientId: envConfig.slack.clientId || argsConfig.slack.clientId || optsConfig.slack.clientId || rcConfig.slack.clientId || null,
+            clientSecret: envConfig.slack.clientSecret || argsConfig.slack.clientSecret || optsConfig.slack.clientSecret || rcConfig.slack.clientSecret || null,
+            verificationToken: envConfig.slack.verificationToken || argsConfig.slack.verificationToken || optsConfig.slack.verificationToken || rcConfig.slack.verificationToken || null,
+            scopes: REQUIRED_SCOPES
+        },
+        googleCredentials: envConfig.googleCredentials || argsConfig.googleCredentials || optsConfig.googleCredentials || rcConfig.googleCredentials || null
+    };
+    console.log(config);
+    return config;
+}
 
-    let config: IbizanConfig = {
+function makeEmptyConfig(): IbizanConfig {
+    return {
         port: null,
         storageUri: null,
         slack: {
             clientId: null,
             clientSecret: null,
             verificationToken: null,
-            scopes: null
+            scopes: REQUIRED_SCOPES
         },
         googleCredentials: null
     };
-    Object.keys(config).forEach(key => {
-        if (key === 'slack' && typeof config[key] === 'object') {
-            Object.keys(config[key]).forEach(subKey => {
-                config[key][subKey] = rcConfig && rcConfig[key] && (rcConfig[key][subKey] || '');
-                if (shouldCheckOpts && optsConfig[key] && optsConfig[key][subKey]) {
-                    config[key][subKey] = optsConfig[key][subKey];
-                }
-                if (shouldCheckArgs && argsConfig[key] && argsConfig[key][subKey]) {
-                    config[key][subKey] = argsConfig[key][subKey];
-                }
-            });
-        } else {
-            config[key] = rcConfig && (rcConfig[key] || null);
-            if (shouldCheckOpts && optsConfig[key]) {
-                config[key] = optsConfig[key];
-            }
-            if (shouldCheckArgs && argsConfig[key]) {
-                config[key] = argsConfig[key];
-            }
-        }
-    });
-    return config;
 }
 
-function loadJSON(path: string): any {
-    if (fs.existsSync(path)) {
-        try {
-            const contents = fs.readFileSync(path, 'utf-8');
-            const json = JSON.parse(contents);
-            return loadArgs(json);
-        } catch (err) {
-            throw err;
-        }
-    }
-    return;
-}
-function loadIbizanRc(overridePath?: string) {
+function loadIbizanRc(overridePath?: string): IbizanConfig {
     const filename = '.ibizanrc.json';
     const homeDir = os.homedir();
     const homePath = path.resolve(homeDir, filename);
@@ -67,92 +49,118 @@ function loadIbizanRc(overridePath?: string) {
     const currentPath = path.resolve(currentDir, filename);
 
     let pathToLoad: string;
-    [overridePath, currentPath, homePath].forEach(path => {
-        if (pathToLoad) {
-            return;
-        } else if (path && fs.existsSync(path)) {
-            pathToLoad = path;
+    const pathFound = [overridePath, currentPath, homePath].some(pathStr => {
+        if (pathStr && fs.existsSync(pathStr)) {
+            pathToLoad = path.resolve(pathStr);
+            return true;
         }
+        return false;
     });
-    if (!pathToLoad) {
-        const warning = '.ibizanrc.json not found in any of the default locations' + (overridePath ? ', or in the override location.' : '.');
-        console.warn(warning);
-        return null;
+    if (!pathFound && !pathToLoad) {
+        console.warn(`.ibizanrc.json not found in any of the default locations${overridePath ? ', or in the override location' : ''}.`);
+        return makeEmptyConfig();
     }
     console.log('Loading .ibizanrc.json from ' + pathToLoad);
     try {
-        return loadJSON(pathToLoad) as IbizanConfig;
+        return loadJSON(pathToLoad);
     } catch (err) {
         console.error('Invalid .ibizanrc.json file', err);
         throw err;
     }
 }
 
-function loadOpts(optsPath?: string) {
-    if (fs.existsSync(optsPath)) {
-        try {
-            let contents = fs.readFileSync(optsPath, 'utf-8')
-                .replace('/\\\s/g', '%20')
-                .split(/\s/)
-                .filter(Boolean)
-                .map(value => value.replace(/%20/g, ' '));
-            let config: any;
-            const keys = Object.keys(config);
-            let key: string = null;
-            let buffer: string[] = [];
-            contents.forEach((element) => {
-                if (element.indexOf('--') && keys.indexOf(element.replace('--', '')) !== -1) {
-                    if (key && buffer.length > 0) {
-                        config[key] = buffer;
-                        buffer = [];
-                    }
-                    key = element.replace('--', '');
-                } else {
-                    buffer.push(element);
-                }
-            });
-            return loadArgs(config);
-        } catch (err) {
-            throw err;
+function loadOpts(optsPath?: string): IbizanConfig {
+    if (!fs.existsSync(optsPath)) {
+        return makeEmptyConfig();
+    }
+    let contents;
+    try {
+        contents = fs.readFileSync(optsPath, 'utf8')
+            .replace('/\\\s/g', '%20')
+            .split(/\s/)
+            .filter(Boolean)
+            .map(value => value.replace(/%20/g, ' '));
+    } catch (err) {
+        throw err;
+    }
+    const config: any = {};
+    const keys = Object.keys(config);
+    let key: string = null;
+    let buffer: string[] = [];
+    contents.forEach((element) => {
+        if (element.indexOf('--') && keys.indexOf(element.replace('--', '')) !== -1) {
+            if (key && buffer.length > 0) {
+                config[key] = buffer;
+                buffer = [];
+            }
+            key = element.replace('--', '');
+        } else {
+            buffer.push(element);
         }
-    }
-    return null;
+    });
+    return loadArgs(config);
 }
-function loadArgs(args?: any) {
+
+function loadArgs(args?: any): IbizanConfig {
     if (!args) {
-        return null;
+        return makeEmptyConfig();
     }
-    let config: IbizanConfig = {
-        port: null,
-        storageUri: null,
-        slack: {
-            clientId: null,
-            clientSecret: null,
-            verificationToken: null,
-            scopes: null
-        },
-        googleCredentials: null
-    };
+    const config = makeEmptyConfig();
     if (args.port) {
-        config.port = args.port || process.env.PORT || process.env.IBIZAN_PORT || process.env.NODE_PORT;
+        config.port = args.port;
     }
     if (args.storageUri) {
-        config.storageUri = args.storageUri || process.env.IBIZAN_STORAGE_URI;
+        config.storageUri = args.storageUri;
     }
-    if (args.slackClientId || args.slackId || process.env.IBIZAN_SLACK_CLIENT_ID) {
-        config.slack.clientId = args.slackClientId || args.id || process.env.IBIZAN_SLACK_CLIENT_ID;
+    if (args.slackClientId || args.slackId) {
+        config.slack.clientId = args.slackClientId || args.id;
     }
-    if (args.slackClientSecret || args.slackSecret || process.env.IBIZAN_SLACK_CLIENT_SECRET) {
-        config.slack.clientSecret = args.slackClientSecret || args.secret || process.env.IBIZAN_SLACK_CLIENT_SECRET;
+    if (args.slackClientSecret || args.slackSecret) {
+        config.slack.clientSecret = args.slackClientSecret || args.secret;
     }
-    if (args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN) {
-        config.slack.verificationToken = args.slackVerificationToken || args.token || process.env.IBIZAN_SLACK_VERIFICATION_TOKEN;
+    if (args.slackVerificationToken || args.token) {
+        config.slack.verificationToken = args.slackVerificationToken || args.token;
     }
-    config.slack.scopes = ['bot', 'im:read'];
-    if (args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS) {
-        config.googleCredentials = loadGoogleCredentials(args.googleCredentials || process.env.IBIZAN_GOOGLE_CREDENTIALS);
+    if (args.googleCredentials) {
+        config.googleCredentials = loadGoogleCredentials(args.googleCredentials);
     }
     return config;
+}
+
+function loadEnv(env = process.env): IbizanConfig {
+    const config = makeEmptyConfig();
+    if (env.PORT || env.IBIZAN_PORT || env.NODE_PORT) {
+        config.port = env.PORT || env.IBIZAN_PORT || env.NODE_PORT;
+    }
+    if (env.IBIZAN_STORAGE_URI) {
+        config.storageUri = env.IBIZAN_STORAGE_URI;
+    }
+    if (env.IBIZAN_SLACK_CLIENT_ID) {
+        config.slack.clientId = env.IBIZAN_SLACK_CLIENT_ID;
+    }
+    if (env.IBIZAN_SLACK_CLIENT_SECRET) {
+        config.slack.clientSecret = env.IBIZAN_SLACK_CLIENT_SECRET;
+    }
+    if (env.IBIZAN_SLACK_VERIFICATION_TOKEN) {
+        config.slack.verificationToken = env.IBIZAN_SLACK_VERIFICATION_TOKEN;
+    }
+    if (env.IBIZAN_GOOGLE_CREDENTIALS) {
+        config.googleCredentials = loadGoogleCredentials(env.IBIZAN_GOOGLE_CREDENTIALS);
+    }
+    return config;
+}
+
+function loadJSON(path: string): IbizanConfig {
+    if (!fs.existsSync(path)) {
+        return makeEmptyConfig();
+    }
+    try {
+        const contents = fs.readFileSync(path, 'utf-8');
+        const json = JSON.parse(contents);
+        return loadArgs(json);
+    } catch (err) {
+        throw err;
+    }
 }
 
 function loadGoogleCredentials(credentials: string): string {
@@ -166,8 +174,8 @@ function loadGoogleCredentials(credentials: string): string {
 
     if (isPath) {
         try {
-            const home = os.homedir();
-            const credentialsPath = path.resolve(home ? credentials.replace(/^~($|\/|\\)/, `${home}$1`) : credentials);
+            const homeDir = os.homedir();
+            const credentialsPath = path.resolve(homeDir ? credentials.replace(/^~($|\/|\\)/, `${homeDir}$1`) : credentials);
             const stats = fs.lstatSync(credentialsPath);
             if (stats && stats.isFile()) {
                 return credentials;
