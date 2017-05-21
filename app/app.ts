@@ -272,7 +272,7 @@ export class App {
             const script = scripts[key];
             console.log(`Loading ${key} script`);
             if (script && typeof script === 'function') {
-                script.call(null, this.controller);
+                this.controller = script.call(null, this.controller);
             } else {
                 console.error(`Expected ${key} to be a function, instead was a ${typeof script}`);
                 throw new Error(`Couldn't load ${key} script`);

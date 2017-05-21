@@ -24,13 +24,8 @@ export function setAccessHandler(handler: (message: Message) => boolean) {
 export function buildOptions(options: HearsOptions, controller: botkit.Controller) {
 	return function (patterns: string[] | RegExp[], message: Message) {
 		message.options = options;
-		if (controller.hears_test(patterns, message)) {
-			if (onReceiveCheckAccessHandlerFn) {
-				if (onReceiveCheckAccessHandlerFn(message)) {
-					return true;
-				}
-			}
-		}
-		return false;
+		return controller.hears_test(patterns, message) &&
+			onReceiveCheckAccessHandlerFn &&
+			onReceiveCheckAccessHandlerFn(message);
 	}
 };
