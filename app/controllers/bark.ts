@@ -10,25 +10,22 @@ import * as moment from 'moment';
 
 import { REGEX, EVENTS } from '../shared/constants';
 import { Message, random } from '../shared/common';
-import Copy from '../i18n';
 import { Slack } from '../logger';
 import { buildOptions } from '../middleware/access';
 
-const copy = Copy.forLocale();
-
 function onBarkHandler(bot: botkit.Bot, message: Message) {
     bot.startTyping(message);
-    bot.reply(message, random(copy.bark.bark));
+    bot.reply(message, random(message.copy.bark.bark));
 }
 
 function onStoryHandler(bot: botkit.Bot, message: Message) {
     bot.startTyping(message);
-    bot.reply(message, random(copy.bark.story));
+    bot.reply(message, random(message.copy.bark.story));
 }
 
 function onGoodDogHandler(bot: botkit.Bot, message: Message) {
     const msg = {
-        text: copy.bark.goodboy,
+        text: message.copy.bark.goodboy,
         channel: message.channel
     } as Message;
     bot.say(msg);
@@ -38,20 +35,20 @@ function onFetchHandler(bot: botkit.Bot, message: Message) {
     const thing = message.match[1];
     if (!thing) {
         const msg = {
-            text: copy.bark.fetch(0, message.user_obj.name),
+            text: message.copy.bark.fetch(0, message.user_obj.name),
             channel: message.channel
         } as Message;
         bot.say(msg);
     } else {
         const msg = {
-            text: copy.bark.fetch(2, message.user_obj.name, thing),
+            text: message.copy.bark.fetch(2, message.user_obj.name, thing),
             channel: message.channel
         } as Message;
         bot.say(msg);
         setTimeout(() => {
             if ((Math.floor(Math.random() * 10) + 1) === 1) {
                 const msg = {
-                    text: copy.bark.fetch(2, message.user_obj.name, thing),
+                    text: message.copy.bark.fetch(2, message.user_obj.name, thing),
                     channel: message.channel
                 } as Message;
                 bot.say(msg);
@@ -63,7 +60,7 @@ function onFetchHandler(bot: botkit.Bot, message: Message) {
                     });
                 }
                 const msg = {
-                    text: copy.bark.fetch(3, message.user_obj.name, thing),
+                    text: message.copy.bark.fetch(3, message.user_obj.name, thing),
                     channel: message.channel
                 } as Message;
                 bot.say(msg);

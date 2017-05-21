@@ -50,15 +50,12 @@ import * as moment from 'moment-timezone';
 
 import { EVENTS, REGEX, REGEX_STR, TIMEZONE } from '../shared/constants';
 import { Message, Mode, isDMChannel } from '../shared/common';
-import Copy from '../i18n';
 import { Slack } from '../logger';
 import { Punch } from '../models/punch';
 import { Rows } from '../models/rows';
 import { User } from '../models/user';
 import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
-
-const copy = Copy.forLocale();
 
 function canPunchHere(channel: { id: string, name: string }, organization: Organization) {
     return isDMChannel(channel.id) || organization.matchesClockChannel(channel.name) || organization.matchesProject(channel.name);
@@ -93,7 +90,7 @@ function parse(bot: botkit.Bot, message: Message, mode: Mode, organization: Orga
     const isAllowed = canPunchHere(channel, organization);
     if (!isAllowed) {
         Slack.addReaction('x', message);
-        user.directMessage(copy.time.forbiddenChannel(channel.name, organization.clockChannel));
+        user.directMessage(message.copy.time.forbiddenChannel(channel.name, organization.clockChannel));
         return;
     }
     Slack.addReaction('clock4', message);
@@ -186,7 +183,7 @@ async function onAppendHandler(bot: botkit.Bot, message: Message) {
     if (operator === 'project' || operator === 'projects' || operator === 'note' || operator === 'notes') {
         const punch = user.lastPunch('in');
         if (!punch) {
-            user.directMessage(copy.time.notPunchedIn);
+            user.directMessage(message.copy.time.notPunchedIn);
             return;
         }
         if (operator === 'project' || operator === 'projects') {
@@ -241,7 +238,7 @@ async function onAppendHandler(bot: botkit.Bot, message: Message) {
             bot.reply(message, 'Something went wrong when adding your event.');
         }
     } else {
-        user.directMessage(copy.time.addFail);
+        user.directMessage(message.copy.time.addFail);
     }
 }
 async function onUndoHandler(bot: botkit.Bot, message: Message) {
@@ -261,14 +258,14 @@ async function onUndoHandler(bot: botkit.Bot, message: Message) {
             Slack.addReaction('dog2', message);
             Slack.removeReaction('clock4', message);
             lastPunch = user.lastPunch();
-            const msg = copy.time.undoSuccess(lastPunchDescription, lastPunch && lastPunch.description(user));
+            const msg = message.copy.time.undoSuccess(lastPunchDescription, lastPunch && lastPunch.description(user));
             user.directMessage(msg);
         } catch (err) {
             Slack.error(`"${err}" was returned for an undo operation by ${user.slackName}`);
-            user.directMessage(copy.time.undoError);
+            user.directMessage(message.copy.time.undoError);
         }
     } else {
-        user.directMessage(copy.time.undoFail);
+        user.directMessage(message.copy.time.undoFail);
     }
 }
 function onUpcomingEventsHandler(bot: botkit.Bot, message: Message) {
@@ -282,7 +279,7 @@ function onUpcomingEventsHandler(bot: botkit.Bot, message: Message) {
     if (upcomingEvents.length > 0) {
         response = 'Upcoming events:\n' + upcomingEvents.reduce((acc, event) => response + `*${event.date.format('M/DD/YY')}* - ${event.name}\n`, response);
     } else {
-        response = copy.time.noEvents;
+        response = message.copy.time.noEvents;
     }
     const msg = {
         text: response,
@@ -293,7 +290,7 @@ function onUpcomingEventsHandler(bot: botkit.Bot, message: Message) {
 }
 function onHoursHelpHandler(bot: botkit.Bot, message: Message) {
     const msg = {
-        text: copy.time.hoursHelp,
+        text: message.copy.time.hoursHelp,
         channel: message.channel
     } as Message;
     bot.say(msg);
@@ -551,7 +548,7 @@ function onSetUserActiveTimesHandler(bot: botkit.Bot, message: Message) {
 
     if (!command) {
         const msg = {
-            text: copy.time.activeHelp,
+            text: message.copy.time.activeHelp,
             channel: message.channel
         } as Message;
         bot.say(msg);
@@ -588,7 +585,7 @@ function onSetUserActiveTimesHandler(bot: botkit.Bot, message: Message) {
         user.directMessage(`Your active *${scope}* time is now *${newTime.format('h:mm A')}*.`);
         Slack.addReaction('dog2', message);
     } else {
-        user.directMessage(copy.time.activeFail);
+        user.directMessage(message.copy.time.activeFail);
         Slack.addReaction('x', message);
     }
 }

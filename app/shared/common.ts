@@ -2,6 +2,7 @@ import { Organization } from '../models/organization';
 import * as moment from 'moment';
 
 import { TeamConfig } from '../config';
+import Localization from '../i18n/localization';
 
 export function typeIsArray(value: any) {
     return (value && typeof value === 'object' && value instanceof Array && typeof value.length === 'number' && typeof value.splice === 'function' && !(value.propertyIsEnumerable('length')));
@@ -39,4 +40,5 @@ export interface Message extends botkit.Message {
         adminOnly?: boolean;
     };
     organization?: Organization;
+    copy: Localization.LocalizedCopy
 }

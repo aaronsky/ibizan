@@ -6,7 +6,6 @@ import * as moment from 'moment';
 const request = require('request');
 
 import { IbizanConfig, TeamConfig } from './config';
-import Copy from './i18n';
 import { Slack } from './logger';
 import { Organization } from './models/organization';
 import { applyRoutes } from './routes';
@@ -16,8 +15,6 @@ import { EVENTS, REGEX } from './shared/constants';
 import * as scripts from './controllers';
 import { setAccessHandler } from './middleware/access';
 import { applyReceiveMiddleware } from './middleware/receive';
-
-const copy = Copy.forLocale();
 
 export class App {
     static config: IbizanConfig;
@@ -155,7 +152,7 @@ export class App {
         const organization: Organization = this.getOrganization(bot);
         if (!organization.ready()) {
             const msg = {
-                text: copy.access.orgNotReady,
+                text: message.copy.access.orgNotReady,
                 channel: message.channel
             } as Message;
             bot.say(msg);
@@ -172,7 +169,7 @@ export class App {
         // Admin command, but the calling user isn't an admin on Slack
         if (adminOnly && !user_obj.is_admin) {
             const msg = {
-                text: copy.access.adminOnly,
+                text: message.copy.access.adminOnly,
                 channel: message.channel
             } as Message;
             bot.say(msg);
@@ -182,7 +179,7 @@ export class App {
             // Slack user does not exist in Employee sheet, but user is required
             if (!orgUser) {
                 const msg = {
-                    text: copy.access.notAnEmployee,
+                    text: message.copy.access.notAnEmployee,
                     channel: message.channel
                 } as Message;
                 bot.say(msg);

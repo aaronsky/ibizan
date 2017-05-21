@@ -1,7 +1,4 @@
 import { Message, typeIsArray } from '../shared/common';
-import Copy from '../i18n';
-
-const copy = Copy.forLocale();
 
 export namespace SlackLogger {
     let bot: botkit.Bot;
@@ -98,7 +95,7 @@ export namespace SlackLogger {
         }
         if (attempt >= 3) {
             console.error(`Failed to add ${reaction} to ${message} after ${attempt} attempts`);
-            log(copy.logger.failedReaction, message.user_obj.name);
+            log(message.copy.logger.failedReaction, message.user_obj.name);
         } else if (bot && reaction && message) {
             setTimeout(() => {
                 bot.api.reactions.add({
@@ -127,7 +124,7 @@ export namespace SlackLogger {
         }
         if (attempt >= 3) {
             console.error(`Failed to remove ${reaction} from ${message} after ${attempt} attempts`);
-            log(copy.logger.failedReaction, message.user_obj.name);
+            log(message.copy.logger.failedReaction, message.user_obj.name);
         } else if (bot && reaction && message) {
             setTimeout(() => {
                 bot.api.reactions.remove({

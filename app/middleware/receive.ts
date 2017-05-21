@@ -3,15 +3,13 @@ import { isDMChannel, Message, random } from '../shared/common';
 import Copy from '../i18n';
 import { Slack } from '../logger';
 
-const copy = Copy.forLocale();
-
 export function applyReceiveMiddleware(controller: botkit.Controller) {
     function onReceiveMessage(bot: botkit.Bot, message: Message) {
         if (message &&
             message.text &&
             message.text.length < 30 &&
             (message.text.match(REGEX.ibizan) || message.channel && message.channel.substring(0, 1) === 'D')) {
-            bot.reply(message, `_${random(copy.access.unknownCommand)} ${random(copy.access.askForHelp)}_`);
+            bot.reply(message, `_${random(message.copy.access.unknownCommand)} ${random(message.copy.access.askForHelp)}_`);
             Slack.addReaction('question', message);
             return;
         }
@@ -29,28 +27,6 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
     }
 
     function onReceiveFormatMessage(bot: botkit.Bot, message: Message, next: () => void) {
-        if (message && message.text) {
-            const channelLinkHeadPattern = '<(#)?([^>|]+)(?:\\|';
-            const channelLinkHead = new RegExp(channelLinkHeadPattern + ')', 'g');
-            const channelLinkTailPattern = '([^>]+))?>';
-            const channelLinkTail = new RegExp('(?:' + channelLinkTailPattern, 'g');
-            const channelLinkPattern = channelLinkHeadPattern + channelLinkTailPattern;
-            const channelLink = new RegExp(channelLinkPattern, 'g');
-            const matches = message.text.match(channelLink);
-            if (!matches) {
-                next();
-                return;
-            }
-
-            let newMessage = message.text;
-            matches.forEach(match => {
-                const submatch = '#' + match.replace(channelLinkHead, '')
-                    .trim()
-                    .slice(0, -1);
-                newMessage = newMessage.replace(match, submatch).trim();
-            });
-            message.text = newMessage;
-        }
         next();
     }
 
@@ -113,11 +89,17 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
         }
     }
 
+    function onReceiveSetCopyForLocale(bot: botkit.Bot, message: Message, next: () => void) {
+        message.copy = Copy.forLocale();
+        next();
+    }
+
     controller.on('message_received', onReceiveMessage);
 
     controller.middleware.receive.use(onReceiveSwallowBlacklistedMessageTypes)
         .use(onReceiveUpdateSlackLogger)
         .use(onReceiveSetUser)
         .use(onReceiveSetChannel)
+        .use(onReceiveSetCopyForLocale)
         .use(onReceiveFormatMessage);
 }

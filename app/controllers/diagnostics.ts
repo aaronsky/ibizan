@@ -12,12 +12,9 @@ import * as moment from 'moment';
 
 import { EVENTS, TIMEZONE } from '../shared/constants';
 import { Message } from '../shared/common';
-import Copy from '../i18n';
 import { Slack } from '../logger';
 import { Organization } from '../models/organization';
 import { buildOptions } from '../middleware/access';
-
-const copy = Copy.forLocale();
 
 function onUptimeHandler(bot, message: Message) {
     const organization: Organization = message.organization;
@@ -25,7 +22,7 @@ function onUptimeHandler(bot, message: Message) {
         console.error('No Organization was found for the team: ' + bot);
         return;
     }
-    bot.reply(message, copy.diagnostics.uptime(organization.name, organization.initTime.toDate(), +moment().diff(organization.initTime, 'minutes', true).toFixed(2)));
+    bot.reply(message, message.copy.diagnostics.uptime(organization.name, organization.initTime.toDate(), +moment().diff(organization.initTime, 'minutes', true).toFixed(2)));
     Slack.addReaction('dog2', message);
 }
 
@@ -37,12 +34,12 @@ function onUsersListHandler(bot, message: Message) {
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
     const attachments = organization.users.map(user => user.slackAttachment());
-    user.directMessage(copy.diagnostics.users, attachments);
+    user.directMessage(message.copy.diagnostics.users, attachments);
     Slack.addReaction('dog2', message);
 }
 
 function onUserHelpHandler(bot, message: Message) {
-    bot.reply(message, copy.diagnostics.userHelp);
+    bot.reply(message, message.copy.diagnostics.userHelp);
     Slack.addReaction('dog2', message);
 }
 
@@ -54,7 +51,7 @@ function onUserDetailHandler(bot, message: Message) {
     }
     const requestingUser = organization.getUserBySlackName(message.user_obj.name);
     const queryedUser = organization.getUserBySlackName(message.match[1]);
-    const response = copy.diagnostics.user(message.match[1], !!queryedUser);
+    const response = message.copy.diagnostics.user(message.match[1], !!queryedUser);
     if (queryedUser) {
         requestingUser.directMessage(response, [queryedUser.slackAttachment()]);
         Slack.addReaction('dog2', message);
@@ -99,7 +96,7 @@ function onProjectsListHandler(bot, message: Message) {
         return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
-    const response = copy.diagnostics.projects;
+    const response = message.copy.diagnostics.projects;
     const attachments = organization.projects.map(project => project.slackAttachment());
     user.directMessage(response, attachments);
     Slack.addReaction('dog2', message);
@@ -113,7 +110,7 @@ function onCalendarHandler(bot, message: Message) {
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
     const attachment = [organization.calendar.slackAttachment()];
-    user.directMessage(copy.diagnostics.calendar, attachment);
+    user.directMessage(message.copy.diagnostics.calendar, attachment);
     Slack.addReaction('dog2', message);
 }
 
@@ -126,11 +123,11 @@ async function onSyncHandler(bot, message: Message) {
     Slack.addReaction('clock4', message);
     try {
         const status = await organization.sync();
-        bot.reply(message, copy.diagnostics.syncSuccess);
+        bot.reply(message, message.copy.diagnostics.syncSuccess);
         Slack.removeReaction('clock4', message);
         Slack.addReaction('dog2', message);
     } catch (err) {
-        Slack.error(copy.diagnostics.syncFailed, err);
+        Slack.error(message.copy.diagnostics.syncFailed, err);
         Slack.removeReaction('clock4', message);
         Slack.addReaction('x', message);
     }
@@ -143,7 +140,7 @@ function onHelpHandler(bot, message: Message) {
         return;
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
-    user.directMessage(copy.diagnostics.help);
+    user.directMessage(message.copy.diagnostics.help);
     Slack.addReaction('dog2', message);
 }
 
