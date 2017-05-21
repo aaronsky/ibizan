@@ -1,5 +1,15 @@
 
-export const REGEX = {
+interface RegexConstants {
+    ibizan: RegExp;
+    modes: RegExp;
+    days: RegExp;
+    rel_time: RegExp;
+    time: RegExp;
+    months: RegExp;
+    date: RegExp;
+    numdate: RegExp;
+}
+export const REGEX: RegexConstants = {
     ibizan: /^(?:@)?ibizan(?::)? ?/i,
     modes: /\b(in|out|vacation|sick|unpaid)\b/i,
     days: /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i,
@@ -10,12 +20,12 @@ export const REGEX = {
     numdate: /((?:\b(0?2)\/(0?[1-9]|[1-2][0-9])\b)|(?:\b(0?[469]|11)\/(0?[1-9]|[1-2][1-9]|30)\b)|(?:\b(0?[13578]|(10|12))\/(0?[1-9]|[1-2][1-9]|3[01])\b))(?: ?- ?((?:\b(0?2)\/(0?[1-9]|[1-2][0-9])\b)|(?:\b(0?[469]|11)\/(0?[1-9]|[1-2][1-9]|30)\b)|(?:\b(0?[13578]|(10|12))\/(0?[1-9]|[1-2][1-9]|3[01])\b)))?(?:\/((19[6-9][0-9])|(2[0-9]{3})))?/i,
 };
 
-let regexStringVariants: any = {};
-for (let key in REGEX) {
-    let regexString = REGEX[key].toString();
-    regexStringVariants[key] = regexString.substring(1, regexString.indexOf('/i'));
-}
-export const REGEX_STR = regexStringVariants;
+export const REGEX_STR = Object.keys(REGEX)
+    .reduce((acc, key) =>
+        REGEX[key].toString().substring(1, REGEX[key].toString().indexOf('/i')),
+    {} as {
+        [key in keyof RegexConstants]: string;
+    });
 
 export const MODES = ['in', 'out', 'vacation', 'sick', 'unpaid'];
 

@@ -147,7 +147,7 @@ async function sendPunch(punch: Punch, user: User, message: Message, organizatio
     }
 }
 
-function onModeHandler(bot: botkit.Bot, message: Message) {
+function onPunchHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
         console.error('No Organization was found for the team: ' + bot);
@@ -155,16 +155,7 @@ function onModeHandler(bot: botkit.Bot, message: Message) {
     }
     parse(bot, message, message.match[1] as Mode, organization);
 }
-function onBlockTimeHandler(bot: botkit.Bot, message: Message) {
-    function onGivenModeHandler(bot: botkit.Bot, message: Message) {
-        const organization: Organization = message.organization;
-        if (!organization) {
-            console.error('No Organization was found for the team: ' + bot);
-            return;
-        }
-        parse(bot, message, message.match[1] as Mode, organization);
-    }
-}
+
 async function onAppendHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -241,6 +232,7 @@ async function onAppendHandler(bot: botkit.Bot, message: Message) {
         user.directMessage(message.copy.time.addFail);
     }
 }
+
 async function onUndoHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -268,6 +260,7 @@ async function onUndoHandler(bot: botkit.Bot, message: Message) {
         user.directMessage(message.copy.time.undoFail);
     }
 }
+
 function onUpcomingEventsHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -288,6 +281,7 @@ function onUpcomingEventsHandler(bot: botkit.Bot, message: Message) {
     bot.say(msg);
     Slack.addReaction('dog2', message);
 }
+
 function onHoursHelpHandler(bot: botkit.Bot, message: Message) {
     const msg = {
         text: message.copy.time.hoursHelp,
@@ -296,6 +290,7 @@ function onHoursHelpHandler(bot: botkit.Bot, message: Message) {
     bot.say(msg);
     Slack.addReaction('dog2', message);
 }
+
 function onHoursForDateHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -354,6 +349,7 @@ function onHoursForDateHandler(bot: botkit.Bot, message: Message) {
     Slack.addReaction('dog2', message);
     user.directMessage(msg, attachments);
 }
+
 function onHoursForPeriodHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -464,6 +460,7 @@ function onHoursForPeriodHandler(bot: botkit.Bot, message: Message) {
     Slack.addReaction('dog2', message);
     user.directMessage(msg, attachments);
 }
+
 function onUserStatusHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -474,6 +471,7 @@ function onUserStatusHandler(bot: botkit.Bot, message: Message) {
     user.directMessage('Your status:', [user.slackAttachment()]);
     Slack.addReaction('dog2', message);
 }
+
 function onUserTimeHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -490,6 +488,7 @@ function onUserTimeHandler(bot: botkit.Bot, message: Message) {
     user.directMessage(msg);
     Slack.addReaction('dog2', message);
 }
+
 function onUserTimezoneHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -501,6 +500,7 @@ function onUserTimezoneHandler(bot: botkit.Bot, message: Message) {
     user.directMessage(`Your timezone is set to *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`);
     Slack.addReaction('dog2', message);
 }
+
 function onSetUserTimezoneHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -516,7 +516,7 @@ function onSetUserTimezoneHandler(bot: botkit.Bot, message: Message) {
         isTzSet = true;
     } else {
         // Try adding 'America/' if a region is not specified
-        if (input.indexOf('/') === -1) {
+        if (!input.includes('/')) {
             input = 'America/' + input;
         }
         if (tz = user.setTimezone(input)) {
@@ -537,6 +537,7 @@ function onSetUserTimezoneHandler(bot: botkit.Bot, message: Message) {
         Slack.addReaction('x', message);
     }
 }
+
 function onSetUserActiveTimesHandler(bot: botkit.Bot, message: Message) {
     const organization: Organization = message.organization;
     if (!organization) {
@@ -590,7 +591,6 @@ function onSetUserActiveTimesHandler(bot: botkit.Bot, message: Message) {
     }
 }
 
-
 export default function (controller: botkit.Controller) {
     // Punch for a given mode
     // respond
@@ -598,7 +598,7 @@ export default function (controller: botkit.Controller) {
     controller.hears(REGEX_STR.modes,
         EVENTS.respond,
         buildOptions({ id: 'time.punchByMode', userRequired: true }, controller),
-        onModeHandler);
+        onPunchHandler);
 
     // Punch for a block of time
     // respond
@@ -606,7 +606,7 @@ export default function (controller: botkit.Controller) {
     controller.hears(REGEX_STR.rel_time,
         EVENTS.respond,
         buildOptions({ id: 'time.punchByTime', userRequired: true }, controller),
-        onBlockTimeHandler);
+        onPunchHandler);
 
     // Switch projects during an 'in' punch
     // append to lastPunch

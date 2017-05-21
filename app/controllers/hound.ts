@@ -44,7 +44,7 @@ function hound(slackuser: { id: string; name: string }, channel: { private?: boo
         if (!channel.private) {
             channel.private = !!channel.is_im || !!channel.is_group;
         }
-        if (channel.private || organization.exemptChannels.indexOf(channel.name) !== -1) {
+        if (channel.private || organization.exemptChannels.includes(channel.name)) {
             console.debug(`#${channel.name} is not an appropriate hounding channel`);
             return;
         }

@@ -235,9 +235,9 @@ export class Organization {
         if (upcomingEvents.length > 0) {
             const now = moment().subtract(1, 'days');
             response += "\nUPCOMING EVENTS:\n";
-            for (let upcomingEvent of upcomingEvents) {
-                const days = upcomingEvent.date.diff(now, 'days');
-                const weeks = upcomingEvent.date.diff(now, 'weeks');
+            upcomingEvents.forEach(event => {
+                const days = event.date.diff(now, 'days');
+                const weeks = event.date.diff(now, 'weeks');
                 let daysArticle = "day";
                 if (days > 1) {
                     daysArticle += "s"
@@ -249,26 +249,24 @@ export class Organization {
                 if (weeks > 0) {
                     const daysRemainder = days % 7 || 0;
                     daysArticle = daysRemainder > 1 ? 'days' : 'day';
-                    response += `${upcomingEvent.name} in ${weeks} ${weeks > 1 ? 'weeks' : 'week'}${daysRemainder > 0 ? ', ' + daysRemainder + ' ' + daysArticle : ''}\n`
+                    response += `${event.name} in ${weeks} ${weeks > 1 ? 'weeks' : 'week'}${daysRemainder > 0 ? ', ' + daysRemainder + ' ' + daysArticle : ''}\n`
                 } else {
-                    response += `*${upcomingEvent.name}* ${days > 1 ? 'in *' + days + ' days*' : '*tomorrow*'}\n`
+                    response += `*${event.name}* ${days > 1 ? 'in *' + days + ' days*' : '*tomorrow*'}\n`
                 }
-            }
+            });
         }
         return response;
     }
 
     resetHounding() {
-        let i = 0;
-        for (let user of this.users) {
+        return this.users.reduce((acc, user) => {
             if (user.settings && user.settings.shouldResetHound) {
                 user.settings.fromSettings({
                     shouldHound: true
                 });
             }
-            i += 1;
-        }
-        return i;
+            return acc + 1;
+        }, 0);
     }
 
     setHoundFrequency(frequency: number) {

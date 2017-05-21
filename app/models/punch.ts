@@ -35,7 +35,7 @@ function parseMode(command: string): [string, string] {
     mode = mode.trim();
     commandWithoutMode = commandWithoutMode || '';
     commandWithoutMode = commandWithoutMode.trim();
-    if (MODES.indexOf(mode) !== -1) {
+    if (MODES.includes(mode)) {
         return [mode, commandWithoutMode];
     }
     return ['none', commandWithoutMode];
@@ -132,7 +132,7 @@ function parseDate(command: string): [moment.Moment[], string] {
         command = command.replace(pattern, '');
     } else if (match = command.match(REGEX.date)) {
         // Placeholder for date blocks
-        if (match[0].indexOf('-') !== -1) {
+        if (match[0].includes('-')) {
             const dateStrings = match[0].split('-')
             let month = ''
             for (let str of dateStrings) {
@@ -151,7 +151,7 @@ function parseDate(command: string): [moment.Moment[], string] {
         const pattern = new RegExp(match[0] + ' ?', 'i');
         command = command.replace(pattern, '');
     } else if (match = command.match(REGEX.numdate)) {
-        if (match[0].indexOf('-') !== -1) {
+        if (match[0].includes('-')) {
             const dateStrings = match[0].split('-')
             let month = ''
             for (let str of dateStrings) {
@@ -339,7 +339,7 @@ export class Punch {
 
         const datetimes: PunchTime = [];
         const tz = user.timetable.timezone.name;
-        for (var i = 0; i < 2; i++) {
+        for (let i = 0; i < 2; i++) {
             const rawPunchTime = row[MODES[i]];
             if (row[MODES[i]]) {
                 let newDate = moment.tz(rawPunchTime, 'MM/DD/YYYY hh:mm:ss a', TIMEZONE);
@@ -441,7 +441,7 @@ export class Punch {
 
             if (!project) {
                 continue;
-            } else if (this.projects.indexOf(project) === -1) {
+            } else if (!this.projects.includes(project)) {
                 this.projects.push(project);
             }
         }
@@ -747,14 +747,9 @@ export class Punch {
             }
             const words = this.notes.split(' ');
             warnings = {
-                projects: [],
+                projects: words.filter(word => word.charAt(0) === '#'),
                 other: []
             };
-            for (let word of words) {
-                if (word.charAt(0) === '#') {
-                    warnings.projects.push(word);
-                }
-            }
         } else {
             if (projectsQualifier) {
                 notesQualifier = ')';

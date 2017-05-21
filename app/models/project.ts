@@ -49,10 +49,8 @@ export class Project {
         }
     }
     hexColor() {
-        let hash = 0;
-        for (let i = 0, len = this.name.length; i < len; i++) {
-            hash = this.name.charCodeAt(i) + ((hash << 3) - hash);
-        }
+        const hash = this.name.split('')
+            .reduce((acc, char) => char.charCodeAt(0) + ((acc << 3) - acc), 0);
         const color = Math.abs(hash).toString(16).substring(0, 6);
         const hexColor = "#" + '000000'.substring(0, 6 - color.length) + color;
         return hexColor;

@@ -247,7 +247,7 @@ export class User {
         if (this.punches && this.punches.length > 0) {
             for (let len = this.punches.length, i = len - 1; i >= 0; --i) {
                 const last = this.punches[i];
-                if (modes.indexOf(last.mode) !== -1) {
+                if (modes.includes(last.mode)) {
                     return last;
                 }
             }
@@ -315,8 +315,9 @@ export class User {
             lastPunch.times.pop();
             lastPunch.elapsed = null;
 
-            if (lastPunch.notes.lastIndexOf('\n') > 0) {
-                lastPunch.notes = lastPunch.notes.substring(0, lastPunch.notes.lastIndexOf('\n'));
+            const lineBreakIndex = lastPunch.notes.lastIndexOf('\n');
+            if (lineBreakIndex > 0) {
+                lastPunch.notes = lastPunch.notes.substring(0, lineBreakIndex);
             }
 
             lastPunch.mode = 'in';
@@ -349,7 +350,7 @@ export class User {
             unpaidTime = 0,
             vacationTime = 0,
             sickTime = 0;
-        const projectsForPeriod = []
+        const projectsForPeriod = [];
         for (let punch of this.punches) {
             if (punch.date.isBefore(start) || punch.date.isAfter(end)) {
                 continue;
@@ -460,9 +461,8 @@ export class User {
         this.updateRow();
     }
     hexColor() {
-        const hash = this.slackName.split('').reduce((acc, char, index) => {
-            return char.charCodeAt(0) + ((acc << 3) - acc);
-        }, 0);
+        const hash = this.slackName.split('')
+            .reduce((acc, char) => char.charCodeAt(0) + ((acc << 3) - acc), 0);
         const color = Math.abs(hash).toString(16).substring(0, 6);
         const hexColor = "#" + '000000'.substring(0, 6 - color.length) + color;
         return hexColor;

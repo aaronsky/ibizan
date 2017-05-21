@@ -73,7 +73,7 @@ function loadOpts(optsPath?: string): IbizanConfig {
     if (!fs.existsSync(optsPath)) {
         return makeEmptyConfig();
     }
-    let contents;
+    let contents: string[];
     try {
         contents = fs.readFileSync(optsPath, 'utf8')
             .replace('/\\\s/g', '%20')
@@ -88,7 +88,7 @@ function loadOpts(optsPath?: string): IbizanConfig {
     let key: string = null;
     let buffer: string[] = [];
     contents.forEach((element) => {
-        if (element.indexOf('--') && keys.indexOf(element.replace('--', '')) !== -1) {
+        if (element.includes('--') && keys.includes(element.replace('--', ''))) {
             if (key && buffer.length > 0) {
                 config[key] = buffer;
                 buffer = [];
