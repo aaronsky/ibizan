@@ -35,7 +35,7 @@ function parseMode(command: string): [string, string] {
     mode = mode.trim();
     commandWithoutMode = commandWithoutMode || '';
     commandWithoutMode = commandWithoutMode.trim();
-    if (MODES.includes(mode)) {
+    if (MODES.indexOf(mode) !== -1) {
         return [mode, commandWithoutMode];
     }
     return ['none', commandWithoutMode];
@@ -441,7 +441,7 @@ export class Punch {
 
             if (!project) {
                 continue;
-            } else if (!this.projects.includes(project)) {
+            } else if (this.projects.indexOf(project) === -1) {
                 this.projects.push(project);
             }
         }

@@ -247,7 +247,7 @@ export class User {
         if (this.punches && this.punches.length > 0) {
             for (let len = this.punches.length, i = len - 1; i >= 0; --i) {
                 const last = this.punches[i];
-                if (modes.includes(last.mode)) {
+                if (modes.indexOf(last.mode) !== -1) {
                     return last;
                 }
             }

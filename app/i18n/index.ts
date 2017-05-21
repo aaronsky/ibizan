@@ -8,7 +8,7 @@ namespace Copy {
     export let defaultLocale = '';
 
     export function setDefaultLocale(locale: string) {
-        if (acceptableLanguages.includes(locale)) {
+        if (acceptableLanguages.indexOf(locale) !== -1) {
             defaultLocale = locale;
             console.log(`Set the default locale to ${locale}`);
         }

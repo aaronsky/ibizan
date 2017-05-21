@@ -21,7 +21,7 @@ export function applyReceiveMiddleware(controller: botkit.Controller) {
     }
 
     function onReceiveSwallowBlacklistedMessageTypes(bot: botkit.Bot, message: Message, next: () => void) {
-        if (!BLACKLISTED_SLACK_MESSAGE_TYPES.includes(message.type)) {
+        if (BLACKLISTED_SLACK_MESSAGE_TYPES.indexOf(message.type) === -1) {
             next();
         }
     }

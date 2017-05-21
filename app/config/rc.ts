@@ -23,7 +23,9 @@ export function createIbizanConfig(rcPathOverride?: string, optsPath?: string, a
         },
         googleCredentials: envConfig.googleCredentials || argsConfig.googleCredentials || optsConfig.googleCredentials || rcConfig.googleCredentials || null
     };
-    console.log(config);
+    if (isValidConfig(config)) {
+        throw new Error('Ibizan configuration was invalid or unable to be completely loaded. If one of these values is null, there could be an issue: ' + JSON.stringify(config));
+    }
     return config;
 }
 
@@ -39,6 +41,10 @@ function makeEmptyConfig(): IbizanConfig {
         },
         googleCredentials: null
     };
+}
+
+function isValidConfig(config: IbizanConfig): boolean {
+    return true;
 }
 
 function loadIbizanRc(overridePath?: string): IbizanConfig {
@@ -88,7 +94,7 @@ function loadOpts(optsPath?: string): IbizanConfig {
     let key: string = null;
     let buffer: string[] = [];
     contents.forEach((element) => {
-        if (element.includes('--') && keys.includes(element.replace('--', ''))) {
+        if (element.includes('--') && keys.indexOf(element.replace('--', '')) !== -1) {
             if (key && buffer.length > 0) {
                 config[key] = buffer;
                 buffer = [];
