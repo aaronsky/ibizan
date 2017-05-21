@@ -23,7 +23,7 @@ export function createIbizanConfig(rcPathOverride?: string, optsPath?: string, a
         },
         googleCredentials: envConfig.googleCredentials || argsConfig.googleCredentials || optsConfig.googleCredentials || rcConfig.googleCredentials || null
     };
-    if (isValidConfig(config)) {
+    if (!isValidConfig(config)) {
         throw new Error('Ibizan configuration was invalid or unable to be completely loaded. If one of these values is null, there could be an issue: ' + JSON.stringify(config));
     }
     return config;
