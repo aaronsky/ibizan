@@ -156,7 +156,7 @@ export class App {
                 channel: message.channel
             } as Message;
             bot.say(msg);
-            Slack.addReaction('x', message);
+            Slack.reactTo(message, 'x');
             return false;
         }
 
@@ -173,7 +173,7 @@ export class App {
                 channel: message.channel
             } as Message;
             bot.say(msg);
-            Slack.addReaction('x', message);
+            Slack.reactTo(message, 'x');
             return false;
         } else if (userRequired) {
             // Slack user does not exist in Employee sheet, but user is required
@@ -183,7 +183,7 @@ export class App {
                     channel: message.channel
                 } as Message;
                 bot.say(msg);
-                Slack.addReaction('x', message);
+                Slack.reactTo(message, 'x');
                 return false;
             }
         }

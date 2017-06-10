@@ -22,7 +22,10 @@ export const REGEX: RegexConstants = {
 
 export const REGEX_STR = Object.keys(REGEX)
     .reduce((acc, key) =>
-        REGEX[key].toString().substring(1, REGEX[key].toString().indexOf('/i')),
+        ({
+            ...acc,
+            [key]: REGEX[key].toString().substring(1, REGEX[key].toString().indexOf('/i'))
+        }),
     {} as {
         [key in keyof RegexConstants]: string;
     });

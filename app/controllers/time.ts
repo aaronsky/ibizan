@@ -89,11 +89,11 @@ function parse(bot: botkit.Bot, message: Message, mode: Mode, organization: Orga
     console.log(`Parsing '${message.text}' for @${user.slackName}.`);
     const isAllowed = canPunchHere(channel, organization);
     if (!isAllowed) {
-        Slack.addReaction('x', message);
+        Slack.reactTo(message, 'x');
         user.directMessage(message.copy.time.forbiddenChannel(channel.name, organization.clockChannel));
         return;
     }
-    Slack.addReaction('clock4', message);
+    Slack.reactTo(message, 'clock4');
     const msg = message.match.input.replace(REGEX.ibizan, '').trim();
     const tz = user.timetable.timezone.name || TIMEZONE;
     const punch = Punch.parse(organization, user, msg, mode, tz);
@@ -136,14 +136,14 @@ async function sendPunch(punch: Punch, user: User, message: Message, organizatio
             const attachments = [enteredPunch.slackAttachment()];
             user.directMessage(punchEnglish, attachments);
         }
-        Slack.addReaction('dog2', message);
-        Slack.removeReaction('clock4', message);
+        Slack.reactTo(message, 'dog2');
+        Slack.unreact(message, 'clock4');
     } catch (err) {
         console.error(err);
         Slack.error(`"${err.message}" was returned for ${user.slackName}. Punch:\n`, message.match.input);
         user.directMessage(`\n${err.message}`);
-        Slack.addReaction('x', message);
-        Slack.removeReaction('clock4', message);
+        Slack.reactTo(message, 'x');
+        Slack.unreact(message, 'clock4');
     }
 }
 
@@ -194,38 +194,38 @@ async function onAppendHandler(bot: botkit.Bot, message: Message) {
         try {
             await organization.spreadsheet.rawData.saveRow(row);
             user.directMessage(`Added ${operator} ${results}`);
-            Slack.addReaction('dog2', message);
+            Slack.reactTo(message, 'dog2');
         } catch (err) {
             user.directMessage(err);
             console.error('Unable to append row', err);
         }
     } else if (operator === 'event' || operator === 'calendar' || operator === 'upcoming') {
-        Slack.addReaction('clock4', message);
+        Slack.reactTo(message, 'clock4');
         const date = moment(words[0], 'MM/DD/YYYY');
         if (!date.isValid()) {
-            Slack.addReaction('x', message);
-            Slack.removeReaction('clock4', message);
+            Slack.reactTo(message, 'x');
+            Slack.unreact(message, 'clock4');
             bot.reply(message, 'Your event has an invalid date. Make sure you\'re using the proper syntax, emit.g. `ibizan add event 3/21 Dog Time`');
             return;
         }
         words.shift();
         const name = words.join(' ').trim();
         if (!name || name.length === 0) {
-            Slack.addReaction('x', message)
-            Slack.removeReaction('clock4', message);
+            Slack.reactTo(message, 'x');
+            Slack.unreact(message, 'clock4');
             bot.reply(message, 'Your event needs a name. Make sure you\'re using the proper syntax, encode.g. `ibizan add event 3/21 Dog Time`');
             return;
         }
         console.debug(`Adding event on ${date} named ${name}`);
         try {
             const calendarEvent = await organization.addEvent(date, name);
-            Slack.addReaction('dog2', message);
-            Slack.removeReaction('clock4', message);
+            Slack.reactTo(message, 'dog2');
+            Slack.unreact(message, 'clock4');
             bot.reply(message, `Added new event: *${calendarEvent.name}* on *${calendarEvent.date.format('M/DD/YYYY')}*`);
         } catch (err) {
             console.error(err);
-            Slack.addReaction('x', message);
-            Slack.removeReaction('clock4', message);
+            Slack.reactTo(message, 'x');
+            Slack.unreact(message, 'clock4');
             bot.reply(message, 'Something went wrong when adding your event.');
         }
     } else {
@@ -241,14 +241,14 @@ async function onUndoHandler(bot: botkit.Bot, message: Message) {
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
     if (user.punches && user.punches.length > 0) {
-        Slack.addReaction('clock4', message);
+        Slack.reactTo(message, 'clock4');
         let lastPunch = user.lastPunch();
         const lastPunchDescription = lastPunch.description(user);
         try {
             await user.undoPunch();
             await user.updateRow();
-            Slack.addReaction('dog2', message);
-            Slack.removeReaction('clock4', message);
+            Slack.reactTo(message, 'dog2');
+            Slack.unreact(message, 'clock4');
             lastPunch = user.lastPunch();
             const msg = message.copy.time.undoSuccess(lastPunchDescription, lastPunch && lastPunch.description(user));
             user.directMessage(msg);
@@ -279,7 +279,7 @@ function onUpcomingEventsHandler(bot: botkit.Bot, message: Message) {
         channel: message.channel
     } as Message;
     bot.say(msg);
-    Slack.addReaction('dog2', message);
+    Slack.reactTo(message, 'dog2');
 }
 
 function onHoursHelpHandler(bot: botkit.Bot, message: Message) {
@@ -288,7 +288,7 @@ function onHoursHelpHandler(bot: botkit.Bot, message: Message) {
         channel: message.channel
     } as Message;
     bot.say(msg);
-    Slack.addReaction('dog2', message);
+    Slack.reactTo(message, 'dog2');
 }
 
 function onHoursForDateHandler(bot: botkit.Bot, message: Message) {
@@ -303,7 +303,7 @@ function onHoursForDateHandler(bot: botkit.Bot, message: Message) {
     if (!date.isValid()) {
         console.log(`hours: \"${message.match[1]}\" is an invalid date`);
         user.directMessage(`\"${message.match[1]}\" is not a valid date`);
-        Slack.addReaction('x', message);
+        Slack.reactTo(message, 'x');
         return;
     }
     const formattedDate = date.format('dddd, MMMM D, YYYY');
@@ -346,7 +346,7 @@ function onHoursForDateHandler(bot: botkit.Bot, message: Message) {
     if (report.extra && report.extra.projects && report.extra.projects.length > 0) {
         msg += ' (' + report.extra.projects.reduce((acc, project) => acc + `#${project.name}`, msg) + ')';
     }
-    Slack.addReaction('dog2', message);
+    Slack.reactTo(message, 'dog2');
     user.directMessage(msg, attachments);
 }
 
@@ -457,7 +457,7 @@ function onHoursForPeriodHandler(bot: botkit.Bot, message: Message) {
         msg = msg.replace(' )', ')');
     }
 
-    Slack.addReaction('dog2', message);
+    Slack.reactTo(message, 'dog2');
     user.directMessage(msg, attachments);
 }
 
@@ -469,7 +469,7 @@ function onUserStatusHandler(bot: botkit.Bot, message: Message) {
     }
     const user = organization.getUserBySlackName(message.user_obj.name);
     user.directMessage('Your status:', [user.slackAttachment()]);
-    Slack.addReaction('dog2', message);
+    Slack.reactTo(message, 'dog2');
 }
 
 function onUserTimeHandler(bot: botkit.Bot, message: Message) {
@@ -486,7 +486,7 @@ function onUserTimeHandler(bot: botkit.Bot, message: Message) {
         msg += `\n\nIt's ${ibizanTime.format('h:mm A')} in the default timezone (${ibizanTime.format('z, Z')}).`;
     }
     user.directMessage(msg);
-    Slack.addReaction('dog2', message);
+    Slack.reactTo(message, 'dog2');
 }
 
 function onUserTimezoneHandler(bot: botkit.Bot, message: Message) {
@@ -498,7 +498,7 @@ function onUserTimezoneHandler(bot: botkit.Bot, message: Message) {
     const user = organization.getUserBySlackName(message.user_obj.name);
     const userTime = moment.tz(user.timetable.timezone.name);
     user.directMessage(`Your timezone is set to *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`);
-    Slack.addReaction('dog2', message);
+    Slack.reactTo(message, 'dog2');
 }
 
 function onSetUserTimezoneHandler(bot: botkit.Bot, message: Message) {
@@ -534,7 +534,7 @@ function onSetUserTimezoneHandler(bot: botkit.Bot, message: Message) {
         user.directMessage(`Your timezone is now *${user.timetable.timezone.name}* (${userTime.format('z, Z')}).`);
     } else {
         user.directMessage('I do not recognize that timezone. Check <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List|this list> for a valid time zone name.');
-        Slack.addReaction('x', message);
+        Slack.reactTo(message, 'x');
     }
 }
 
@@ -553,7 +553,7 @@ function onSetUserActiveTimesHandler(bot: botkit.Bot, message: Message) {
             channel: message.channel
         } as Message;
         bot.say(msg);
-        Slack.addReaction('dog2', message);
+        Slack.reactTo(message, 'dog2');
         return;
     }
 
@@ -565,29 +565,29 @@ function onSetUserActiveTimesHandler(bot: botkit.Bot, message: Message) {
         const newTime = moment.tz(time, 'h:mm A', user.timetable.timezone.name);
         if (!newTime.isValid()) {
             user.directMessage(`\"${time}\" is not a valid time.`);
-            Slack.addReaction('x', message);
+            Slack.reactTo(message, 'x');
             return;
         }
         if (scope === 'start') {
             if (!newTime.isBefore(user.timetable.end)) {
                 user.directMessage(`${newTime.format('h:mm A')} is not before your current end time of ${user.timetable.start.format('h:mm A')}.`);
-                Slack.addReaction('x', message);
+                Slack.reactTo(message, 'x');
                 return;
             }
             user.setStart(newTime);
         } else if (scope === 'end') {
             if (!newTime.isAfter(user.timetable.start)) {
                 user.directMessage(`${newTime.format('h:mm A')} is not after your current start time of ${user.timetable.start.format('h:mm A')}.`);
-                Slack.addReaction('x', message);
+                Slack.reactTo(message, 'x');
                 return;
             }
             user.setEnd(newTime);
         }
         user.directMessage(`Your active *${scope}* time is now *${newTime.format('h:mm A')}*.`);
-        Slack.addReaction('dog2', message);
+        Slack.reactTo(message, 'dog2');
     } else {
         user.directMessage(message.copy.time.activeFail);
-        Slack.addReaction('x', message);
+        Slack.reactTo(message, 'x');
     }
 }
 

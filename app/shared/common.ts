@@ -22,18 +22,22 @@ export interface Team extends botkit.Team {
     config?: TeamConfig;
 }
 
+export interface SlackUser {
+    [props: string]: any;
+    id: string;
+    name: string;
+    is_admin: boolean;
+}
+
+export interface SlackChannel {
+    [props: string]: any;
+    id: string;
+    name: string;
+}
+
 export interface Message extends botkit.Message {
-    user_obj?: {
-        [props: string]: any;
-        id: string;
-        name: string;
-        is_admin: boolean;
-    };
-    channel_obj?: {
-        [props: string]: any;
-        id: string;
-        name: string;
-    };
+    user_obj?: SlackUser;
+    channel_obj?: SlackChannel;
     options?: {
         id?: string;
         userRequired?: boolean;

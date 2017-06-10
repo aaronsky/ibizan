@@ -55,9 +55,7 @@ function onFetchHandler(bot: botkit.Bot, message: Message) {
             } else {
                 const match = thing.match(/:(.*?):/g);
                 if (match) {
-                    match.forEach(element => {
-                        Slack.addReaction(element.replace(/:/g, ''), message);
-                    });
+                    match.forEach(element => Slack.reactTo(message, element.replace(/:/g, '')));
                 }
                 const msg = {
                     text: message.copy.bark.fetch(3, message.user_obj.name, thing),

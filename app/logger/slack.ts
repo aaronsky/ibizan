@@ -1,4 +1,9 @@
-import { Message, typeIsArray } from '../shared/common';
+import {
+    Message,
+    SlackUser,
+    SlackChannel,
+    typeIsArray
+} from '../shared/common';
 
 export namespace SlackLogger {
     let bot: botkit.Bot;
@@ -16,18 +21,64 @@ export namespace SlackLogger {
             attachments: null
         };
 
-        if (attachment) {
-            if (typeof attachment === 'string') {
-                message.attachments = {
-                    text: attachment,
-                    fallback: attachment.replace(/\W/g, '')
-                };
-            } else {
-                message.attachments = attachment;
-            }
+        if (typeof attachment === 'string') {
+            message.attachments = {
+                text: attachment,
+                fallback: attachment.replace(/\W/g, '')
+            };
+        } else if (attachment) {
+            message.attachments = attachment;
         }
 
         return message;
+    }
+
+    export async function getUser(id: string) {
+        return new Promise<SlackUser>((resolve, reject) => {
+            bot.api.users.info({ user: id }, (err, response: SlackUser) => {
+                if (err || (response && !response.ok)) {
+                    reject(err);
+                    return;
+                }
+                resolve(response.user);
+            });
+        });
+    }
+
+    export async function getChannel(id: string) {
+        return new Promise<SlackChannel>((resolve, reject) => {
+            bot.api.channels.info({ channel: id }, (err, response: SlackChannel) => {
+                if (err || (response && !response.ok)) {
+                    reject(err);
+                    return;
+                }
+                resolve(response.channel);
+            });
+        });
+    }
+
+    async function joinChannel(name: string) {
+        return new Promise<SlackChannel>((resolve, reject) => {
+            bot.api.channels.join({ name: 'ibizan-diagnostics' }, (err, response: SlackChannel) => {
+                if (err || (response && !response.ok)) {
+                    reject(err);
+                    return;
+                }
+                resolve(response.channel);
+            });
+        });
+    }
+
+    export async function imList() {
+        return new Promise<any[]>((resolve, reject) => {
+            bot.api.im.list({}, async (err, response) => {
+                if (err || (response && !response.ok)) {
+                    reject(err);
+                    return;
+                }
+                resolve(response.ims);
+            });
+        });
     }
 
     export function log(text: string, channel: string, attachment?: string | { text: string, fallback: string }[]) {
@@ -39,9 +90,7 @@ export namespace SlackLogger {
             return;
         }
         const message = composeMessage(text, channel, attachment);
-        bot.send(message, (err) => {
-
-        });
+        bot.send(message, (err) => { });
     }
 
     export function logDM(text: string, id: string, attachment?: string | { text: string, fallback: string }[]) {
@@ -52,9 +101,7 @@ export namespace SlackLogger {
                     return;
                 }
                 const message = composeMessage(text, data.channel.id, attachment);
-                bot.send(message, (err) => {
-
-                });
+                bot.send(message, (err) => { });
             });
         }
     }
@@ -64,32 +111,31 @@ export namespace SlackLogger {
             console.error('SlackLogger#error called with no message');
             return;
         }
-        bot.api.channels.list({}, (err, data) => {
+        bot.api.channels.list({}, async (err, data) => {
             if (err || (data && !data.ok)) {
                 console.error(err);
                 return;
             }
-            let sent = false;
-            data.channels.forEach(channel => {
-                if (channel.name !== 'ibizan-diagnostics' || sent) {
-                    return;
+            const channels: SlackChannel[] = data.channels;
+            channels.some(channel => {
+                if (channel.name !== 'ibizan-diagnostics') {
+                    return false;
                 }
                 const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, channel.id);
                 bot.send(message, err => { });
-                sent = true;
+                return true;
             });
-            bot.api.channels.join({ name: 'ibizan-diagnostics' }, (err, data) => {
-                if (err || (data && !data.ok)) {
-                    console.error(err);
-                    return;
-                }
-                const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, data.channel.id);
+            try {
+                const channel = await joinChannel('ibizan-diagnostics');
+                const message = composeMessage(`(${new Date()}) ERROR: ${text}\n${error || ''}`, channel.id);
                 bot.send(message, err => { });
-            });
+            } catch (error) {
+                console.error(error);
+            }
         });
     }
 
-    export function addReaction(reaction: string, message: Message, attempt: number = 0) {
+    export function reactTo(message: Message, reaction: string, attempt: number = 0) {
         if (attempt > 0 && attempt <= 2) {
             console.debug(`Retrying adding ${reaction}, attempt ${attempt}...`);
         }
@@ -97,15 +143,16 @@ export namespace SlackLogger {
             console.error(`Failed to add ${reaction} to ${message} after ${attempt} attempts`);
             log(message.copy.logger.failedReaction, message.user_obj.name);
         } else if (bot && reaction && message) {
+            const payload = {
+                timestamp: message.ts,
+                channel: message.channel,
+                name: reaction
+            };
             setTimeout(() => {
-                bot.api.reactions.add({
-                    timestamp: message.ts,
-                    channel: message.channel,
-                    name: reaction
-                }, (err, data) => {
+                bot.api.reactions.add(payload, (err, data) => {
                     if (err || (data && !data.ok)) {
                         attempt += 1;
-                        addReaction(reaction, message, attempt);
+                        reactTo(message, reaction, attempt);
                     } else {
                         if (attempt >= 1) {
                             console.debug(`Added ${reaction} to ${message} after ${attempt} attempts`);
@@ -118,7 +165,7 @@ export namespace SlackLogger {
         }
     }
 
-    export function removeReaction(reaction: string, message: Message, attempt: number = 0) {
+    export function unreact(message: Message, reaction: string, attempt: number = 0) {
         if (attempt > 0 && attempt <= 2) {
             console.debug(`Retrying removal of ${reaction}, attempt ${attempt}...`);
         }
@@ -126,15 +173,16 @@ export namespace SlackLogger {
             console.error(`Failed to remove ${reaction} from ${message} after ${attempt} attempts`);
             log(message.copy.logger.failedReaction, message.user_obj.name);
         } else if (bot && reaction && message) {
+            const payload = {
+                timestamp: message.ts,
+                channel: message.channel,
+                name: reaction
+            };
             setTimeout(() => {
-                bot.api.reactions.remove({
-                    timestamp: message.ts,
-                    channel: message.channel,
-                    name: reaction
-                }, (err, data) => {
+                bot.api.reactions.remove(payload, (err, data) => {
                     if (err || (data && !data.ok)) {
                         attempt += 1;
-                        removeReaction(reaction, message, attempt);
+                        unreact(message, reaction, attempt);
                     } else {
                         if (attempt >= 1) {
                             console.debug(`Removed ${reaction} from ${message} after ${attempt} attempts`);

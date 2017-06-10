@@ -80,26 +80,27 @@ async function onPayrollHandler(bot: botkit.Bot, message: Message) {
     let dates = message.match[1] && message.match[1].split(' ');
     if (dates && dates[0] && !dates[1]) {
         user.directMessage('You must provide both a start and end date.');
-        Slack.addReaction('x', message);
-    } else {
-        const start = dates && dates[0] ? moment(dates[0], 'MM/DD/YYYY') : moment().subtract(2, 'weeks');
-        const end = dates && dates[1] ? moment(dates[1], 'MM/DD/YYYY') : moment();
-        try {
-            const reports = await organization.generateReport(start, end, true);
-            if (typeof reports === 'number') {
-                throw new Error(`Payroll reporting was cut short. Only completed ${reports}/${organization.users.length} reports`);
-            }
-            const numberDone = reports.length;
-            const response = `Payroll has been generated for ${numberDone} employees from ${start.format('dddd, MMMM D, YYYY')} to ${end.format('dddd, MMMM D, YYYY')}`;
-            user.directMessage(response);
-            console.log(response);
-        } catch (err) {
-            const response = `Failed to produce a salary report: ${err}`;
-            user.directMessage(response);
-            console.error(response);
-        }
-        Slack.addReaction('dog2', message);
+        Slack.reactTo(message, 'x');
+        return;
     }
+    const start = dates && dates[0] ? moment(dates[0], 'MM/DD/YYYY') : moment().subtract(2, 'weeks');
+    const end = dates && dates[1] ? moment(dates[1], 'MM/DD/YYYY') : moment();
+    try {
+        const reports = await organization.generateReport(start, end, true);
+        if (typeof reports === 'number') {
+            throw new Error(`Payroll reporting was cut short. Only completed ${reports}/${organization.users.length} reports`);
+        }
+        const numberDone = reports.length;
+        const response = `Payroll has been generated for ${numberDone} employees from ${start.format('dddd, MMMM D, YYYY')} to ${end.format('dddd, MMMM D, YYYY')}`;
+        user.directMessage(response);
+        console.log(response);
+    } catch (err) {
+        const response = `Failed to produce a salary report: ${err}`;
+        user.directMessage(response);
+        console.error(response);
+    }
+    Slack.reactTo(message, 'dog2');
+
 }
 
 function onScheduledPayrollWarningHandler(organization: Organization) {
